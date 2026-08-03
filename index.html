@@ -108,9 +108,10 @@
         .stat-value { color:var(--accent); font-weight:600; }
         .hidden { display:none !important; }
         .passive-info { text-align:center; color:var(--text-secondary); font-size:11px; }
-        .server-status { font-size:10px; text-align:center; padding:4px; }
-        .server-status.online { color:#4caf84; }
-        .server-status.offline { color:#e74c3c; }
+        .status-bar { font-size:10px; text-align:center; padding:4px; border-radius:8px; margin-top:4px; }
+        .status-bar.online { background:rgba(76,175,132,0.2); color:#4caf84; }
+        .status-bar.offline { background:rgba(231,76,60,0.2); color:#e74c3c; }
+        .status-bar.waking { background:rgba(243,156,18,0.2); color:#f39c12; }
     </style>
 </head>
 <body>
@@ -151,12 +152,11 @@
             <button class="btn btn-trade" id="btnTrade">💱 Торги</button>
         </div>
         <div class="passive-info" id="passiveInfo"></div>
-        <div class="server-status" id="serverStatus">🔄 Подключение...</div>
+        <div class="status-bar offline" id="statusBar">🔄 Подключение к серверу...</div>
     </div>
 </div>
 </div>
 
-<!-- Модальные окна -->
 <div class="modal-overlay hidden" id="shopOverlay"><div class="modal"><h3>🏪 Магазин</h3><div id="shopItems"></div><button class="btn-close" id="btnCloseShop">Закрыть</button></div></div>
 <div class="modal-overlay hidden" id="leaderboardOverlay"><div class="modal"><div class="tab-buttons"><button class="tab-btn active" id="tabRankBtn">🏆 Рейтинг</button><button class="tab-btn" id="tabStatsBtn">📊 Статистика</button></div><div id="leaderboardTab"><h3 style="text-align:center;">🏆 Глобальный рейтинг</h3><table class="leaderboard-table"><thead><tr><th>#</th><th>Игрок</th><th>🌲</th><th>💎</th><th>🎄</th></tr></thead><tbody id="leaderboardBody"></tbody></table></div><div id="statsTab" class="hidden"><h3 style="text-align:center;">📊 Статистика</h3><div class="player-id-box"><span>Ваш ID: <span class="id-value" id="myPlayerId"></span></span><button class="copy-btn" id="btnCopyId">📋 Копировать</button></div><div class="stats-list" id="statsList"></div></div><button class="btn-close" id="btnCloseLeaderboard">Закрыть</button></div></div>
 <div class="modal-overlay hidden" id="skinsOverlay"><div class="modal"><h3>🎄 Скины</h3><div class="skin-grid" id="skinGrid"></div><button class="btn-close" id="btnCloseSkins">Закрыть</button></div></div>
@@ -164,7 +164,7 @@
 
 <script>
 // ============ КОНФИГУРАЦИЯ ============
-const API_URL = 'https://woodcutter-server.onrender.com'; // ← ЗАМЕНИТЕ НА ВАШ URL
+const API_URL = 'https://woodcutter-server.onrender.com'; // ← ЗАМЕНИТЕ НА ВАШ RENDER URL
 
 const tg = window.Telegram.WebApp;
 tg.expand(); tg.ready();
@@ -181,26 +181,42 @@ if(tgUser?.photo_url) {
 
 let serverOnline = false;
 
-// ============ API ============
-async function api(endpoint, method='GET', body=null) {
-    try {
-        const opts = { method, headers: {'Content-Type':'application/json'} };
-        if(body) opts.body = JSON.stringify(body);
-        const res = await fetch(API_URL + endpoint, opts);
-        const data = await res.json();
-        if(!serverOnline) { serverOnline=true; updateStatus(); }
-        return data;
-    } catch(e) {
-        serverOnline=false; updateStatus();
-        return {success:false, error:e.message};
-    }
+function setStatus(text, cls) {
+    const el = document.getElementById('statusBar');
+    el.textContent = text;
+    el.className = 'status-bar ' + cls;
 }
 
-function updateStatus() {
-    const el = document.getElementById('serverStatus');
-    el.textContent = serverOnline ? '🟢 Сервер онлайн' : '🔴 Оффлайн';
-    el.className = 'server-status ' + (serverOnline?'online':'offline');
+// ============ API с авто-пробуждением ============
+async function api(endpoint, method='GET', body=null, retries=3) {
+    for(let i=0; i<retries; i++) {
+        try {
+            const opts = { method, headers: {'Content-Type':'application/json'} };
+            if(body) opts.body = JSON.stringify(body);
+            const res = await fetch(API_URL + endpoint, opts);
+            const data = await res.json();
+            if(!serverOnline) { serverOnline=true; setStatus('🟢 Сервер онлайн','online'); }
+            return data;
+        } catch(e) {
+            if(i === 0) setStatus('⏳ Пробуждение сервера...','waking');
+            if(i < retries-1) {
+                await new Promise(r => setTimeout(r, 3000)); // Ждём 3 секунды
+            }
+        }
+    }
+    serverOnline=false;
+    setStatus('🔴 Сервер оффлайн — игра работает локально','offline');
+    return {success:false, error:'Сервер недоступен'};
 }
+
+// Будим сервер при загрузке
+(async ()=>{
+    setStatus('⏳ Пробуждение сервера...','waking');
+    const ping = await api('/ping');
+    if(ping.success || ping.status==='ok') {
+        setStatus('🟢 Сервер онлайн','online');
+    }
+})();
 
 async function loadLB() { const r = await api('/leaderboard'); return r.success ? r.players : []; }
 async function saveLB() { await api('/leaderboard/update','POST',{user_id:userId,name:playerName,wood:player.wood,crystals:player.crystals,treeLevel:player.treeLevel,totalTrees:player.totalTrees}); }
@@ -212,11 +228,10 @@ async function createServerTrade(skinId,price,targetId) {
 async function buyServerTrade(tradeId) { return await api('/trades/buy','POST',{trade_id:tradeId,buyer_id:userId}); }
 async function cancelServerTrade(tradeId) { return await api('/trades/cancel','POST',{trade_id:tradeId,user_id:userId}); }
 async function loadProfile() { const r = await api('/profile/'+userId); return r.success ? r.profile : null; }
-async function saveProfile() { await api('/profile/save','POST',{user_id:userId,wood:player.wood,crystals:player.crystals,stars:player.stars,axePower:player.axePower,autoWood:player.autoWood,critChance:player.critChance,critMultiplier:player.critMultiplier,crystalToWoodRate:player.crystalToWoodRate,comboBonus:player.comboBonus,treeHP:player.treeHP,maxTreeHP:player.maxTreeHP,totalTrees:player.totalTrees,treeLevel:player.treeLevel,activeSkin:player.activeSkin,ownedSkins:player.ownedSkins,upgrades:player.upgrades}); }
+async function saveProfile() { await api('/profile/save','POST',{user_id:userId,wood:player.wood,crystals:player.crystals,stars:player.stars,axePower:player.axePower,autoWood:player.autoWood,critChance:player.critChance,critMultiplier:player.critMultiplier,treeHP:player.treeHP,maxTreeHP:player.maxTreeHP,totalTrees:player.totalTrees,treeLevel:player.treeLevel,activeSkin:player.activeSkin,ownedSkins:player.ownedSkins,upgrades:player.upgrades}); }
 
-// ============ Хранилище ============
-function store(k,v) { localStorage.setItem('wc5_'+k, JSON.stringify(v)); }
-function load(k,d) { try { const r=localStorage.getItem('wc5_'+k); return r?JSON.parse(r):d; } catch(e) { return d; } }
+function store(k,v) { localStorage.setItem('wc6_'+k, JSON.stringify(v)); }
+function load(k,d) { try { const r=localStorage.getItem('wc6_'+k); return r?JSON.parse(r):d; } catch(e) { return d; } }
 
 const treeSkins = [
     { id:'default', name:'Обычное', emoji:'🌳', colors:['#3a7d3a','#4caf50','#66bb6a'], price:0, cur:'free' },
@@ -247,7 +262,6 @@ player.name = playerName; player.userId = userId;
 if(!player.maxTreeHP||player.maxTreeHP<10) { player.maxTreeHP=15; player.treeHP=15; }
 ['axe','strength','crystal1','crystal2','auto1','auto2','auto3','auto4','crit1','crit2','crystalToWood1','crystalToWood2','crystalAuto1','crystalAuto2','critDamage1','comboBoost1'].forEach(id=>{ if(!(id in player.upgrades)) player.upgrades[id]=0; });
 
-// Загрузка с сервера
 (async ()=>{
     const sp = await loadProfile();
     if(sp && sp.wood !== undefined) { Object.assign(player, sp); player.name=playerName; player.userId=userId; }
@@ -256,16 +270,7 @@ if(!player.maxTreeHP||player.maxTreeHP<10) { player.maxTreeHP=15; player.treeHP=
 
 async function saveGame() { store('player_'+userId, player); await saveProfile(); }
 
-function calcHP(lv) {
-    const bMin=15,bMax=30; let m;
-    if(lv<=10) m=1+(lv-1)*0.5;
-    else if(lv<=50) m=5.5+(lv-10)*0.3;
-    else if(lv<=200) m=17.5+(lv-50)*0.2;
-    else if(lv<=1000) m=47.5+(lv-200)*0.1;
-    else if(lv<=5000) m=127.5+(lv-1000)*0.05;
-    else m=327.5+(lv-5000)*0.02;
-    return Math.floor(rand(bMin*m+(lv-1)*5,bMax*m+(lv-1)*5));
-}
+function calcHP(lv) { const bMin=15,bMax=30; let m; if(lv<=10)m=1+(lv-1)*0.5; else if(lv<=50)m=5.5+(lv-10)*0.3; else if(lv<=200)m=17.5+(lv-50)*0.2; else if(lv<=1000)m=47.5+(lv-200)*0.1; else if(lv<=5000)m=127.5+(lv-1000)*0.05; else m=327.5+(lv-5000)*0.02; return Math.floor(rand(bMin*m+(lv-1)*5,bMax*m+(lv-1)*5)); }
 
 const shopItems = [
     { cat:'🌲 За древесину', id:'axe', name:'🪓 Топор +1', desc:'+1 к силе', base:10, mult:1.5, cur:'wood', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.axe));}, eff(){player.axePower++;player.upgrades.axe++;} },
@@ -293,27 +298,21 @@ function updateUI() {
     document.getElementById('crown1').setAttribute('fill',colors[0]);
     document.getElementById('crown2').setAttribute('fill',colors[1]);
     document.getElementById('crown3').setAttribute('fill',colors[2]);
-    const tw = Math.min(30+(player.treeLevel-1)*0.2,80);
-    document.getElementById('trunk').setAttribute('width',tw);
-    document.getElementById('trunk').setAttribute('x',130-tw/2);
-    const idEl = document.getElementById('myPlayerId'); if(idEl) idEl.textContent = player.userId;
+    document.getElementById('myPlayerId').textContent = player.userId;
 }
 
 function fmt(n) { return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':Math.floor(n).toString(); }
 function rand(min,max) { return Math.random()*(max-min)+min; }
 function esc(t) { const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 
-// Комбо
 const COMBO_TIMEOUT = 5000;
-let comboTimer=null, comboTimerStart=0;
+let comboTimer=null;
 function resetCombo() {
     if(comboTimer) clearTimeout(comboTimer);
-    comboTimerStart=Date.now();
     comboTimer=setTimeout(()=>{player.combo=0;player.comboMultiplier=1.0;document.getElementById('comboTimerBar').style.display='none';updateUI();},COMBO_TIMEOUT);
     if(player.combo>0) document.getElementById('comboTimerBar').style.display='block';
 }
 
-// Анимации
 const axeEmoji=document.getElementById('axeEmoji');
 const treeContainer=document.getElementById('treeContainer');
 const floatContainer=document.getElementById('floatTextContainer');
@@ -340,10 +339,8 @@ function chopTree() {
         animFall(()=>{player.maxTreeHP=calcHP(player.treeLevel);player.treeHP=player.maxTreeHP;updateUI();});
     } else animShake();
     updateUI(); saveGame(); saveLB();
-    if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
 }
 
-// Магазин
 function openShop(){
     const el=document.getElementById('shopItems'); el.innerHTML=''; let cat='';
     shopItems.forEach(item=>{
@@ -354,17 +351,9 @@ function openShop(){
     document.querySelectorAll('.shop-item-buy').forEach(b=>b.addEventListener('click',function(){buyUpgrade(this.dataset.id);}));
     document.getElementById('shopOverlay').classList.remove('hidden');
 }
-function buyUpgrade(id){
-    const item=shopItems.find(i=>i.id===id); if(!item) return;
-    const cost=item.cost();
-    if(item.cur==='wood'&&player.wood<cost) return;
-    if(item.cur==='crystals'&&player.crystals<cost) return;
-    if(item.cur==='wood') player.wood-=cost; else player.crystals-=cost;
-    item.eff(); updateUI(); saveGame(); saveLB(); openShop();
-}
+function buyUpgrade(id){const item=shopItems.find(i=>i.id===id);if(!item)return;const cost=item.cost();if(item.cur==='wood'&&player.wood<cost)return;if(item.cur==='crystals'&&player.crystals<cost)return;if(item.cur==='wood')player.wood-=cost;else player.crystals-=cost;item.eff();updateUI();saveGame();saveLB();openShop();}
 function closeShop(){document.getElementById('shopOverlay').classList.add('hidden');}
 
-// Скины
 function openSkins(){
     const grid=document.getElementById('skinGrid'); grid.innerHTML='';
     treeSkins.forEach(skin=>{
@@ -382,7 +371,6 @@ function openSkins(){
 }
 function closeSkins(){document.getElementById('skinsOverlay').classList.add('hidden');}
 
-// Торги
 async function renderTradeList(trades){
     const list=document.getElementById('tradeList'); list.innerHTML='';
     if(!trades.length){list.innerHTML='<p class="no-data">Нет предложений</p>';return;}
@@ -391,17 +379,10 @@ async function renderTradeList(trades){
         const canBuy=!isOwn&&player.wood>=trade.price&&!player.ownedSkins.includes(trade.skinId);
         const div=document.createElement('div'); div.className='trade-item';
         div.innerHTML=`<div class="trade-header"><span class="trade-seller">${esc(trade.sellerName)}</span><span class="trade-price">${fmt(trade.price)} 🌲</span></div><div class="trade-tree">${trade.skinEmoji} ${trade.skinName}</div><button class="trade-btn ${isOwn?'cancel':'buy'}" data-action="${isOwn?'cancel':'buy'}" data-id="${trade.id}" ${!isOwn&&!canBuy?'disabled':''}>${isOwn?'Отменить':(canBuy?'Купить':'Мало 🌲')}</button>`;
-        const btn=div.querySelector('button');
-        btn.addEventListener('click',async ()=>{
-            if(btn.dataset.action==='buy'){
-                const r=await buyServerTrade(btn.dataset.id);
-                if(r.success){player.wood-=r.price;player.ownedSkins.push(r.skinId);saveGame();updateUI();}
-                else alert('❌ '+r.error);
-            } else {
-                const r=await cancelServerTrade(btn.dataset.id);
-                if(r.success){const t=await loadTrades();renderTradeList(t);}
-            }
-            const t=await loadTrades();renderTradeList(t);
+        div.querySelector('button').addEventListener('click',async function(){
+            if(this.dataset.action==='buy'){const r=await buyServerTrade(this.dataset.id);if(r.success){player.wood-=r.price;player.ownedSkins.push(r.skinId);saveGame();updateUI();}}
+            else {await cancelServerTrade(this.dataset.id);}
+            renderTradeList(await loadTrades());
         });
         list.appendChild(div);
     });
@@ -423,10 +404,9 @@ async function createTrade(){
     if(!sid||!price||price<1){alert('Заполните поля');return;}
     const r=await createServerTrade(sid,price,targetId);
     if(r.success){player.ownedSkins=player.ownedSkins.filter(s=>s!==sid);saveGame();renderTradeList(await loadTrades());}
-    else alert('❌ Ошибка');
+    else alert('❌ Сервер недоступен');
 }
 
-// Рейтинг
 async function renderLB(){
     const lb=await loadLB();
     const tbody=document.getElementById('leaderboardBody'); tbody.innerHTML='';
@@ -434,7 +414,7 @@ async function renderLB(){
     lb.forEach((e,i)=>{
         const r=i+1; let rc='',ri=r;
         if(r===1){rc='rank-1';ri='🥇';}else if(r===2){rc='rank-2';ri='🥈';}else if(r===3){rc='rank-3';ri='🥉';}
-        tbody.innerHTML+=`<tr class="${e.user_id===player.userId?'player-row':''}"><td class="rank ${rc}">${ri}</td><td>${esc(e.name)}</td><td>${fmt(e.wood)}</td><td>${fmt(e.crystals)}</td><td>${e.treeLevel||1}</td></tr>`;
+        tbody.innerHTML+=`<tr class="${(e.user_id||e.userId)===player.userId?'player-row':''}"><td class="rank ${rc}">${ri}</td><td>${esc(e.name)}</td><td>${fmt(e.wood)}</td><td>${fmt(e.crystals)}</td><td>${e.treeLevel||1}</td></tr>`;
     });
 }
 
@@ -452,7 +432,6 @@ function closeLeaderboard(){document.getElementById('leaderboardOverlay').classL
 
 function passiveIncome(){if(player.autoWood>0){player.wood+=player.autoWood;updateUI();}}
 
-// Обработчики
 document.getElementById('btnShop').addEventListener('click',openShop);
 document.getElementById('btnLeaderboard').addEventListener('click',openLeaderboard);
 document.getElementById('btnSkins').addEventListener('click',openSkins);
