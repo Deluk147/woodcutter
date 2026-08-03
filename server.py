@@ -1,6 +1,5 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import json
 import os
 
 app = Flask(__name__)
@@ -87,9 +86,14 @@ def save_profile():
         profiles[user_id] = data
     return jsonify({'success': True})
 
+@app.route('/api/ping', methods=['GET'])
+def ping():
+    """Эндпоинт для проверки что сервер жив"""
+    return jsonify({'status': 'ok', 'players': len(leaderboard), 'trades': len(trades)})
+
 @app.route('/')
 def home():
-    return jsonify({'status': 'ok', 'players': len(leaderboard), 'trades': len(trades)})
+    return jsonify({'status': 'ok', 'message': 'Дровосек-кликер API v2.0'})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
