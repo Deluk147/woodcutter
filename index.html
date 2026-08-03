@@ -9,35 +9,34 @@
         :root {
             --bg: #1a1a2e; --panel: #16213e; --accent: #e2a03f;
             --text: #eee; --text-secondary: #aaa; --border: #2a2a4a;
-            --gold: #ffd700; --crystal: #a78bfa; --star: #ffd700;
+            --gold: #ffd700;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        html,body { width:100%; height:100%; overflow:hidden; background:var(--bg); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+        html,body { width:100%; height:100%; overflow:hidden; background:var(--bg); font-family:-apple-system,sans-serif; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
         .app-container { width:100%; height:100%; display:flex; justify-content:center; align-items:center; background:var(--bg); }
-        .phone-frame { width:100%; height:100%; max-width:430px; background:var(--bg); display:flex; flex-direction:column; position:relative; overflow:hidden; z-index:1; }
-        .header { background:var(--panel); padding:12px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); z-index:10; flex-shrink:0; }
-        .header .avatar { width:36px; height:36px; min-width:36px; border-radius:50%; background:linear-gradient(135deg,#e2a03f,#c47f2a); display:flex; align-items:center; justify-content:center; font-size:20px; overflow:hidden; background-size:cover; background-position:center; }
+        .phone-frame { width:100%; height:100%; max-width:430px; background:var(--bg); display:flex; flex-direction:column; position:relative; overflow:hidden; }
+        .header { background:var(--panel); padding:12px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); flex-shrink:0; }
+        .header .avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#e2a03f,#c47f2a); display:flex; align-items:center; justify-content:center; font-size:20px; overflow:hidden; background-size:cover; }
         .header .title { font-weight:600; color:var(--text); font-size:15px; }
         .header .subtitle { font-size:11px; color:var(--text-secondary); }
         .game-area { flex:1; display:flex; flex-direction:column; padding:10px; overflow-y:auto; gap:8px; -webkit-overflow-scrolling:touch; padding-bottom:20px; }
-        .resources { display:flex; gap:8px; flex-shrink:0; }
+        .resources { display:flex; gap:8px; }
         .resource-card { flex:1; background:var(--panel); border-radius:12px; padding:8px 12px; display:flex; align-items:center; gap:6px; border:1px solid var(--border); }
-        .resource-icon { font-size:20px; flex-shrink:0; }
-        .resource-info { display:flex; flex-direction:column; min-width:0; }
+        .resource-icon { font-size:20px; }
         .resource-value { font-size:15px; font-weight:700; color:var(--text); }
         .resource-label { font-size:10px; color:var(--text-secondary); }
-        .tree-scene { background:var(--panel); border-radius:16px; padding:12px; display:flex; flex-direction:column; align-items:center; gap:8px; border:1px solid var(--border); position:relative; flex-shrink:0; }
-        .tree-container { position:relative; width:100%; max-width:240px; aspect-ratio:3/4; cursor:pointer; z-index:5; }
+        .tree-scene { background:var(--panel); border-radius:16px; padding:12px; display:flex; flex-direction:column; align-items:center; gap:8px; border:1px solid var(--border); }
+        .tree-container { position:relative; width:100%; max-width:240px; aspect-ratio:3/4; cursor:pointer; }
         .tree-container:active { transform:scale(0.96); }
         .tree-container.shake { animation:shake 0.4s ease; }
-        @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-4px) rotate(-1deg)} 40%{transform:translateX(4px) rotate(1deg)} 60%{transform:translateX(-3px) rotate(-0.5deg)} 80%{transform:translateX(3px) rotate(0.5deg)} }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-4px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
         .tree-fall { animation:fall 0.6s ease forwards; }
-        @keyframes fall { 0%{transform:rotate(0);opacity:1} 30%{transform:rotate(10deg)} 100%{transform:rotate(80deg) translateX(60px);opacity:0} }
+        @keyframes fall { 0%{transform:rotate(0);opacity:1} 100%{transform:rotate(80deg) translateX(60px);opacity:0} }
         .tree-svg { width:100%; height:100%; pointer-events:none; }
         .axe-emoji { position:absolute; right:8%; top:42%; font-size:clamp(32px,10vw,45px); pointer-events:none; z-index:6; filter:drop-shadow(2px 3px 3px rgba(0,0,0,0.4)); }
         .axe-emoji.swing { animation:axeSwing 0.3s ease; }
         @keyframes axeSwing { 0%{transform:rotate(-40deg)} 50%{transform:rotate(20deg)} 100%{transform:rotate(0deg)} }
-        .tree-level-badge { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.8); color:var(--gold); padding:3px 8px; border-radius:12px; font-size:12px; font-weight:700; pointer-events:none; border:1px solid var(--gold); z-index:7; }
+        .tree-level-badge { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.8); color:var(--gold); padding:3px 8px; border-radius:12px; font-size:12px; font-weight:700; border:1px solid var(--gold); }
         .hp-bar-container { width:100%; background:#2a2a3a; border-radius:8px; height:14px; overflow:hidden; border:1px solid var(--border); }
         .hp-bar { height:100%; border-radius:8px; transition:width 0.3s ease; }
         .hp-bar.high { background:linear-gradient(90deg,#4caf84,#81c784); }
@@ -45,110 +44,95 @@
         .hp-bar.low { background:linear-gradient(90deg,#e74c3c,#c0392b); }
         .hp-text { font-size:12px; color:var(--text); text-align:center; font-weight:600; }
         .combo-display { color:var(--text-secondary); font-size:11px; text-align:center; min-height:16px; }
-        .combo-fire { color:#ff6b35; font-weight:600; }
+        .combo-fire { color:#ff6b35; }
         .combo-timer-bar { width:100%; height:3px; background:#2a2a3a; border-radius:2px; overflow:hidden; }
-        .combo-timer-fill { height:100%; background:var(--accent); border-radius:2px; transition:width 0.1s linear; }
-        .float-text { position:absolute; font-weight:700; pointer-events:none; animation:floatUp 1s ease-out forwards; z-index:20; font-size:clamp(14px,4vw,18px); }
+        .combo-timer-fill { height:100%; background:var(--accent); }
+        .float-text { position:absolute; font-weight:700; pointer-events:none; animation:floatUp 1s ease-out forwards; z-index:20; font-size:16px; }
         @keyframes floatUp { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-50px)} }
-        .wood-particles { position:absolute; pointer-events:none; }
-        .particle { position:absolute; width:6px; height:6px; background:#8b5e3c; border-radius:2px; animation:particleBurst 0.7s ease-out forwards; }
-        @keyframes particleBurst { 0%{opacity:1;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(0)} }
-        .btn-row { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; flex-shrink:0; position:relative; z-index:10; }
-        .btn { padding:12px 8px; border-radius:12px; border:none; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; min-height:44px; pointer-events:auto; }
-        .btn:active { transform:scale(0.95); opacity:0.8; }
+        .btn-row { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
+        .btn { padding:12px 8px; border-radius:12px; border:none; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px; min-height:44px; }
+        .btn:active { transform:scale(0.95); }
         .btn-shop { background:var(--panel); color:var(--text); border:1px solid var(--border); }
         .btn-leaderboard { background:linear-gradient(135deg,#ffd700,#ffaa00); color:#000; }
         .btn-trees { background:linear-gradient(135deg,#4caf50,#2d6b2d); color:#fff; }
         .btn-trade { background:linear-gradient(135deg,#a78bfa,#7c3aed); color:#fff; }
-        .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); display:flex; align-items:flex-end; justify-content:center; z-index:1000; animation:fadeIn 0.2s ease; pointer-events:auto; }
+        .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); display:flex; align-items:flex-end; justify-content:center; z-index:1000; }
         .modal-overlay.hidden { display:none !important; }
-        @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-        .modal { background:var(--panel); border-radius:16px 16px 0 0; width:100%; max-width:430px; max-height:85vh; overflow-y:auto; padding:16px 12px 30px; border:1px solid var(--border); border-bottom:none; animation:slideUp 0.3s ease; -webkit-overflow-scrolling:touch; }
-        @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+        .modal { background:var(--panel); border-radius:16px 16px 0 0; width:100%; max-width:430px; max-height:85vh; overflow-y:auto; padding:16px 12px 30px; border:1px solid var(--border); }
         .modal h3 { color:var(--text); font-size:18px; margin-bottom:12px; text-align:center; }
         .btn-close { width:100%; padding:14px; border-radius:12px; border:1px solid var(--border); background:var(--panel); color:var(--text); font-size:15px; font-weight:600; cursor:pointer; margin-top:8px; min-height:44px; }
         .shop-category { color:var(--accent); font-size:13px; font-weight:700; margin:12px 0 6px; padding-bottom:4px; border-bottom:1px solid var(--border); }
         .shop-item { background:#1e2a3a; border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border); gap:8px; }
-        .shop-item-info { display:flex; flex-direction:column; gap:2px; flex:1; }
         .shop-item-name { font-weight:600; color:var(--text); font-size:14px; }
         .shop-item-desc { font-size:11px; color:var(--text-secondary); }
-        .shop-item-level { font-size:10px; color:var(--accent); }
-        .shop-item-buy { padding:8px 14px; border-radius:10px; border:none; font-weight:600; cursor:pointer; font-size:12px; white-space:nowrap; min-height:36px; flex-shrink:0; }
+        .shop-item-buy { padding:8px 14px; border-radius:10px; border:none; font-weight:600; cursor:pointer; font-size:12px; }
         .buy-wood { background:#4caf84; color:#fff; }
         .buy-crystal { background:#a78bfa; color:#fff; }
         .shop-item-buy:disabled { opacity:0.4; }
-        .skin-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
-        .skin-card { background:#1e2a3a; border-radius:12px; padding:10px; text-align:center; border:2px solid var(--border); cursor:pointer; transition:all 0.15s; }
-        .skin-card.active { border-color:var(--gold); box-shadow:0 0 12px rgba(255,215,0,0.2); }
+        .skin-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+        .skin-card { background:#1e2a3a; border-radius:12px; padding:10px; text-align:center; border:2px solid var(--border); cursor:pointer; }
+        .skin-card.active { border-color:var(--gold); }
         .skin-emoji { font-size:32px; display:block; margin-bottom:6px; }
         .skin-name { font-size:11px; color:var(--text); font-weight:600; }
         .skin-price { font-size:10px; color:var(--accent); margin-top:3px; }
-        .skin-price-star { font-size:10px; color:var(--star); margin-top:3px; }
-        .player-id-box { background:#1e2a3a; border-radius:10px; padding:10px 14px; margin-bottom:12px; border:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; font-size:13px; color:var(--text); }
+        .player-id-box { background:#1e2a3a; border-radius:10px; padding:10px 14px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
         .id-value { color:var(--accent); font-weight:700; font-family:monospace; font-size:12px; }
-        .copy-btn { background:var(--accent); color:#000; border:none; padding:6px 10px; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer; margin-left:8px; }
+        .copy-btn { background:var(--accent); color:#000; border:none; padding:6px 10px; border-radius:8px; font-size:11px; cursor:pointer; }
         .trade-item { background:#1e2a3a; border-radius:12px; padding:12px; margin-bottom:8px; border:1px solid var(--border); }
-        .trade-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; gap:4px; }
-        .trade-seller-name { font-weight:600; color:var(--text); font-size:13px; }
-        .trade-seller-id { font-size:10px; color:var(--text-secondary); font-family:monospace; }
-        .trade-badge { font-size:10px; padding:2px 6px; border-radius:6px; display:inline-block; }
-        .trade-badge.global { background:rgba(76,175,132,0.2); color:#4caf84; }
-        .trade-badge.direct { background:rgba(167,139,250,0.2); color:#a78bfa; }
+        .trade-header { display:flex; justify-content:space-between; margin-bottom:6px; }
+        .trade-seller { font-weight:600; color:var(--text); font-size:13px; }
+        .trade-price { color:var(--accent); font-weight:700; }
         .trade-tree { font-size:20px; text-align:center; margin:6px 0; }
-        .trade-price { color:var(--accent); font-weight:700; font-size:14px; }
-        .trade-action-btn { width:100%; padding:10px; border-radius:10px; border:none; font-weight:600; cursor:pointer; margin-top:6px; min-height:36px; color:#fff; }
-        .trade-action-btn.buy { background:#4caf84; }
-        .trade-action-btn.cancel { background:#e74c3c; }
-        .trade-action-btn:disabled { opacity:0.4; }
-        .create-trade-form { background:#1e2a3a; border-radius:12px; padding:12px; margin-bottom:12px; border:1px solid var(--border); }
+        .trade-btn { width:100%; padding:10px; border-radius:10px; border:none; color:#fff; font-weight:600; cursor:pointer; margin-top:6px; }
+        .trade-btn.buy { background:#4caf84; }
+        .trade-btn.cancel { background:#e74c3c; }
+        .trade-btn:disabled { opacity:0.4; }
+        .create-form { background:#1e2a3a; border-radius:12px; padding:12px; margin-bottom:12px; border:1px solid var(--border); }
         .form-group { margin-bottom:8px; }
         .form-group label { display:block; color:var(--text-secondary); font-size:11px; margin-bottom:3px; }
-        .form-group select, .form-group input { width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:#16213e; color:var(--text); font-size:14px; -webkit-appearance:none; }
-        .form-submit { width:100%; padding:12px; border-radius:10px; border:none; background:var(--accent); color:#000; font-weight:700; font-size:14px; cursor:pointer; min-height:44px; }
-        .leaderboard { margin:12px 0; }
+        .form-group select, .form-group input { width:100%; padding:10px; border-radius:10px; border:1px solid var(--border); background:#16213e; color:var(--text); font-size:14px; }
+        .form-submit { width:100%; padding:12px; border-radius:10px; border:none; background:var(--accent); color:#000; font-weight:700; cursor:pointer; }
         .leaderboard-table { width:100%; border-collapse:collapse; }
         .leaderboard-table th, .leaderboard-table td { padding:8px 6px; text-align:left; border-bottom:1px solid var(--border); color:var(--text); font-size:12px; }
-        .leaderboard-table th { color:var(--text-secondary); font-size:10px; text-transform:uppercase; font-weight:600; }
+        .leaderboard-table th { color:var(--text-secondary); font-size:10px; }
         .rank { font-weight:700; font-size:14px; width:35px; text-align:center; }
         .rank-1 { color:var(--gold); } .rank-2 { color:#c0c0c0; } .rank-3 { color:#cd7f32; }
-        .player-row { background:rgba(226,160,63,0.15); border-radius:6px; }
-        .player-row td { border-bottom:2px solid var(--accent); font-weight:600; }
-        .no-data { text-align:center; padding:20px; color:var(--text-secondary); font-size:13px; }
+        .player-row { background:rgba(226,160,63,0.15); }
+        .player-row td { border-bottom:2px solid var(--accent); }
+        .no-data { text-align:center; padding:20px; color:var(--text-secondary); }
         .tab-buttons { display:flex; gap:6px; margin-bottom:12px; }
-        .tab-btn { flex:1; padding:10px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--text); cursor:pointer; font-weight:600; font-size:13px; min-height:40px; }
+        .tab-btn { flex:1; padding:10px; border-radius:10px; border:1px solid var(--border); background:transparent; color:var(--text); cursor:pointer; font-weight:600; font-size:13px; }
         .tab-btn.active { background:var(--accent); border-color:var(--accent); color:#000; }
         .stats-list { display:flex; flex-direction:column; gap:4px; }
         .stat-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border); color:var(--text); font-size:13px; }
         .stat-value { color:var(--accent); font-weight:600; }
         .hidden { display:none !important; }
-        .passive-info { text-align:center; color:var(--text-secondary); font-size:11px; min-height:16px; flex-shrink:0; }
-        .section-title { color:var(--accent); font-size:13px; font-weight:700; margin:12px 0 6px; padding-bottom:4px; border-bottom:1px solid var(--border); }
+        .passive-info { text-align:center; color:var(--text-secondary); font-size:11px; }
+        .server-status { font-size:10px; text-align:center; padding:4px; }
+        .server-status.online { color:#4caf84; }
+        .server-status.offline { color:#e74c3c; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
-<div class="phone-frame" id="app">
+<div class="phone-frame">
     <div class="header">
         <div class="avatar" id="headerAvatar">🪓</div>
         <div><div class="title">Дровосек-кликер</div><div class="subtitle" id="playerNameDisplay">Загрузка...</div></div>
     </div>
-    <div class="game-area" id="gameArea">
+    <div class="game-area">
         <div class="resources">
-            <div class="resource-card"><span class="resource-icon">🌲</span><div class="resource-info"><span class="resource-value" id="woodCount">0</span><span class="resource-label">Древесина</span></div></div>
-            <div class="resource-card"><span class="resource-icon">💎</span><div class="resource-info"><span class="resource-value" id="crystalCount">0</span><span class="resource-label">Кристаллы</span></div></div>
+            <div class="resource-card"><span class="resource-icon">🌲</span><div><span class="resource-value" id="woodCount">0</span><span class="resource-label">Древесина</span></div></div>
+            <div class="resource-card"><span class="resource-icon">💎</span><div><span class="resource-value" id="crystalCount">0</span><span class="resource-label">Кристаллы</span></div></div>
         </div>
         <div class="tree-scene">
             <div class="tree-container" id="treeContainer">
                 <div class="tree-level-badge" id="treeLevelBadge">🌲 Ур. 1</div>
                 <div class="axe-emoji" id="axeEmoji">🪓</div>
-                <svg class="tree-svg" viewBox="0 0 260 360" preserveAspectRatio="xMidYMid meet">
+                <svg class="tree-svg" viewBox="0 0 260 360">
                     <ellipse cx="130" cy="330" rx="110" ry="20" fill="#3d2b1f" opacity="0.6"/>
-                    <ellipse cx="130" cy="328" rx="85" ry="12" fill="#4a3728" opacity="0.4"/>
-                    <ellipse cx="130" cy="330" rx="70" ry="9" fill="#1a0f0a" opacity="0.3"/>
                     <rect x="115" y="180" width="30" height="152" rx="7" fill="#6b4226" id="trunk"/>
-                    <path d="M115 325 Q95 332 78 340" stroke="#5a3520" stroke-width="9" fill="none" stroke-linecap="round"/>
-                    <path d="M145 325 Q165 332 182 340" stroke="#5a3520" stroke-width="9" fill="none" stroke-linecap="round"/>
                     <ellipse cx="130" cy="130" rx="85" ry="75" fill="#3a7d3a" id="crown1"/>
                     <ellipse cx="130" cy="85" rx="70" ry="65" fill="#4caf50" id="crown2"/>
                     <ellipse cx="130" cy="45" rx="55" ry="55" fill="#66bb6a" id="crown3"/>
@@ -167,401 +151,123 @@
             <button class="btn btn-trade" id="btnTrade">💱 Торги</button>
         </div>
         <div class="passive-info" id="passiveInfo"></div>
+        <div class="server-status" id="serverStatus">🔄 Подключение...</div>
     </div>
 </div>
 </div>
 
+<!-- Модальные окна -->
 <div class="modal-overlay hidden" id="shopOverlay"><div class="modal"><h3>🏪 Магазин</h3><div id="shopItems"></div><button class="btn-close" id="btnCloseShop">Закрыть</button></div></div>
-<div class="modal-overlay hidden" id="leaderboardOverlay"><div class="modal"><div class="tab-buttons"><button class="tab-btn active" id="tabRankBtn">🏆 Рейтинг</button><button class="tab-btn" id="tabStatsBtn">📊 Статистика</button></div><div id="leaderboardTab"><h3 style="text-align:center;margin-bottom:8px;">🏆 Рейтинг (это устройство)</h3><div class="leaderboard"><table class="leaderboard-table"><thead><tr><th>#</th><th>Игрок</th><th>🌲</th><th>💎</th><th>🎄</th></tr></thead><tbody id="leaderboardBody"></tbody></table></div></div><div id="statsTab" class="hidden"><h3 style="text-align:center;margin-bottom:8px;">📊 Статистика</h3><div class="player-id-box"><span>Ваш ID: <span class="id-value" id="myPlayerId"></span></span><button class="copy-btn" id="btnCopyId">📋 Копировать</button></div><div class="stats-list" id="statsList"></div></div><button class="btn-close" id="btnCloseLeaderboard">Закрыть</button></div></div>
+<div class="modal-overlay hidden" id="leaderboardOverlay"><div class="modal"><div class="tab-buttons"><button class="tab-btn active" id="tabRankBtn">🏆 Рейтинг</button><button class="tab-btn" id="tabStatsBtn">📊 Статистика</button></div><div id="leaderboardTab"><h3 style="text-align:center;">🏆 Глобальный рейтинг</h3><table class="leaderboard-table"><thead><tr><th>#</th><th>Игрок</th><th>🌲</th><th>💎</th><th>🎄</th></tr></thead><tbody id="leaderboardBody"></tbody></table></div><div id="statsTab" class="hidden"><h3 style="text-align:center;">📊 Статистика</h3><div class="player-id-box"><span>Ваш ID: <span class="id-value" id="myPlayerId"></span></span><button class="copy-btn" id="btnCopyId">📋 Копировать</button></div><div class="stats-list" id="statsList"></div></div><button class="btn-close" id="btnCloseLeaderboard">Закрыть</button></div></div>
 <div class="modal-overlay hidden" id="skinsOverlay"><div class="modal"><h3>🎄 Скины</h3><div class="skin-grid" id="skinGrid"></div><button class="btn-close" id="btnCloseSkins">Закрыть</button></div></div>
-<div class="modal-overlay hidden" id="tradeOverlay"><div class="modal"><h3>💱 Торги</h3><div class="section-title">📤 Выставить скин</div><div class="create-trade-form"><div class="form-group"><label>ID игрока (пусто = всем)</label><input type="text" id="tradeTargetId" placeholder="Вставьте ID..."></div><div class="form-group"><label>Скин</label><select id="tradeSkinSelect"></select></div><div class="form-group"><label>Цена (🌲)</label><input type="number" id="tradePriceInput" placeholder="100" min="1"></div><button class="form-submit" id="btnCreateTrade">Выставить</button></div><div class="section-title">📋 Предложения</div><div id="tradeList"></div><button class="btn-close" id="btnCloseTrade">Закрыть</button></div></div>
+<div class="modal-overlay hidden" id="tradeOverlay"><div class="modal"><h3>💱 Торги</h3><div class="create-form"><div class="form-group"><label>ID игрока (пусто = всем)</label><input type="text" id="tradeTargetId" placeholder="Вставьте ID..."></div><div class="form-group"><label>Скин</label><select id="tradeSkinSelect"></select></div><div class="form-group"><label>Цена (🌲)</label><input type="number" id="tradePriceInput" placeholder="100" min="1"></div><button class="form-submit" id="btnCreateTrade">Выставить</button></div><h4 style="color:var(--text);margin:12px 0 8px;">📋 Предложения</h4><div id="tradeList"></div><button class="btn-close" id="btnCloseTrade">Закрыть</button></div></div>
 
 <script>
-(function() {
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-    tg.ready();
-    
-    const tgUser = tg.initDataUnsafe?.user;
-    const userId = tgUser ? 'WC' + String(tgUser.id).slice(-6).padStart(6,'0') : 'WC' + Math.random().toString(36).substr(2,6).toUpperCase();
-    const playerName = tgUser ? (tgUser.first_name + (tgUser.last_name?' '+tgUser.last_name:'')) : 'Игрок';
-    
-    console.log('🪓 Игрок:', playerName, 'ID:', userId);
-    
-    if(tgUser?.photo_url) {
-        const av = document.getElementById('headerAvatar');
-        av.style.backgroundImage = `url(${tgUser.photo_url})`;
-        av.textContent = '';
+// ============ КОНФИГУРАЦИЯ ============
+const API_URL = 'https://woodcutter-server.onrender.com'; // ← ЗАМЕНИТЕ НА ВАШ URL
+
+const tg = window.Telegram.WebApp;
+tg.expand(); tg.ready();
+
+const tgUser = tg.initDataUnsafe?.user;
+const userId = tgUser ? 'WC' + String(tgUser.id).slice(-6).padStart(6,'0') : 'WC' + Math.random().toString(36).substr(2,6).toUpperCase();
+const playerName = tgUser ? (tgUser.first_name + (tgUser.last_name?' '+tgUser.last_name:'')) : 'Игрок';
+
+if(tgUser?.photo_url) {
+    const av = document.getElementById('headerAvatar');
+    av.style.backgroundImage = `url(${tgUser.photo_url})`;
+    av.textContent = '';
+}
+
+let serverOnline = false;
+
+// ============ API ============
+async function api(endpoint, method='GET', body=null) {
+    try {
+        const opts = { method, headers: {'Content-Type':'application/json'} };
+        if(body) opts.body = JSON.stringify(body);
+        const res = await fetch(API_URL + endpoint, opts);
+        const data = await res.json();
+        if(!serverOnline) { serverOnline=true; updateStatus(); }
+        return data;
+    } catch(e) {
+        serverOnline=false; updateStatus();
+        return {success:false, error:e.message};
     }
-    
-    // ============ ХРАНИЛИЩЕ ============
-    function store(key, val) { localStorage.setItem('wc4_'+key, JSON.stringify(val)); }
-    function load(key, def) { try { const r=localStorage.getItem('wc4_'+key); return r?JSON.parse(r):def; } catch(e) { return def; } }
-    
-    // Общий рейтинг (все игроки на устройстве)
-    function getLB() { return load('leaderboard', []); }
-    function saveLB(lb) { store('leaderboard', lb); }
-    function getTrades() { return load('trades', []); }
-    function saveTrades(t) { store('trades', t); }
-    
-    const treeSkins = [
-        { id:'default', name:'Обычное', emoji:'🌳', colors:['#3a7d3a','#4caf50','#66bb6a'], price:0, cur:'free' },
-        { id:'autumn', name:'Осеннее', emoji:'🍂', colors:['#c47f2a','#d4943a','#e2a03f'], price:500, cur:'crystals' },
-        { id:'cherry', name:'Сакура', emoji:'🌸', colors:['#ff9ec4','#ffbdd4','#ffd1e4'], price:800, cur:'crystals' },
-        { id:'crystal', name:'Кристальное', emoji:'💎', colors:['#a78bfa','#c4b5fd','#ddd6fe'], price:1200, cur:'crystals' },
-        { id:'golden', name:'Золотое', emoji:'✨', colors:['#d4a017','#e6c22a','#f0d840'], price:2000, cur:'crystals' },
-        { id:'inferno', name:'Огненное', emoji:'🔥', colors:['#cc3300','#e64d00','#ff6600'], price:3500, cur:'crystals' },
-        { id:'ocean', name:'Океанское', emoji:'🌊', colors:['#0066cc','#0088e6','#00aaff'], price:10, cur:'stars' },
-        { id:'void', name:'Бездны', emoji:'🕳️', colors:['#1a0033','#2d004d','#400066'], price:25, cur:'stars' },
-        { id:'rainbow', name:'Радужное', emoji:'🌈', colors:['#ff0000','#ff7700','#ffff00'], price:50, cur:'stars' },
-    ];
-    
-    let player = load('player_'+userId, {
-        wood:0, crystals:0, stars:0,
-        axePower:1, crystalBonus:1, autoWood:0,
-        critChance:0, critMultiplier:2.0,
-        crystalToWoodRate:0, comboBonus:0,
-        combo:0, comboMultiplier:1.0,
-        treeHP:15, maxTreeHP:15,
-        totalTrees:0, treeLevel:1,
-        activeSkin:'default',
-        ownedSkins:['default'],
-        upgrades:{}
-    });
-    
-    player.name = playerName;
-    player.userId = userId;
-    
-    if(!player.maxTreeHP || player.maxTreeHP<10) {
-        player.maxTreeHP=15; player.treeHP=15;
-    }
-    
-    ['axe','strength','crystal1','crystal2','auto1','auto2','auto3','auto4','crit1','crit2',
-     'crystalToWood1','crystalToWood2','crystalAuto1','crystalAuto2','critDamage1','comboBoost1']
-        .forEach(id=>{ if(!(id in player.upgrades)) player.upgrades[id]=0; });
-    
-    function saveGame() { store('player_'+userId, player); }
-    
-    function calcHP(lv) {
-        const bMin=15,bMax=30; let m;
-        if(lv<=10) m=1+(lv-1)*0.5;
-        else if(lv<=50) m=5.5+(lv-10)*0.3;
-        else if(lv<=200) m=17.5+(lv-50)*0.2;
-        else if(lv<=1000) m=47.5+(lv-200)*0.1;
-        else if(lv<=5000) m=127.5+(lv-1000)*0.05;
-        else m=327.5+(lv-5000)*0.02;
-        return Math.floor(rand(bMin*m+(lv-1)*5,bMax*m+(lv-1)*5));
-    }
-    
-    const shopItems = [
-        { cat:'🌲 За древесину', id:'axe', name:'🪓 Топор получше', desc:'+1 к силе', base:10, mult:1.5, cur:'wood', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.axe));}, eff(){player.axePower++;player.upgrades.axe++;} },
-        { cat:'🌲 За древесину', id:'strength', name:'💪 Силашка', desc:'+2 к силе', base:25, mult:1.6, cur:'wood', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.strength));}, eff(){player.axePower+=2;player.upgrades.strength++;} },
-        { cat:'🌲 За древесину', id:'crit1', name:'🎯 Заточка', desc:'+5% крит', base:30, mult:1.7, cur:'wood', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.crit1));}, eff(){player.critChance=Math.min(80,player.critChance+5);player.upgrades.crit1++;} },
-        { cat:'🌲 За древесину', id:'crit2', name:'✨ Благословение', desc:'+10% крит', base:80, mult:1.8, cur:'wood', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.crit2));}, eff(){player.critChance=Math.min(80,player.critChance+10);player.upgrades.crit2++;} },
-        { cat:'🌲 За древесину', id:'auto1', name:'🌱 Саженец', desc:'+1/с авто', base:50, mult:1.4, cur:'wood', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.auto1));}, eff(){player.autoWood++;player.upgrades.auto1++;} },
-        { cat:'🌲 За древесину', id:'auto2', name:'🌿 Росток', desc:'+2/с авто', base:150, mult:1.5, cur:'wood', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.auto2));}, eff(){player.autoWood+=2;player.upgrades.auto2++;} },
-        { cat:'🌲 За древесину', id:'auto3', name:'🌳 Дерево', desc:'+5/с авто', base:400, mult:1.6, cur:'wood', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.auto3));}, eff(){player.autoWood+=5;player.upgrades.auto3++;} },
-        { cat:'🌲 За древесину', id:'auto4', name:'🏭 Лесопилка', desc:'+10/с авто', base:1000, mult:1.7, cur:'wood', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.auto4));}, eff(){player.autoWood+=10;player.upgrades.auto4++;} },
-        { cat:'💎 За кристаллы', id:'crystal1', name:'💎 Кристальный глаз', desc:'+1💎 за сруб', base:5, mult:2.0, cur:'crystals', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.crystal1));}, eff(){player.crystalBonus++;player.upgrades.crystal1++;} },
-        { cat:'💎 За кристаллы', id:'crystal2', name:'💎 Кристальная аура', desc:'+2💎 за сруб', base:15, mult:2.2, cur:'crystals', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.crystal2));}, eff(){player.crystalBonus+=2;player.upgrades.crystal2++;} },
-        { cat:'💎 За кристаллы', id:'crystalToWood1', name:'🔄 Конвертер', desc:'+1🌲/💎 при срубе', base:10, mult:1.8, cur:'crystals', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.crystalToWood1));}, eff(){player.crystalToWoodRate++;player.upgrades.crystalToWood1++;} },
-        { cat:'💎 За кристаллы', id:'crystalToWood2', name:'🔄 Мощный конвертер', desc:'+3🌲/💎 при срубе', base:30, mult:2.0, cur:'crystals', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.crystalToWood2));}, eff(){player.crystalToWoodRate+=3;player.upgrades.crystalToWood2++;} },
-        { cat:'💎 За кристаллы', id:'crystalAuto1', name:'💎 Кристальный дровосек', desc:'+2/с авто', base:15, mult:1.6, cur:'crystals', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.crystalAuto1));}, eff(){player.autoWood+=2;player.upgrades.crystalAuto1++;} },
-        { cat:'💎 За кристаллы', id:'crystalAuto2', name:'💎 Кристальная пила', desc:'+5/с авто', base:40, mult:1.7, cur:'crystals', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.crystalAuto2));}, eff(){player.autoWood+=5;player.upgrades.crystalAuto2++;} },
-        { cat:'💎 За кристаллы', id:'critDamage1', name:'💥 Кристальный удар', desc:'+0.5x крит', base:20, mult:2.5, cur:'crystals', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.critDamage1));}, eff(){player.critMultiplier+=0.5;player.upgrades.critDamage1++;} },
-        { cat:'💎 За кристаллы', id:'comboBoost1', name:'🔥 Кристальное комбо', desc:'+0.5%/удар', base:25, mult:2.0, cur:'crystals', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.comboBoost1));}, eff(){player.comboBonus+=0.5;player.upgrades.comboBoost1++;} },
-    ];
-    
-    function updateLB() {
-        let lb = getLB();
-        const idx = lb.findIndex(e=>e.userId===player.userId);
-        const entry = { userId:player.userId, name:player.name, wood:player.wood, crystals:player.crystals, treeLevel:player.treeLevel, totalTrees:player.totalTrees };
-        if(idx>=0) lb[idx]=entry; else lb.push(entry);
-        lb.sort((a,b)=>b.wood-a.wood);
-        saveLB(lb.slice(0,100));
-        return lb;
-    }
-    
-    function updateUI() {
-        document.getElementById('woodCount').textContent = fmt(player.wood);
-        document.getElementById('crystalCount').textContent = fmt(player.crystals);
-        const hpPct = Math.max(0, (player.treeHP/Math.max(1,player.maxTreeHP))*100);
-        const hpb = document.getElementById('hpBar');
-        hpb.style.width = hpPct+'%';
-        hpb.className = 'hp-bar ' + (hpPct>60?'high':hpPct>30?'medium':'low');
-        document.getElementById('hpText').textContent = `${fmt(Math.max(0,player.treeHP))} / ${fmt(player.maxTreeHP)} HP`;
-        document.getElementById('treeLevelBadge').textContent = `🌲 Ур. ${player.treeLevel}`;
-        document.getElementById('playerNameDisplay').textContent = player.name;
-        const cd = document.getElementById('comboDisplay');
-        if(player.combo>1) cd.innerHTML = `<span class="combo-fire">🔥 Комбо x${player.combo} (+${Math.floor((player.comboMultiplier-1)*100)}%)</span>`;
-        else { cd.textContent = 'Нажимай на дерево! 🪓'; document.getElementById('comboTimerBar').style.display='none'; }
-        document.getElementById('passiveInfo').textContent = player.autoWood>0?`⏳ +${player.autoWood} 🌲/сек`:'';
-        const skin = treeSkins.find(s=>s.id===player.activeSkin)||treeSkins[0];
-        const colors = hpPct>60?skin.colors:(hpPct>30?['#e67e22','#f39c12','#f1c40f']:['#c0392b','#e74c3c','#ff6b6b']);
-        document.getElementById('crown1').setAttribute('fill',colors[0]);
-        document.getElementById('crown2').setAttribute('fill',colors[1]);
-        document.getElementById('crown3').setAttribute('fill',colors[2]);
-        const tw = Math.min(30+(player.treeLevel-1)*0.2,80);
-        document.getElementById('trunk').setAttribute('width',tw);
-        document.getElementById('trunk').setAttribute('x',130-tw/2);
-        const idEl = document.getElementById('myPlayerId');
-        if(idEl) idEl.textContent = player.userId;
-    }
-    
-    function fmt(n) {
-        if(n>=1e15) return (n/1e15).toFixed(2)+'Q';
-        if(n>=1e12) return (n/1e12).toFixed(2)+'T';
-        if(n>=1e9) return (n/1e9).toFixed(2)+'B';
-        if(n>=1e6) return (n/1e6).toFixed(2)+'M';
-        if(n>=1e3) return (n/1e3).toFixed(1)+'K';
-        return Math.floor(n).toString();
-    }
-    function rand(min,max) { return Math.random()*(max-min)+min; }
-    function esc(t) { const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
-    
-    // Комбо таймер
-    const COMBO_TIMEOUT = 5000;
-    let comboTimer=null, comboTimerStart=0, comboTimerInterval=null;
-    function resetCombo() {
-        if(comboTimer) clearTimeout(comboTimer);
-        if(comboTimerInterval) clearInterval(comboTimerInterval);
-        comboTimerStart=Date.now();
-        updateComboBar();
-        comboTimerInterval=setInterval(updateComboBar,100);
-        comboTimer=setTimeout(()=>{player.combo=0;player.comboMultiplier=1.0;clearInterval(comboTimerInterval);document.getElementById('comboTimerBar').style.display='none';updateUI();},COMBO_TIMEOUT);
-        if(player.combo>0) document.getElementById('comboTimerBar').style.display='block';
-    }
-    function updateComboBar() {
-        const pct=Math.max(0,(COMBO_TIMEOUT-(Date.now()-comboTimerStart))/COMBO_TIMEOUT*100);
-        document.getElementById('comboTimerFill').style.width=pct+'%';
-        document.getElementById('comboTimerFill').style.background=pct<25?'#e74c3c':(pct<50?'#f39c12':'var(--accent)');
-    }
-    
-    // Анимации
-    const axeEmoji=document.getElementById('axeEmoji');
-    const treeContainer=document.getElementById('treeContainer');
-    const floatContainer=document.getElementById('floatTextContainer');
-    function animAxe(){axeEmoji.classList.remove('swing');void axeEmoji.offsetWidth;axeEmoji.classList.add('swing');}
-    function animShake(){treeContainer.classList.add('shake');setTimeout(()=>treeContainer.classList.remove('shake'),400);}
-    function animFall(cb){treeContainer.classList.add('tree-fall');setTimeout(()=>{treeContainer.classList.remove('tree-fall');if(cb)cb();},600);}
-    function floatText(text,color,x,y){
-        const el=document.createElement('div');el.className='float-text';el.textContent=text;el.style.color=color;el.style.left=x+'px';el.style.top=y+'px';
-        floatContainer.appendChild(el);setTimeout(()=>el.remove(),1000);
-    }
-    function particles(x,y){
-        const c=document.createElement('div');c.className='wood-particles';c.style.left=x+'px';c.style.top=y+'px';
-        for(let i=0;i<10;i++){const p=document.createElement('div');p.className='particle';const a=Math.random()*Math.PI*2,d=25+Math.random()*45;p.style.setProperty('--dx',Math.cos(a)*d+'px');p.style.setProperty('--dy',Math.sin(a)*d+'px');c.appendChild(p);}
-        floatContainer.appendChild(c);setTimeout(()=>c.remove(),700);
-    }
-    
-    function chopTree() {
-        if(player.treeHP<=0) return;
-        let dmg=player.axePower;
-        const crit=Math.random()*100<player.critChance;
-        if(crit) dmg=Math.floor(dmg*player.critMultiplier);
-        player.combo=Math.min(50,player.combo+1);
-        player.comboMultiplier=1.0+player.combo*(0.01+player.comboBonus/100);
-        dmg=Math.max(1,Math.floor(dmg*player.comboMultiplier));
-        player.treeHP-=dmg; player.wood+=dmg;
-        animAxe(); resetCombo();
-        const r=treeContainer.getBoundingClientRect();
-        const rx=r.width/2+(Math.random()-0.5)*50, ry=r.height*0.55;
-        floatText((crit?'💥+':'+')+fmt(dmg)+'🌲',crit?'#ff6b6b':'#e2a03f',rx,ry);
-        particles(rx,ry+8);
-        if(player.treeHP<=0){
-            const cg=player.crystalBonus; player.crystals+=cg;
-            if(player.crystalToWoodRate>0&&player.crystals>0){const conv=Math.floor(player.crystals*player.crystalToWoodRate);player.wood+=conv;floatText('🔄+'+fmt(conv)+'🌲','#4caf84',rx,ry+18);}
-            player.totalTrees++; player.treeLevel=Math.min(Math.floor(player.totalTrees/2)+1,9999);
-            animFall(()=>{player.maxTreeHP=calcHP(player.treeLevel);player.treeHP=player.maxTreeHP;updateUI();});
-            floatText('🎉+'+cg+'💎','#a78bfa',rx,ry-25);
-            if(player.treeLevel%100===0||player.treeLevel===9999) floatText('⭐Ур.'+player.treeLevel+'!','#ffd700',rx,ry-50);
-        } else animShake();
-        updateUI(); saveGame(); updateLB();
-        if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-    }
-    
-    // Магазин
-    function openShop(){
-        const el=document.getElementById('shopItems'); el.innerHTML=''; let cat='';
-        shopItems.forEach(item=>{
-            if(item.cat!==cat){cat=item.cat;el.innerHTML+=`<div class="shop-category">${cat}</div>`;}
-            const cost=item.cost(), afford=item.cur==='wood'?player.wood>=cost:player.crystals>=cost;
-            el.innerHTML+=`<div class="shop-item"><div class="shop-item-info"><span class="shop-item-name">${item.name}</span><span class="shop-item-desc">${item.desc}</span>${player.upgrades[item.id]?`<span class="shop-item-level">Ур.${player.upgrades[item.id]}</span>`:''}</div><button class="shop-item-buy ${item.cur==='wood'?'buy-wood':'buy-crystal'}" data-id="${item.id}" ${!afford?'disabled':''}>${fmt(cost)} ${item.cur==='wood'?'🌲':'💎'}</button></div>`;
-        });
-        document.querySelectorAll('.shop-item-buy').forEach(b=>b.addEventListener('click',function(){buyUpgrade(this.dataset.id);}));
-        document.getElementById('shopOverlay').classList.remove('hidden');
-    }
-    function buyUpgrade(id){
-        const item=shopItems.find(i=>i.id===id); if(!item) return;
-        const cost=item.cost();
-        if(item.cur==='wood'&&player.wood<cost) return;
-        if(item.cur==='crystals'&&player.crystals<cost) return;
-        if(item.cur==='wood') player.wood-=cost; else player.crystals-=cost;
-        item.eff(); updateUI(); saveGame(); updateLB(); openShop();
-    }
-    function closeShop(){document.getElementById('shopOverlay').classList.add('hidden');}
-    
-    // Скины
-    function openSkins(){
-        const grid=document.getElementById('skinGrid'); grid.innerHTML='';
-        treeSkins.forEach(skin=>{
-            const owned=player.ownedSkins.includes(skin.id), active=player.activeSkin===skin.id;
-            let priceHTML='';
-            if(!owned){
-                if(skin.cur==='free') priceHTML='<span class="skin-price">Бесплатно</span>';
-                else if(skin.cur==='crystals') priceHTML=`<span class="skin-price">🔒 ${skin.price} 💎</span>`;
-                else priceHTML=`<span class="skin-price-star">⭐ ${skin.price} звёзд</span>`;
-            }
-            const card=document.createElement('div'); card.className=`skin-card ${active?'active':''}`;
-            card.innerHTML=`<span class="skin-emoji">${skin.emoji}</span><span class="skin-name">${skin.name}</span>${priceHTML}${active?'<span style="color:#ffd700;font-size:10px;">✅</span>':''}`;
-            card.addEventListener('click',()=>{
-                if(owned){player.activeSkin=skin.id;updateUI();saveGame();openSkins();}
-                else if(skin.cur==='free'){player.ownedSkins.push(skin.id);player.activeSkin=skin.id;updateUI();saveGame();openSkins();}
-                else if(skin.cur==='crystals'){
-                    if(player.crystals>=skin.price){if(confirm(`Купить "${skin.name}" за ${skin.price}💎?`)){player.crystals-=skin.price;player.ownedSkins.push(skin.id);player.activeSkin=skin.id;updateUI();saveGame();openSkins();}}
-                    else alert('Недостаточно кристаллов!');
-                } else alert('⭐ Скин за звёзды Telegram. Нужен сервер с Bot API.');
-            });
-            grid.appendChild(card);
-        });
-        document.getElementById('skinsOverlay').classList.remove('hidden');
-    }
-    function closeSkins(){document.getElementById('skinsOverlay').classList.add('hidden');}
-    
-    // Торги
-    function renderTradeList(trades){
-        const list=document.getElementById('tradeList'); list.innerHTML='';
-        if(!trades.length){list.innerHTML='<p class="no-data">Нет предложений</p>';return;}
-        trades.forEach(trade=>{
-            const isOwn=trade.sellerId===player.userId;
-            const canBuy=!isOwn&&player.wood>=trade.price&&!player.ownedSkins.includes(trade.skinId);
-            const badge=trade.targetId?`<span class="trade-badge direct">🎯 Для: ${trade.targetId}</span>`:'<span class="trade-badge global">🌐 Всем</span>';
-            const div=document.createElement('div'); div.className='trade-item';
-            div.innerHTML=`<div class="trade-header"><div><div class="trade-seller-name">${esc(trade.sellerName)}</div><div class="trade-seller-id">ID: ${trade.sellerId}</div>${badge}</div><span class="trade-price">${fmt(trade.price)} 🌲</span></div><div class="trade-tree">${trade.skinEmoji} ${trade.skinName}</div><button class="trade-action-btn ${isOwn?'cancel':'buy'}" data-action="${isOwn?'cancel':'buy'}" data-id="${trade.id}" ${!isOwn&&!canBuy?'disabled':''}>${isOwn?'Отменить':(canBuy?'Купить':(player.ownedSkins.includes(trade.skinId)?'Уже есть':'Мало 🌲'))}</button>`;
-            const btn=div.querySelector('button');
-            btn.addEventListener('click',()=>{
-                const action=btn.dataset.action, tid=btn.dataset.id;
-                if(action==='buy'){
-                    const t=getTrades().find(t=>t.id===tid);
-                    if(t&&player.wood>=t.price&&!player.ownedSkins.includes(t.skinId)){
-                        player.wood-=t.price; player.ownedSkins.push(t.skinId);
-                        saveTrades(getTrades().filter(x=>x.id!==tid));
-                        saveGame(); updateUI(); renderTradeList(getTrades().filter(x=>!x.targetId||x.targetId===player.userId));
-                    }
-                } else {
-                    const t=getTrades().find(t=>t.id===tid);
-                    if(t) player.ownedSkins.push(t.skinId);
-                    saveTrades(getTrades().filter(x=>x.id!==tid));
-                    saveGame(); renderTradeList(getTrades().filter(x=>!x.targetId||x.targetId===player.userId));
-                }
-            });
-            list.appendChild(div);
-        });
-    }
-    
-    function openTrade(){
-        document.getElementById('tradeSkinSelect').innerHTML='<option value="">-- Выберите --</option>';
-        player.ownedSkins.forEach(sid=>{
-            if(sid==='default'||sid===player.activeSkin) return;
-            const skin=treeSkins.find(s=>s.id===sid);
-            if(skin) document.getElementById('tradeSkinSelect').innerHTML+=`<option value="${skin.id}">${skin.emoji} ${skin.name}</option>`;
-        });
-        document.getElementById('tradePriceInput').value='';
-        document.getElementById('tradeTargetId').value='';
-        renderTradeList(getTrades().filter(t=>!t.targetId||t.targetId===player.userId));
-        document.getElementById('tradeOverlay').classList.remove('hidden');
-    }
-    function closeTrade(){document.getElementById('tradeOverlay').classList.add('hidden');}
-    
-    function createTrade(){
-        const sid=document.getElementById('tradeSkinSelect').value;
-        const price=parseInt(document.getElementById('tradePriceInput').value);
-        const targetId=document.getElementById('tradeTargetId').value.trim();
-        if(!sid||!price||price<1){alert('Заполните поля');return;}
-        if(sid==='default'){alert('Нельзя продать стандартный скин!');return;}
-        if(!player.ownedSkins.includes(sid)){alert('У вас нет этого скина!');return;}
-        if(sid===player.activeSkin){alert('Нельзя продать активный скин!');return;}
-        const skin=treeSkins.find(s=>s.id===sid);
-        const trades=getTrades();
-        trades.push({id:Date.now().toString(),sellerId:player.userId,sellerName:player.name,targetId:targetId||null,skinId:sid,skinName:skin.name,skinEmoji:skin.emoji,price});
-        saveTrades(trades);
-        player.ownedSkins=player.ownedSkins.filter(s=>s!==sid);
-        saveGame();
-        openTrade();
-        if(targetId) alert('✅ Скин для игрока '+targetId);
-    }
-    
-    // Рейтинг
-    function renderLB(){
-        const lb=updateLB();
-        const tbody=document.getElementById('leaderboardBody'); tbody.innerHTML='';
-        if(!lb.length){tbody.innerHTML='<tr><td colspan="5" class="no-data">Вы первый! Рубите 🌲</td></tr>';return;}
-        lb.forEach((e,i)=>{
-            const r=i+1; let rc='',ri=r;
-            if(r===1){rc='rank-1';ri='🥇';}else if(r===2){rc='rank-2';ri='🥈';}else if(r===3){rc='rank-3';ri='🥉';}
-            const tr=document.createElement('tr'); tr.className=e.userId===player.userId?'player-row':'';
-            tr.innerHTML=`<td class="rank ${rc}">${ri}</td><td>${esc(e.name)}</td><td>${fmt(e.wood)}</td><td>${fmt(e.crystals)}</td><td>${e.treeLevel||1}</td>`;
-            tbody.appendChild(tr);
-        });
-    }
-    
-    function renderStats(){
-        const skin=treeSkins.find(s=>s.id===player.activeSkin)||treeSkins[0];
-        document.getElementById('statsList').innerHTML=`
-            <div class="stat-row"><span>🆔 ID</span><span class="stat-value" style="font-family:monospace;font-size:11px;">${player.userId}</span></div>
-            <div class="stat-row"><span>🌲 Древесина</span><span class="stat-value">${fmt(player.wood)}</span></div>
-            <div class="stat-row"><span>💎 Кристаллы</span><span class="stat-value">${fmt(player.crystals)}</span></div>
-            <div class="stat-row"><span>🎄 Скин</span><span class="stat-value">${skin.emoji} ${skin.name}</span></div>
-            <div class="stat-row"><span>🪓 Сила</span><span class="stat-value">${player.axePower}</span></div>
-            <div class="stat-row"><span>⏳ Авто</span><span class="stat-value">${player.autoWood}/с</span></div>
-            <div class="stat-row"><span>📊 Уровень</span><span class="stat-value">${player.treeLevel}/9999</span></div>`;
-        document.getElementById('myPlayerId').textContent=player.userId;
-    }
-    
-    function openLeaderboard(){
-        renderLB(); renderStats();
-        document.getElementById('leaderboardOverlay').classList.remove('hidden');
-        document.getElementById('leaderboardTab').classList.remove('hidden');
-        document.getElementById('statsTab').classList.add('hidden');
-        document.getElementById('tabRankBtn').classList.add('active');
-        document.getElementById('tabStatsBtn').classList.remove('active');
-    }
-    function closeLeaderboard(){document.getElementById('leaderboardOverlay').classList.add('hidden');}
-    
-    function passiveIncome(){if(player.autoWood>0){player.wood+=player.autoWood;updateUI();saveGame();}}
-    
-    // Обработчики кнопок
-    document.getElementById('btnShop').addEventListener('click',openShop);
-    document.getElementById('btnLeaderboard').addEventListener('click',openLeaderboard);
-    document.getElementById('btnSkins').addEventListener('click',openSkins);
-    document.getElementById('btnTrade').addEventListener('click',openTrade);
-    document.getElementById('btnCloseShop').addEventListener('click',closeShop);
-    document.getElementById('btnCloseLeaderboard').addEventListener('click',closeLeaderboard);
-    document.getElementById('btnCloseSkins').addEventListener('click',closeSkins);
-    document.getElementById('btnCloseTrade').addEventListener('click',closeTrade);
-    document.getElementById('btnCreateTrade').addEventListener('click',createTrade);
-    document.getElementById('tabRankBtn').addEventListener('click',()=>{document.getElementById('leaderboardTab').classList.remove('hidden');document.getElementById('statsTab').classList.add('hidden');document.getElementById('tabRankBtn').classList.add('active');document.getElementById('tabStatsBtn').classList.remove('active');renderLB();});
-    document.getElementById('tabStatsBtn').addEventListener('click',()=>{document.getElementById('leaderboardTab').classList.add('hidden');document.getElementById('statsTab').classList.remove('hidden');document.getElementById('tabStatsBtn').classList.add('active');document.getElementById('tabRankBtn').classList.remove('active');renderStats();});
-    document.getElementById('btnCopyId').addEventListener('click',()=>{navigator.clipboard.writeText(player.userId).then(()=>alert('✅ ID скопирован!'));});
-    
-    treeContainer.addEventListener('click',chopTree);
-    treeContainer.addEventListener('touchend',function(e){e.preventDefault();chopTree();});
-    document.addEventListener('keydown',function(e){if(e.code==='Space'){e.preventDefault();chopTree();}});
-    
-    // Закрытие модалок по клику на фон
-    ['shopOverlay','leaderboardOverlay','skinsOverlay','tradeOverlay'].forEach(id=>{
-        document.getElementById(id).addEventListener('click',function(e){if(e.target===this) this.classList.add('hidden');});
-    });
-    
-    // Запуск
+}
+
+function updateStatus() {
+    const el = document.getElementById('serverStatus');
+    el.textContent = serverOnline ? '🟢 Сервер онлайн' : '🔴 Оффлайн';
+    el.className = 'server-status ' + (serverOnline?'online':'offline');
+}
+
+async function loadLB() { const r = await api('/leaderboard'); return r.success ? r.players : []; }
+async function saveLB() { await api('/leaderboard/update','POST',{user_id:userId,name:playerName,wood:player.wood,crystals:player.crystals,treeLevel:player.treeLevel,totalTrees:player.totalTrees}); }
+async function loadTrades() { const r = await api('/trades?user_id='+userId); return r.success ? r.trades : []; }
+async function createServerTrade(skinId,price,targetId) {
+    const skin = treeSkins.find(s=>s.id===skinId);
+    return await api('/trades/create','POST',{sellerId:userId,sellerName:playerName,targetId:targetId||null,skinId,price,skinName:skin.name,skinEmoji:skin.emoji});
+}
+async function buyServerTrade(tradeId) { return await api('/trades/buy','POST',{trade_id:tradeId,buyer_id:userId}); }
+async function cancelServerTrade(tradeId) { return await api('/trades/cancel','POST',{trade_id:tradeId,user_id:userId}); }
+async function loadProfile() { const r = await api('/profile/'+userId); return r.success ? r.profile : null; }
+async function saveProfile() { await api('/profile/save','POST',{user_id:userId,wood:player.wood,crystals:player.crystals,stars:player.stars,axePower:player.axePower,autoWood:player.autoWood,critChance:player.critChance,critMultiplier:player.critMultiplier,crystalToWoodRate:player.crystalToWoodRate,comboBonus:player.comboBonus,treeHP:player.treeHP,maxTreeHP:player.maxTreeHP,totalTrees:player.totalTrees,treeLevel:player.treeLevel,activeSkin:player.activeSkin,ownedSkins:player.ownedSkins,upgrades:player.upgrades}); }
+
+// ============ Хранилище ============
+function store(k,v) { localStorage.setItem('wc5_'+k, JSON.stringify(v)); }
+function load(k,d) { try { const r=localStorage.getItem('wc5_'+k); return r?JSON.parse(r):d; } catch(e) { return d; } }
+
+const treeSkins = [
+    { id:'default', name:'Обычное', emoji:'🌳', colors:['#3a7d3a','#4caf50','#66bb6a'], price:0, cur:'free' },
+    { id:'autumn', name:'Осеннее', emoji:'🍂', colors:['#c47f2a','#d4943a','#e2a03f'], price:500, cur:'crystals' },
+    { id:'cherry', name:'Сакура', emoji:'🌸', colors:['#ff9ec4','#ffbdd4','#ffd1e4'], price:800, cur:'crystals' },
+    { id:'crystal', name:'Кристальное', emoji:'💎', colors:['#a78bfa','#c4b5fd','#ddd6fe'], price:1200, cur:'crystals' },
+    { id:'golden', name:'Золотое', emoji:'✨', colors:['#d4a017','#e6c22a','#f0d840'], price:2000, cur:'crystals' },
+    { id:'inferno', name:'Огненное', emoji:'🔥', colors:['#cc3300','#e64d00','#ff6600'], price:3500, cur:'crystals' },
+    { id:'ocean', name:'Океанское', emoji:'🌊', colors:['#0066cc','#0088e6','#00aaff'], price:10, cur:'stars' },
+    { id:'void', name:'Бездны', emoji:'🕳️', colors:['#1a0033','#2d004d','#400066'], price:25, cur:'stars' },
+    { id:'rainbow', name:'Радужное', emoji:'🌈', colors:['#ff0000','#ff7700','#ffff00'], price:50, cur:'stars' },
+];
+
+let player = load('player_'+userId, {
+    wood:0, crystals:0, stars:0,
+    axePower:1, crystalBonus:1, autoWood:0,
+    critChance:0, critMultiplier:2.0,
+    crystalToWoodRate:0, comboBonus:0,
+    combo:0, comboMultiplier:1.0,
+    treeHP:15, maxTreeHP:15,
+    totalTrees:0, treeLevel:1,
+    activeSkin:'default',
+    ownedSkins:['default'],
+    upgrades:{}
+});
+
+player.name = playerName; player.userId = userId;
+if(!player.maxTreeHP||player.maxTreeHP<10) { player.maxTreeHP=15; player.treeHP=15; }
+['axe','strength','crystal1','crystal2','auto1','auto2','auto3','auto4','crit1','crit2','crystalToWood1','crystalToWood2','crystalAuto1','crystalAuto2','critDamage1','comboBoost1'].forEach(id=>{ if(!(id in player.upgrades)) player.upgrades[id]=0; });
+
+// Загрузка с сервера
+(async ()=>{
+    const sp = await loadProfile();
+    if(sp && sp.wood !== undefined) { Object.assign(player, sp); player.name=playerName; player.userId=userId; }
     updateUI();
-    updateLB();
-    setInterval(passiveIncome,1000);
-    setInterval(saveGame,10000);
-    setInterval(updateLB,30000);
-    
-    console.log('✅ Игра готова! Без сервера, всё работает локально.');
 })();
-</script>
-</body>
-</html>
+
+async function saveGame() { store('player_'+userId, player); await saveProfile(); }
+
+function calcHP(lv) {
+    const bMin=15,bMax=30; let m;
+    if(lv<=10) m=1+(lv-1)*0.5;
+    else if(lv<=50) m=5.5+(lv-10)*0.3;
+    else if(lv<=200) m=17.5+(lv-50)*0.2;
+    else if(lv<=1000) m=47.5+(lv-200)*0.1;
+    else if(lv<=5000) m=127.5+(lv-1000)*0.05;
+    else m=327.5+(lv-5000)*0.02;
+    return Math.floor(rand(bMin*m+(lv-1)*5,bMax*m+(lv-1)*5));
+}
+
+const shopItems = [
+    { cat:'🌲 За древесину', id:'axe', name:'🪓 Топор +1', desc:'+1 к силе', base:10, mult:1.5, cur:'wood', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.axe));}, eff(){player.axePower++;player.upgrades.axe++;} },
+    { cat:'🌲 За древесину', id:'auto1', name:'🌱 Саженец', desc:'+1/с авто', base:50, mult:1.4, cur:'wood', cost(){return Math.floor(this.base*Math.pow(this.mult,player.upgrades.auto1));}, eff(){player.autoWood++;player.upgrades.auto1++;} },
+    { cat:'💎 За кристаллы', id:'crystal1', name:'💎 Кристальный глаз', desc:'+1💎 за
