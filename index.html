@@ -223,33 +223,35 @@ async function buySkinWithStars(skin) {
     
     setStatus('loading', '⏳ Открытие оплаты...');
     
-    // Пробуем sendStarInvoice
+    // Пробуем отправить звёзды через Telegram Web App
     if (typeof tg.sendStarInvoice === 'function') {
-        try {
-            await tg.sendStarInvoice({
-                title: 'Скин: ' + skin.name,
-                description: 'Скин для Woodcutter',
-                payload: 'skin_' + skin.id + '_' + userId,
-                currency: 'XTR',
-                prices: [{ amount: skin.price, label: skin.name }]
-            });
-            // Если не выбросило ошибку — оплата прошла
-            player.ownedSkins.push(skin.id);
-            player.activeSkin = skin.id;
-            player.stars = (player.stars || 0) + skin.price;
-            updateUI(); saveGame(); openSkins();
-            alert('✅ Скин куплен за ' + skin.price + ' ⭐!');
-        } catch(e) {
-            console.error('Ошибка sendStarInvoice:', e);
-            // Пробуем openInvoice
-            tryOpenInvoice(skin);
-        }
-    } else if (typeof tg.openInvoice === 'function') {
-        tryOpenInvoice(skin);
+        tg.sendStarInvoice({
+            title: 'Скин: ' + skin.name,
+            description: 'Скин для Woodcutter',
+            payload: 'skin_' + skin.id + '_' + userId,
+            currency: 'XTR',
+            prices: [{ amount: skin.price, label: skin.name }]
+        }, async (status) => {
+            console.log('⭐ Статус оплаты:', status);
+            if (status === 'paid') {
+                player.ownedSkins.push(skin.id);
+                player.activeSkin = skin.id;
+                player.stars = (player.stars || 0) + skin.price;
+                updateUI(); saveGame(); openSkins();
+                alert('✅ Скин куплен за ' + skin.price + ' ⭐!');
+            } else if (status === 'cancelled') {
+                console.log('Оплата отменена');
+            } else if (status === 'failed') {
+                alert('❌ Ошибка оплаты. Проверьте баланс звёзд.');
+            }
+            setStatus('online', '🟢 Сервер онлайн');
+        });
     } else {
-        // Ручное создание ссылки
-        alert('⭐ Для покупки откройте игру через бота в Telegram.\n\nСкин: ' + skin.name + '\nЦена: ' + skin.price + ' ⭐');
+        // Если sendStarInvoice недоступен
+        alert('⭐ Для покупки звёздами нужно:\n\n1. Открыть игру через бота в Telegram\n2. Иметь достаточно звёзд на балансе\n\nВаша версия Telegram: ' + (tg.version || 'неизвестно'));
+        setStatus('online', '🟢 Сервер онлайн');
     }
+}
     
     setStatus('online', '🟢 Сервер онлайн');
 }
