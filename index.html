@@ -57,9 +57,8 @@
         .btn-leaderboard { background:linear-gradient(135deg,#ffd700,#ffaa00); color:#000; }
         .btn-trees { background:linear-gradient(135deg,#4caf50,#2d6b2d); color:#fff; }
         .btn-trade { background:linear-gradient(135deg,#a78bfa,#7c3aed); color:#fff; }
-        #shopOverlay, #leaderboardOverlay, #skinsOverlay, #tradeOverlay { display: none !important; }
-        .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:1000; display:none; align-items:flex-end; justify-content:center; }
-        .modal-overlay.show { display:flex !important; }
+        .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:1000; display:none; align-items:flex-end; justify-content:center; pointer-events:none; }
+        .modal-overlay.show { display:flex !important; pointer-events:auto; }
         .modal { background:var(--panel); border-radius:16px 16px 0 0; width:100%; max-width:430px; max-height:85vh; overflow-y:auto; padding:16px 12px 30px; border:1px solid var(--border); }
         .modal h3 { color:var(--text); font-size:18px; margin-bottom:12px; text-align:center; }
         .btn-close { width:100%; padding:14px; border-radius:12px; border:1px solid var(--border); background:var(--panel); color:var(--text); font-size:15px; font-weight:600; cursor:pointer; margin-top:8px; min-height:44px; }
@@ -155,10 +154,15 @@ const API_URL = 'https://delay.pythonanywhere.com/api';
 const tg = window.Telegram.WebApp;
 tg.expand(); tg.ready();
 
+// Скрываем все модалки
+document.querySelectorAll('.modal-overlay').forEach(el => el.classList.remove('show'));
+
 const tgUser = tg.initDataUnsafe?.user;
 const userId = tgUser ? 'WC' + String(tgUser.id).slice(-6).padStart(6,'0') : 'WC' + Math.random().toString(36).substr(2,6).toUpperCase();
 const playerName = tgUser ? (tgUser.first_name + (tgUser.last_name?' '+tgUser.last_name:'')) : 'Игрок';
 const STORAGE_KEY = 'wc_' + userId;
+
+console.log('🪓 Woodcutter | ID:', userId, '| TG:', tg.version);
 
 if(tgUser?.photo_url) {
     document.getElementById('headerAvatar').style.backgroundImage = `url(${tgUser.photo_url})`;
@@ -177,15 +181,10 @@ async function api(endpoint, method='GET', body=null) {
     } catch(e) { return {success:false}; }
 }
 
-async function sendLB() {
-    await api('/leaderboard/update', 'POST', {user_id:userId, name:playerName, wood:player.wood, crystals:player.crystals, treeLevel:player.treeLevel, totalTrees:player.totalTrees});
-}
+async function sendLB() { await api('/leaderboard/update','POST',{user_id:userId,name:playerName,wood:player.wood,crystals:player.crystals,treeLevel:player.treeLevel,totalTrees:player.totalTrees}); }
 async function loadLB() { const r=await api('/leaderboard'); return r.success?r.players:[]; }
 async function loadTrades() { const r=await api('/trades?user_id='+userId); return r.success?r.trades:[]; }
-async function createTrade(skinId, price, targetId) {
-    const skin=treeSkins.find(s=>s.id===skinId);
-    return await api('/trades/create','POST',{sellerId:userId,sellerName:playerName,targetId:targetId||null,skinId,price,skinName:skin.name,skinEmoji:skin.emoji});
-}
+async function createTrade(skinId,price,targetId) { const skin=treeSkins.find(s=>s.id===skinId); return await api('/trades/create','POST',{sellerId:userId,sellerName:playerName,targetId:targetId||null,skinId,price,skinName:skin.name,skinEmoji:skin.emoji}); }
 async function buyTrade(tradeId) { return await api('/trades/buy','POST',{trade_id:tradeId,buyer_id:userId}); }
 async function cancelTrade(tradeId) { return await api('/trades/cancel','POST',{trade_id:tradeId,user_id:userId}); }
 
@@ -201,13 +200,7 @@ const treeSkins = [
     { id:'rainbow', name:'Радужное', emoji:'🌈', colors:['#ff0000','#ff7700','#ffff00'], price:50, cur:'stars' },
 ];
 
-let player = {
-    name:playerName, userId:userId, wood:0, crystals:0, stars:0,
-    axePower:1, crystalBonus:1, autoWood:0, critChance:0, critMultiplier:2.0,
-    crystalToWoodRate:0, comboBonus:0, combo:0, comboMultiplier:1.0,
-    treeHP:15, maxTreeHP:15, totalTrees:0, treeLevel:1,
-    activeSkin:'default', ownedSkins:['default'], upgrades:{}
-};
+let player = { name:playerName, userId, wood:0, crystals:0, stars:0, axePower:1, crystalBonus:1, autoWood:0, critChance:0, critMultiplier:2.0, crystalToWoodRate:0, comboBonus:0, combo:0, comboMultiplier:1.0, treeHP:15, maxTreeHP:15, totalTrees:0, treeLevel:1, activeSkin:'default', ownedSkins:['default'], upgrades:{} };
 
 try { const s=localStorage.getItem(STORAGE_KEY); if(s) Object.assign(player, JSON.parse(s)); } catch(e) {}
 player.name=playerName; player.userId=userId;
@@ -232,8 +225,7 @@ function updateUI() {
     document.getElementById('woodCount').textContent = fmt(player.wood);
     document.getElementById('crystalCount').textContent = fmt(player.crystals);
     const hpPct = Math.max(0, (player.treeHP/Math.max(1,player.maxTreeHP))*100);
-    const hpb = document.getElementById('hpBar');
-    hpb.style.width = hpPct+'%';
+    const hpb = document.getElementById('hpBar'); hpb.style.width = hpPct+'%';
     hpb.className = 'hp-bar ' + (hpPct>60?'high':hpPct>30?'medium':'low');
     document.getElementById('hpText').textContent = `${fmt(Math.max(0,player.treeHP))} / ${fmt(player.maxTreeHP)} HP`;
     document.getElementById('treeLevelBadge').textContent = `🌲 Ур. ${player.treeLevel}`;
@@ -316,14 +308,9 @@ function openSkins(){
             else if(skin.cur==='stars'){
                 if(typeof tg.openInvoice === 'function'){
                     api('/create-star-invoice','POST',{user_id:userId,skin_id:skin.id,skin_name:skin.name,price:skin.price}).then(result=>{
-                        if(result.success && result.invoice_link){
-                            tg.openInvoice(result.invoice_link, (status)=>{
-                                if(status==='paid'){player.ownedSkins.push(skin.id);player.activeSkin=skin.id;updateUI();save();openSkins();alert('✅ Куплено!');}
-                            });
-                        } else alert('❌ Ошибка создания счёта');
+                        if(result.success && result.invoice_link){tg.openInvoice(result.invoice_link,(status)=>{if(status==='paid'){player.ownedSkins.push(skin.id);player.activeSkin=skin.id;updateUI();save();openSkins();}});}
+                        else alert('❌ Ошибка создания счёта');
                     });
-                } else if(typeof tg.sendStarInvoice === 'function'){
-                    tg.sendStarInvoice({title:'Скин: '+skin.name,description:'Скин для Woodcutter',payload:'skin_'+skin.id+'_'+userId,currency:'XTR',prices:[{amount:skin.price,label:skin.name}]},(status)=>{if(status==='paid'){player.ownedSkins.push(skin.id);player.activeSkin=skin.id;updateUI();save();openSkins();}});
                 } else alert('⭐ Откройте игру через бота Telegram');
             }
         });
@@ -388,16 +375,13 @@ document.getElementById('btnCreateTrade').addEventListener('click', createTradeS
 document.getElementById('btnCopyId').addEventListener('click', ()=>navigator.clipboard.writeText(player.userId).then(()=>alert('✅ Скопировано!')));
 treeContainer.addEventListener('click', chopTree);
 document.addEventListener('keydown', e=>{if(e.code==='Space'){e.preventDefault();chopTree();}});
-document.getElementById('shopOverlay').addEventListener('click', function(e){if(e.target===this) hideModal('shopOverlay');});
-document.getElementById('leaderboardOverlay').addEventListener('click', function(e){if(e.target===this) hideModal('leaderboardOverlay');});
-document.getElementById('skinsOverlay').addEventListener('click', function(e){if(e.target===this) hideModal('skinsOverlay');});
-document.getElementById('tradeOverlay').addEventListener('click', function(e){if(e.target===this) hideModal('tradeOverlay');});
+['shopOverlay','leaderboardOverlay','skinsOverlay','tradeOverlay'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)hideModal(id);}));
 
 updateUI();
 sendLB();
-setInterval(passiveIncome, 1000);
-setInterval(save, 10000);
-setInterval(sendLB, 30000);
+setInterval(passiveIncome,1000);
+setInterval(save,10000);
+setInterval(sendLB,30000);
 </script>
 </body>
 </html>
