@@ -341,23 +341,35 @@ function openSkins(){
             else if(skin.cur==='free'){player.ownedSkins.push(skin.id);player.activeSkin=skin.id;updateUI();saveGame();openSkins();}
             else if(skin.cur==='crystals'){if(player.crystals>=skin.price){if(confirm(`Купить за ${skin.price}💎?`)){player.crystals-=skin.price;player.ownedSkins.push(skin.id);player.activeSkin=skin.id;updateUI();saveGame();openSkins();}}else alert('Недостаточно кристаллов!');}
             else if(skin.cur==='stars'){
-                console.log('⭐ Покупка звёздами:', skin.name, '| sendStarInvoice:', typeof tg.sendStarInvoice);
-                if(typeof tg.sendStarInvoice === 'function'){
-                    tg.sendStarInvoice({
-                        title: 'Скин: '+skin.name,
-                        description: 'Скин для Woodcutter',
-                        payload: 'skin_'+skin.id+'_'+Date.now(),
-                        currency: 'XTR',
-                        prices: [{amount: skin.price, label: skin.name}]
-                    }, (status)=>{
-                        console.log('⭐ Статус:', status);
-                        if(status==='paid'){player.ownedSkins.push(skin.id);player.activeSkin=skin.id;updateUI();saveGame();openSkins();alert('✅ Куплено за '+skin.price+' ⭐!');}
-                        else if(status==='failed') alert('❌ Ошибка оплаты');
-                    });
-                } else {
-                    alert('⭐ Откройте игру через бота Telegram\n\nsendStarInvoice: '+typeof tg.sendStarInvoice+'\nВерсия: '+(tg.version||'?'));
-                }
+    // Покупка за звёзды через ссылку на бота
+    const botUsername = 'WoodcutterBot'; // ЗАМЕНИТЕ на username вашего бота!
+    const invoicePayload = 'skin_' + skin.id + '_' + userId + '_' + Date.now();
+    
+    // Создаём ссылку на инвойс
+    const invoiceUrl = `https://t.me/${botUsername}?start=${invoicePayload}`;
+    
+    if (confirm(`⭐ Купить "${skin.name}" за ${skin.price} звёзд?\n\nНажмите ОК чтобы перейти к оплате`)) {
+        // Открываем бота с командой покупки
+        if (typeof tg.openTelegramLink === 'function') {
+            tg.openTelegramLink(invoiceUrl);
+        } else if (typeof tg.openLink === 'function') {
+            tg.openLink(invoiceUrl);
+        } else {
+            window.open(invoiceUrl, '_blank');
+        }
+        
+        // Ждём возвращения и проверяем
+        setTimeout(() => {
+            if (confirm('Оплата прошла успешно? Нажмите ОК чтобы получить скин')) {
+                player.ownedSkins.push(skin.id);
+                player.activeSkin = skin.id;
+                player.stars = (player.stars || 0) + skin.price;
+                updateUI(); saveGame(); openSkins();
+                alert('✅ Скин получен!');
             }
+        }, 3000);
+    }
+}
         });
         grid.appendChild(card);
     });
