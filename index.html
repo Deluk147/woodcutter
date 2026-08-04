@@ -109,6 +109,9 @@
         .status-bar.online { background:rgba(76,175,132,0.2); color:#4caf84; }
         .status-bar.offline { background:rgba(231,76,60,0.2); color:#e74c3c; }
         .status-bar.loading { background:rgba(243,156,18,0.2); color:#f39c12; }
+        #shopOverlay, #leaderboardOverlay, #skinsOverlay, #tradeOverlay { display: none !important; }
+#shopOverlay.hidden, #leaderboardOverlay.hidden, #skinsOverlay.hidden, #tradeOverlay.hidden { display: none !important; }
+#shopOverlay:not(.hidden), #leaderboardOverlay:not(.hidden), #skinsOverlay:not(.hidden), #tradeOverlay:not(.hidden) { display: flex !important; }
     </style>
 </head>
 <body>
@@ -160,6 +163,12 @@
 <div class="modal-overlay hidden" id="tradeOverlay"><div class="modal"><h3>💱 Торги</h3><div class="player-id-box"><span>Ваш ID: <span class="id-value" id="myPlayerId"></span></span><button class="copy-btn" id="btnCopyId">📋 Копировать</button></div><div class="create-form"><div class="form-group"><label>ID игрока (пусто = всем)</label><input type="text" id="tradeTargetId" placeholder="Вставьте ID..."></div><div class="form-group"><label>Скин</label><select id="tradeSkinSelect"></select></div><div class="form-group"><label>Цена (🌲)</label><input type="number" id="tradePriceInput" placeholder="100" min="1"></div><button class="form-submit" id="btnCreateTrade">Выставить</button></div><h4 style="color:var(--text);margin:12px 0 8px;">📋 Предложения</h4><div id="tradeList"></div><button class="btn-close" id="btnCloseTrade">Закрыть</button></div></div>
 
 <script>
+
+    // Скрываем все модальные окна при загрузке
+document.getElementById('shopOverlay').classList.add('hidden');
+document.getElementById('leaderboardOverlay').classList.add('hidden');
+document.getElementById('skinsOverlay').classList.add('hidden');
+document.getElementById('tradeOverlay').classList.add('hidden');
 // ============ КОНФИГУРАЦИЯ ============
 const API_URL = 'https://delay.pythonanywhere.com/api';
 const tg = window.Telegram.WebApp;
