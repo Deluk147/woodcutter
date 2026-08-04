@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Дровосек-кликер | Telegram Game</title>
+    <title>Woodcutter | Telegram Game</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -21,9 +21,10 @@
         .header .subtitle { font-size:11px; color:var(--text-secondary); }
         .game-area { flex:1; display:flex; flex-direction:column; padding:10px; overflow-y:auto; gap:8px; -webkit-overflow-scrolling:touch; padding-bottom:20px; }
         .resources { display:flex; gap:8px; }
-        .resource-card { flex:1; background:var(--panel); border-radius:12px; padding:8px 12px; display:flex; align-items:center; gap:6px; border:1px solid var(--border); }
-        .resource-icon { font-size:20px; }
-        .resource-value { font-size:15px; font-weight:700; color:var(--text); }
+        .resource-card { flex:1; background:var(--panel); border-radius:12px; padding:10px 14px; display:flex; align-items:center; gap:10px; border:1px solid var(--border); }
+        .resource-icon { font-size:22px; }
+        .resource-info { display:flex; flex-direction:column; gap:2px; }
+        .resource-value { font-size:18px; font-weight:700; color:var(--text); line-height:1; }
         .resource-label { font-size:10px; color:var(--text-secondary); }
         .tree-scene { background:var(--panel); border-radius:16px; padding:12px; display:flex; flex-direction:column; align-items:center; gap:8px; border:1px solid var(--border); }
         .tree-container { position:relative; width:100%; max-width:240px; aspect-ratio:3/4; cursor:pointer; }
@@ -45,8 +46,8 @@
         .hp-text { font-size:12px; color:var(--text); text-align:center; font-weight:600; }
         .combo-display { color:var(--text-secondary); font-size:11px; text-align:center; min-height:16px; }
         .combo-fire { color:#ff6b35; }
-        .combo-timer-bar { width:100%; height:3px; background:#2a2a3a; border-radius:2px; overflow:hidden; }
-        .combo-timer-fill { height:100%; background:var(--accent); }
+        .combo-timer-bar { width:100%; height:4px; background:#2a2a3a; border-radius:2px; overflow:hidden; margin-top:4px; }
+        .combo-timer-fill { height:100%; background:var(--accent); border-radius:2px; width:100%; transition:width 0.1s linear; }
         .float-text { position:absolute; font-weight:700; pointer-events:none; animation:floatUp 1s ease-out forwards; z-index:20; font-size:16px; }
         @keyframes floatUp { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-50px)} }
         .btn-row { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
@@ -119,12 +120,24 @@
 <div class="phone-frame">
     <div class="header">
         <div class="avatar" id="headerAvatar">🪓</div>
-        <div><div class="title">Дровосек-кликер</div><div class="subtitle" id="playerNameDisplay">Загрузка...</div></div>
+        <div><div class="title">Woodcutter</div><div class="subtitle" id="playerNameDisplay">Загрузка...</div></div>
     </div>
     <div class="game-area">
         <div class="resources">
-            <div class="resource-card"><span class="resource-icon">🌲</span><div><span class="resource-value" id="woodCount">0</span><span class="resource-label">Древесина</span></div></div>
-            <div class="resource-card"><span class="resource-icon">💎</span><div><span class="resource-value" id="crystalCount">0</span><span class="resource-label">Кристаллы</span></div></div>
+            <div class="resource-card">
+                <span class="resource-icon">🌲</span>
+                <div class="resource-info">
+                    <span class="resource-value" id="woodCount">0</span>
+                    <span class="resource-label">Древесина</span>
+                </div>
+            </div>
+            <div class="resource-card">
+                <span class="resource-icon">💎</span>
+                <div class="resource-info">
+                    <span class="resource-value" id="crystalCount">0</span>
+                    <span class="resource-label">Кристаллы</span>
+                </div>
+            </div>
         </div>
         <div class="tree-scene">
             <div class="tree-container" id="treeContainer">
@@ -158,7 +171,7 @@
 
 <!-- Модальные окна -->
 <div class="modal-overlay hidden" id="shopOverlay"><div class="modal"><h3>🏪 Магазин</h3><div id="shopItems"></div><button class="btn-close" id="btnCloseShop">Закрыть</button></div></div>
-<div class="modal-overlay hidden" id="leaderboardOverlay"><div class="modal"><h3 style="text-align:center;">🏆 Глобальный рейтинг</h3><p style="text-align:center;color:var(--text-secondary);font-size:10px;margin-bottom:8px;">Сортировка по 🌲 древесине</p><table class="leaderboard-table"><thead><tr><th>#</th><th>Игрок</th><th>🌲</th><th>💎</th><th>🎄</th></tr></thead><tbody id="leaderboardBody"><tr><td colspan="5" class="no-data">Загрузка...</td></tr></tbody></table><button class="btn-close" id="btnCloseLeaderboard">Закрыть</button></div></div>
+<div class="modal-overlay hidden" id="leaderboardOverlay"><div class="modal"><h3 style="text-align:center;">🏆 Глобальный рейтинг</h3><table class="leaderboard-table"><thead><tr><th>#</th><th>Игрок</th><th>🌲</th><th>💎</th><th>🎄</th></tr></thead><tbody id="leaderboardBody"><tr><td colspan="5" class="no-data">Загрузка...</td></tr></tbody></table><button class="btn-close" id="btnCloseLeaderboard">Закрыть</button></div></div>
 <div class="modal-overlay hidden" id="skinsOverlay"><div class="modal"><h3>🎄 Скины</h3><div class="skin-grid" id="skinGrid"></div><button class="btn-close" id="btnCloseSkins">Закрыть</button></div></div>
 <div class="modal-overlay hidden" id="tradeOverlay"><div class="modal"><h3>💱 Торги</h3><div class="player-id-box"><span>Ваш ID: <span class="id-value" id="myPlayerId"></span></span><button class="copy-btn" id="btnCopyId">📋 Копировать</button></div><div class="create-form"><div class="form-group"><label>ID игрока (пусто = всем)</label><input type="text" id="tradeTargetId" placeholder="Вставьте ID..."></div><div class="form-group"><label>Скин</label><select id="tradeSkinSelect"></select></div><div class="form-group"><label>Цена (🌲)</label><input type="number" id="tradePriceInput" placeholder="100" min="1"></div><button class="form-submit" id="btnCreateTrade">Выставить</button></div><h4 style="color:var(--text);margin:12px 0 8px;">📋 Предложения</h4><div id="tradeList"></div><button class="btn-close" id="btnCloseTrade">Закрыть</button></div></div>
 
@@ -232,37 +245,59 @@ async function cancelServerTrade(tradeId) {
     return await apiCall('/trades/cancel', 'POST', {trade_id:tradeId, user_id:userId});
 }
 
+// ============ ПОКУПКА ЗА ЗВЁЗДЫ ============
 async function buySkinWithStars(skin) {
     if (!confirm(`⭐ Купить скин "${skin.name}" за ${skin.price} звёзд Telegram?`)) return;
     
-    setStatus('loading', '⏳ Создание счёта...');
+    setStatus('loading', '⏳ Открытие оплаты...');
     
-    const result = await apiCall('/create-star-invoice', 'POST', {
-        user_id: userId, skin_id: skin.id,
-        skin_name: skin.name, price: skin.price
-    });
-    
-    if (result.success && result.invoice_link) {
-        tg.openInvoice(result.invoice_link, async (status) => {
+    if (typeof tg.sendStarInvoice === 'function') {
+        tg.sendStarInvoice({
+            title: 'Скин: ' + skin.name,
+            description: 'Скин "' + skin.name + '" для Woodcutter',
+            payload: 'skin_' + skin.id + '_' + userId,
+            currency: 'XTR',
+            prices: [{ amount: skin.price, label: skin.name }]
+        }, async (status) => {
             if (status === 'paid') {
-                await apiCall('/confirm-star-payment', 'POST', {user_id: userId, skin_id: skin.id});
                 player.ownedSkins.push(skin.id);
                 player.activeSkin = skin.id;
-                player.stars = (player.stars||0) + skin.price;
+                player.stars = (player.stars || 0) + skin.price;
                 updateUI(); saveGame(); openSkins();
                 alert('✅ Скин куплен за ' + skin.price + ' ⭐!');
             }
             setStatus('online', '🟢 Сервер онлайн');
         });
+    } else if (typeof tg.openInvoice === 'function') {
+        // Пробуем через API сервера
+        const result = await apiCall('/create-star-invoice', 'POST', {
+            user_id: userId, skin_id: skin.id,
+            skin_name: skin.name, price: skin.price
+        });
+        if (result.success && result.invoice_link) {
+            tg.openInvoice(result.invoice_link, async (status) => {
+                if (status === 'paid') {
+                    player.ownedSkins.push(skin.id);
+                    player.activeSkin = skin.id;
+                    player.stars = (player.stars || 0) + skin.price;
+                    updateUI(); saveGame(); openSkins();
+                    alert('✅ Скин куплен за ' + skin.price + ' ⭐!');
+                }
+                setStatus('online', '🟢 Сервер онлайн');
+            });
+        } else {
+            alert('❌ Не удалось создать счёт');
+            setStatus('online', '🟢 Сервер онлайн');
+        }
     } else {
-        alert('❌ Ошибка: ' + (result.error || 'не удалось создать счёт'));
+        alert('⭐ Для покупки нужен Telegram версии 6.0 или выше');
         setStatus('online', '🟢 Сервер онлайн');
     }
 }
 
 // ============ ХРАНИЛИЩЕ ============
-function store(k,v) { localStorage.setItem('wc9_'+k, JSON.stringify(v)); }
-function load(k,d) { try { const r=localStorage.getItem('wc9_'+k); return r?JSON.parse(r):d; } catch(e) { return d; } }
+function store(k,v) { localStorage.setItem('wc10_'+k, JSON.stringify(v)); }
+function load(k,d) { try { const r=localStorage.getItem('wc10_'+k); return r?JSON.parse(r):d; } catch(e) { return d; } }
 
 const treeSkins = [
     { id:'default', name:'Обычное', emoji:'🌳', colors:['#3a7d3a','#4caf50','#66bb6a'], price:0, cur:'free' },
@@ -334,7 +369,7 @@ function updateUI() {
     document.getElementById('playerNameDisplay').textContent = player.name;
     const cd = document.getElementById('comboDisplay');
     if(player.combo>1) cd.innerHTML = `<span class="combo-fire">🔥 Комбо x${player.combo} (+${Math.floor((player.comboMultiplier-1)*100)}%)</span>`;
-    else { cd.textContent = 'Нажимай на дерево! 🪓'; document.getElementById('comboTimerBar').style.display='none'; }
+    else { cd.textContent = 'Нажимай на дерево! 🪓'; }
     document.getElementById('passiveInfo').textContent = player.autoWood>0?`⏳ +${player.autoWood} 🌲/сек`:'';
     const skin = treeSkins.find(s=>s.id===player.activeSkin)||treeSkins[0];
     const colors = hpPct>60?skin.colors:(hpPct>30?['#e67e22','#f39c12','#f1c40f']:['#c0392b','#e74c3c','#ff6b6b']);
@@ -348,16 +383,46 @@ function fmt(n) { return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)
 function rand(min,max) { return Math.random()*(max-min)+min; }
 function esc(t) { const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
 
-// Комбо
+// ============ КОМБО (ИСПРАВЛЕНО) ============
 const COMBO_TIMEOUT = 5000;
-let comboTimer=null;
+let comboTimer = null;
+let comboTimerStart = 0;
+let comboTimerInterval = null;
+
 function resetCombo() {
-    if(comboTimer) clearTimeout(comboTimer);
-    comboTimer=setTimeout(()=>{player.combo=0;player.comboMultiplier=1.0;document.getElementById('comboTimerBar').style.display='none';updateUI();},COMBO_TIMEOUT);
-    if(player.combo>0) document.getElementById('comboTimerBar').style.display='block';
+    if (comboTimer) clearTimeout(comboTimer);
+    if (comboTimerInterval) clearInterval(comboTimerInterval);
+    
+    const bar = document.getElementById('comboTimerBar');
+    const fill = document.getElementById('comboTimerFill');
+    
+    if (player.combo > 0) {
+        bar.style.display = 'block';
+        fill.style.transition = 'none';
+        fill.style.width = '100%';
+        
+        comboTimerStart = Date.now();
+        
+        // Запускаем плавное уменьшение
+        requestAnimationFrame(() => {
+            fill.style.transition = `width ${COMBO_TIMEOUT}ms linear`;
+            fill.style.width = '0%';
+        });
+        
+        comboTimer = setTimeout(() => {
+            player.combo = 0;
+            player.comboMultiplier = 1.0;
+            bar.style.display = 'none';
+            fill.style.transition = 'none';
+            fill.style.width = '100%';
+            updateUI();
+        }, COMBO_TIMEOUT);
+    } else {
+        bar.style.display = 'none';
+    }
 }
 
-// Анимации
+// ============ АНИМАЦИИ ============
 const axeEmoji=document.getElementById('axeEmoji');
 const treeContainer=document.getElementById('treeContainer');
 const floatContainer=document.getElementById('floatTextContainer');
