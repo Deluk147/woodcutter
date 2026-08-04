@@ -341,33 +341,56 @@ function openSkins(){
             else if(skin.cur==='free'){player.ownedSkins.push(skin.id);player.activeSkin=skin.id;updateUI();saveGame();openSkins();}
             else if(skin.cur==='crystals'){if(player.crystals>=skin.price){if(confirm(`Купить за ${skin.price}💎?`)){player.crystals-=skin.price;player.ownedSkins.push(skin.id);player.activeSkin=skin.id;updateUI();saveGame();openSkins();}}else alert('Недостаточно кристаллов!');}
             else if(skin.cur==='stars'){
-    // Покупка за звёзды через ссылку на бота
-    const botUsername = 'WoodcutterBot'; // ЗАМЕНИТЕ на username вашего бота!
-    const invoicePayload = 'skin_' + skin.id + '_' + userId + '_' + Date.now();
+    console.log('⭐ Покупка звёздами:', skin.name);
     
-    // Создаём ссылку на инвойс
-    const invoiceUrl = `https://t.me/${botUsername}?start=${invoicePayload}`;
-    
-    if (confirm(`⭐ Купить "${skin.name}" за ${skin.price} звёзд?\n\nНажмите ОК чтобы перейти к оплате`)) {
-        // Открываем бота с командой покупки
-        if (typeof tg.openTelegramLink === 'function') {
-            tg.openTelegramLink(invoiceUrl);
-        } else if (typeof tg.openLink === 'function') {
-            tg.openLink(invoiceUrl);
-        } else {
-            window.open(invoiceUrl, '_blank');
-        }
+    if (typeof tg.openInvoice === 'function') {
+        // Сначала создаём инвойс на сервере
+        setStatus('online', '⏳ Создание счёта...');
         
-        // Ждём возвращения и проверяем
-        setTimeout(() => {
-            if (confirm('Оплата прошла успешно? Нажмите ОК чтобы получить скин')) {
+        apiCall('/create-star-invoice', 'POST', {
+            user_id: userId,
+            skin_id: skin.id,
+            skin_name: skin.name,
+            price: skin.price
+        }).then(result => {
+            setStatus('online', '🟢 Сервер онлайн');
+            
+            if (result.success && result.invoice_link) {
+                console.log('✅ Ссылка на оплату:', result.invoice_link);
+                
+                tg.openInvoice(result.invoice_link, (status) => {
+                    console.log('⭐ Статус оплаты:', status);
+                    if (status === 'paid') {
+                        player.ownedSkins.push(skin.id);
+                        player.activeSkin = skin.id;
+                        player.stars = (player.stars || 0) + skin.price;
+                        updateUI(); saveGame(); openSkins();
+                        alert('✅ Скин куплен за ' + skin.price + ' ⭐!');
+                    } else if (status === 'failed') {
+                        alert('❌ Оплата не прошла');
+                    }
+                });
+            } else {
+                alert('❌ Не удалось создать счёт: ' + (result.error || 'ошибка сервера'));
+            }
+        });
+    } else if (typeof tg.sendStarInvoice === 'function') {
+        tg.sendStarInvoice({
+            title: 'Скин: ' + skin.name,
+            description: 'Скин для Woodcutter',
+            payload: 'skin_' + skin.id + '_' + userId,
+            currency: 'XTR',
+            prices: [{ amount: skin.price, label: skin.name }]
+        }, (status) => {
+            if (status === 'paid') {
                 player.ownedSkins.push(skin.id);
                 player.activeSkin = skin.id;
-                player.stars = (player.stars || 0) + skin.price;
                 updateUI(); saveGame(); openSkins();
-                alert('✅ Скин получен!');
+                alert('✅ Куплено!');
             }
-        }, 3000);
+        });
+    } else {
+        alert('⭐ Откройте игру через бота Telegram\n\nВерсия: ' + (tg.version || 'неизвестно'));
     }
 }
         });
