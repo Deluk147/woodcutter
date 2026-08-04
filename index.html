@@ -174,19 +174,42 @@ async function apiCall(endpoint, method='GET', body=null) {
 }
 
 async function sendToLeaderboard() {
-    await apiCall('/leaderboard/update', 'POST', {
-        user_id: userId,
-        name: playerName,
-        wood: player.wood,
-        crystals: player.crystals,
-        treeLevel: player.treeLevel,
-        totalTrees: player.totalTrees
-    });
+    console.log('📤 Отправка в рейтинг:', player.wood, '🌲');
+    try {
+        const res = await fetch(API_URL + '/leaderboard/update', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                user_id: userId,
+                name: playerName,
+                wood: player.wood,
+                crystals: player.crystals,
+                treeLevel: player.treeLevel,
+                totalTrees: player.totalTrees
+            })
+        });
+        const data = await res.json();
+        console.log('✅ Сервер ответил:', data);
+        document.getElementById('statusBar').textContent = '🟢 Сервер онлайн';
+        document.getElementById('statusBar').className = 'status-bar online';
+    } catch(e) {
+        console.error('❌ Ошибка отправки:', e.message);
+        document.getElementById('statusBar').textContent = '🔴 Ошибка сервера';
+        document.getElementById('statusBar').className = 'status-bar';
+    }
 }
 
+
 async function loadLeaderboard() {
-    const result = await apiCall('/leaderboard');
-    return result.success ? result.players : [];
+    try {
+        const res = await fetch(API_URL + '/leaderboard');
+        const data = await res.json();
+        console.log('📥 Загружено игроков:', data.players ? data.players.length : 0);
+        return data.success ? data.players : [];
+    } catch(e) {
+        console.error('Ошибка загрузки:', e);
+        return [];
+    }
 }
 
 // ============ ХРАНИЛИЩЕ ============
