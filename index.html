@@ -309,7 +309,7 @@ let player = {
 
 // ============ ЗАГРУЗКА (локально + сервер) ============
 async function loadGame() {
-    // 1. Локально
+    // 1. Локально (ВСЕГДА загружаем мгновенно)
     try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -318,6 +318,38 @@ async function loadGame() {
             console.log('📂 Локальные данные загружены');
         }
     } catch(e) {}
+    
+    player.name = playerName;
+    player.userId = userId;
+    
+    // 2. С сервера (НЕ ЖДЁМ, загружаем в фоне)
+    apiCall('/profile/' + userId).then(result => {
+        if (result && result.success && result.profile && Object.keys(result.profile).length > 0) {
+            const sp = result.profile;
+            if (sp.wood > player.wood) {
+                console.log('💰 Баланс обновлён с сервера:', player.wood, '→', sp.wood);
+                player.wood = sp.wood;
+            }
+            if (sp.crystals > player.crystals) player.crystals = sp.crystals;
+            if (sp.ownedSkins && Array.isArray(sp.ownedSkins)) {
+                const merged = [...new Set([...player.ownedSkins, ...sp.ownedSkins])];
+                if (merged.length > player.ownedSkins.length) player.ownedSkins = merged;
+            }
+            if (sp.activeSkin && player.ownedSkins.includes(sp.activeSkin)) player.activeSkin = sp.activeSkin;
+            updateUI();
+            saveGame();
+        }
+    }).catch(e => console.log('Сервер не ответил, использую локальные данные'));
+    
+    // 3. Проверка и восстановление
+    if (!player.maxTreeHP || player.maxTreeHP < 10) { player.maxTreeHP = 15; player.treeHP = 15; }
+    if (!player.ownedSkins || !player.ownedSkins.length) player.ownedSkins = ['default'];
+    if (!player.activeSkin || !player.ownedSkins.includes(player.activeSkin)) player.activeSkin = 'default';
+    if (!player.upgrades || typeof player.upgrades !== 'object') player.upgrades = {};
+    ['axe','strength','crystal1','crystal2','auto1','auto2','auto3','auto4','crit1','crit2','crystalToWood1','crystalToWood2','crystalAuto1','crystalAuto2','critDamage1','comboBoost1'].forEach(id=>{ if(!(id in player.upgrades)) player.upgrades[id]=0; });
+    
+    saveGame();
+}
     
     player.name = playerName;
     player.userId = userId;
@@ -588,12 +620,12 @@ document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();
 ['shopOverlay','leaderboardOverlay','skinsOverlay','tradeOverlay'].forEach(id=>document.getElementById(id).addEventListener('click',function(e){if(e.target===this)this.classList.add('hidden');}));
 
 // Запуск
-(async () => {
-    await loadGame();
+// Запуск (без await — мгновенная загрузка)
+loadGame().then(() => {
     updateUI();
     sendToLeaderboard();
-    console.log('✅ Woodcutter запущен! Баланс:', player.wood, '🌲 | Улучшения:', JSON.stringify(player.upgrades));
-})();
+    console.log('✅ Игра запущена!');
+});
 
 setInterval(passiveIncome, 1000);
 setInterval(saveGame, 10000);
