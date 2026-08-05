@@ -187,7 +187,7 @@ const tgUser = tg.initDataUnsafe?.user;
 const userId = tgUser ? 'WC' + String(tgUser.id).slice(-6).padStart(6,'0') : 'WC' + Math.random().toString(36).substr(2,6).toUpperCase();
 const playerName = tgUser ? (tgUser.first_name + (tgUser.last_name?' '+tgUser.last_name:'')) : 'Игрок';
 const STORAGE_KEY = 'wc_' + userId;
-const ADMIN_ID = 'WC3DQ05G';
+const ADMIN_ID = 'WC046190';
 
 console.log('Woodcutter | ID:', userId, '| Админ:', userId === ADMIN_ID);
 
