@@ -292,33 +292,52 @@ function showSkins(){
 }
 
 function addSkinForm(){
-    let html='<div class="create-form">';
-    html+='<div class="form-group"><label>Тип</label><select id="nst" class="form-input"><option value="tree">🎄 Дерево</option><option value="axe">🪓 Топор</option></select></div>';
-    html+='<div class="form-group"><label>Название *</label><input type="text" id="nsn" class="form-input" placeholder="Мой скин"></div>';
-    html+='<div class="form-group"><label>Эмодзи *</label><input type="text" id="nse" class="form-input" placeholder="🎄" value="🎄"></div>';
-    html+='<div class="form-group"><label>Цена *</label><input type="number" id="nsp" class="form-input" placeholder="500" value="500"></div>';
-    html+='<button id="nsb" class="form-submit">Добавить</button>';
-    html+='<div id="nserr" style="color:#e74c3c;font-size:12px;margin-top:8px;"></div></div>';
-    const bg=popup('➕ Новый скин',html);
-    document.getElementById('nsb').addEventListener('click',()=>{
-        const err=document.getElementById('nserr');err.textContent='';
-        const type=document.getElementById('nst').value;
-        const name=document.getElementById('nsn').value.trim();
-        const emoji=document.getElementById('nse').value.trim();
-        const price=parseInt(document.getElementById('nsp').value)||500;
-        if(!name){err.textContent='❌ Введите название!';return}
-        if(!emoji){err.textContent='❌ Введите эмодзи!';return}
-        if(price<1){err.textContent='❌ Цена должна быть > 0!';return}
-        const ns={id:'custom_'+Date.now(),name,emoji,colors:['#4caf50','#66bb6a','#81c784'],price,cur:'crystals',hidden:false,type};
-        try{
-            if(type==='tree'){treeSkins.push(ns);localStorage.setItem('c_ts',JSON.stringify(treeSkins.filter(s=>s.id.startsWith('custom_'))))}
-            else{axeSkins.push(ns);localStorage.setItem('c_as',JSON.stringify(axeSkins.filter(s=>s.id.startsWith('custom_'))))}
-            err.textContent='✅ Сохранено!';
-            setTimeout(()=>{bg.remove();showSkins()},500);
-        }catch(e){err.textContent='❌ Ошибка: '+e.message}
-    });
+    var type = prompt('Тип скина:\n1 - Дерево\n2 - Топор', '1');
+    if (!type) return;
+    type = (type === '2') ? 'axe' : 'tree';
+    
+    var name = prompt('Название скина:', 'Мой скин');
+    if (!name) return;
+    
+    var emoji = prompt('Эмодзи:', '🎄');
+    if (!emoji) return;
+    
+    var price = parseInt(prompt('Цена (кристаллы):', '500'));
+    if (!price || price < 1) { alert('Цена должна быть больше 0!'); return; }
+    
+    var ns = {
+        id: 'custom_' + Date.now(),
+        name: name,
+        emoji: emoji,
+        colors: ['#4caf50', '#66bb6a', '#81c784'],
+        price: price,
+        cur: 'crystals',
+        hidden: false,
+        type: type
+    };
+    
+    try {
+        if (type === 'tree') {
+            treeSkins.push(ns);
+            var saved = [];
+            for (var i = 0; i < treeSkins.length; i++) {
+                if (treeSkins[i].id.indexOf('custom_') === 0) saved.push(treeSkins[i]);
+            }
+            localStorage.setItem('c_ts', JSON.stringify(saved));
+        } else {
+            axeSkins.push(ns);
+            var saved = [];
+            for (var i = 0; i < axeSkins.length; i++) {
+                if (axeSkins[i].id.indexOf('custom_') === 0) saved.push(axeSkins[i]);
+            }
+            localStorage.setItem('c_as', JSON.stringify(saved));
+        }
+        alert('✅ Скин "' + name + '" добавлен!');
+        showSkins();
+    } catch(e) {
+        alert('❌ Ошибка: ' + e.message);
+    }
 }
-
 async function showLB(){
     const lb=await lLB();
     let html='<table class="lb-table"><thead><tr><th>#</th><th>Игрок</th><th>🌲</th><th>💎</th><th>🎄</th></tr></thead><tbody>';
