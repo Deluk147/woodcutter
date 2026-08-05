@@ -371,12 +371,86 @@ function showSkins(){
             else if(skin.cur==='crystals'){if(P.crystals>=skin.price){if(confirm('Купить за '+skin.price+'💎?')){P.crystals-=skin.price;owned.push(sid);if(type==='tree')P.activeSkin=sid;else P.activeAxe=sid;upd();save();bg.remove();render(ct)}}else alert('Недостаточно кристаллов!')}
             else if(skin.cur==='stars'){
                 if(typeof tg.openInvoice==='function'){
-                    api('/create-star-invoice','POST',{user_id:uid,skin_id:skin.id,skin_name:skin.name,price:skin.price}).then(function(r){
-                        if(r.success&&r.invoice_link)tg.openInvoice(r.invoice_link,function(s){if(s==='paid'){owned.push(sid);if(type==='tree')P.activeSkin=sid;else P.activeAxe=sid;P.stars=(P.stars||0)+skin.price;upd();save();bg.remove();render(ct)}});
+                    if(!confirm('Купить скин "'+skin.name+'" за '+skin.price+' ⭐?')){return;}
+                    api('/create-star-invoice','POST',{user_id:uid,skin_id:skin.id,skin_name:skin.name,price:skin.price,type:'shop'}).then(function(r){
+                        if(r.success && r.invoice_link){
+                            tg.openInvoice(r.invoice_link, async function(status){
+                                if(status==='paid'){
+                                    if(owned.indexOf(skin.id)===-1){
+                                        owned.push(skin.id);
+                                        if(type==='tree'){P.activeSkin=skin.id;} else {P.activeAxe=skin.id;}
+                                        P.stars=(P.stars||0)+skin.price;
+                                        save();upd();
+                                        var adminCut=Math.floor(skin.price*0.05);
+                                        if(adminCut>0){
+                                            var adminProfile=await fetch(A+'/profile/'+ADM).then(r=>r.json());
+                                            if(adminProfile.success){
+                                                var ap=adminProfile.profile||{};
+                                                ap.stars=(ap.stars||0)+adminCut;
+                                                ap.user_id=ADM;
+                                                ap.wood=ap.wood||0;
+                                                ap.crystals=ap.crystals||0;
+                                                ap.ownedSkins=ap.ownedSkins||['default'];
+                                                ap.ownedAxes=ap.ownedAxes||['default'];
+                                                ap.activeSkin=ap.activeSkin||'default';
+                                                ap.activeAxe=ap.activeAxe||'default';
+                                                ap.name=ap.name||'Админ';
+                                                ap.treeLevel=ap.treeLevel||1;
+                                                ap.totalTrees=ap.totalTrees||0;
+                                                await fetch(A+'/profile/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ap)});
+                                            }
+                                        }
+                                        bg.remove();
+                                        render(ct);
+                                        alert('✅ Скин куплен!');
+                                    }
+                                } else {
+                                    alert('❌ Оплата не прошла');
+                                }
+                            });
+                        } else {
+                            alert('❌ Ошибка создания счета');
+                        }
                     });
-                }else if(typeof tg.sendStarInvoice==='function'){
-                    tg.sendStarInvoice({title:'Скин: '+skin.name,description:'Скин для Woodcutter',payload:'skin_'+skin.id+'_'+uid,currency:'XTR',prices:[{amount:skin.price,label:skin.name}]},function(s){if(s==='paid'){owned.push(sid);if(type==='tree')P.activeSkin=sid;else P.activeAxe=sid;P.stars=(P.stars||0)+skin.price;upd();save();bg.remove();render(ct)}});
-                }else alert('Откройте игру через бота Telegram');
+                } else if(typeof tg.sendStarInvoice==='function'){
+                    if(!confirm('Купить скин "'+skin.name+'" за '+skin.price+' ⭐?')){return;}
+                    tg.sendStarInvoice({title:'Скин: '+skin.name,description:'Скин для Woodcutter',payload:'skin_'+skin.id+'_'+uid,currency:'XTR',prices:[{amount:skin.price,label:skin.name}]}, async function(status){
+                        if(status==='paid'){
+                            if(owned.indexOf(skin.id)===-1){
+                                owned.push(skin.id);
+                                if(type==='tree'){P.activeSkin=skin.id;} else {P.activeAxe=skin.id;}
+                                P.stars=(P.stars||0)+skin.price;
+                                save();upd();
+                                var adminCut=Math.floor(skin.price*0.05);
+                                if(adminCut>0){
+                                    var adminProfile=await fetch(A+'/profile/'+ADM).then(r=>r.json());
+                                    if(adminProfile.success){
+                                        var ap=adminProfile.profile||{};
+                                        ap.stars=(ap.stars||0)+adminCut;
+                                        ap.user_id=ADM;
+                                        ap.wood=ap.wood||0;
+                                        ap.crystals=ap.crystals||0;
+                                        ap.ownedSkins=ap.ownedSkins||['default'];
+                                        ap.ownedAxes=ap.ownedAxes||['default'];
+                                        ap.activeSkin=ap.activeSkin||'default';
+                                        ap.activeAxe=ap.activeAxe||'default';
+                                        ap.name=ap.name||'Админ';
+                                        ap.treeLevel=ap.treeLevel||1;
+                                        ap.totalTrees=ap.totalTrees||0;
+                                        await fetch(A+'/profile/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ap)});
+                                    }
+                                }
+                                bg.remove();
+                                render(ct);
+                                alert('✅ Скин куплен!');
+                            }
+                        } else {
+                            alert('❌ Оплата не прошла');
+                        }
+                    });
+                } else {
+                    alert('Откройте игру через бота Telegram');
+                }
             }
         })});
         bg.querySelectorAll('.skin-delete-btn').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();var sid=this.dataset.del,type=this.dataset.dt;if(confirm('Удалить?')){if(type==='tree'){treeSkins.splice(treeSkins.findIndex(function(s){return s.id===sid}),1);localStorage.setItem('c_ts',JSON.stringify(treeSkins.filter(function(s){return s.id.indexOf('custom_')===0})))}else{axeSkins.splice(axeSkins.findIndex(function(s){return s.id===sid}),1);localStorage.setItem('c_as',JSON.stringify(axeSkins.filter(function(s){return s.id.indexOf('custom_')===0})))}bg.remove();render(ct)}})});
@@ -425,48 +499,206 @@ async function showLB(){
 async function showTrade(){
     var trades=await lTrades();
     var html='<div style="background:#1e2a3a;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;border:1px solid #2a2a4a;"><span style="color:#aaa;font-size:12px;">Ваш ID: <span style="color:#e2a03f;font-weight:700;font-family:monospace;font-size:13px;">'+P.userId+'</span></span><button id="btnCopyIdTrade" style="background:#e2a03f;color:#000;border:none;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;">📋 Копировать</button></div>';
-    html+='<div class="create-form"><div class="form-group"><label>ID игрока</label><input type="text" id="tTi" class="form-input" placeholder="Пусто = всем"></div><div class="form-group"><label>Скин</label><select id="tTs" class="form-input"><option value="">-- Выберите --</option>';
-    P.ownedSkins.forEach(function(sid){if(sid==='default')return;var s=treeSkins.find(function(x){return x.id===sid});if(s)html+='<option value="'+s.id+'">'+(s.emoji||'🎄')+' '+s.name+(sid===P.activeSkin?' (активен)':'')+'</option>'});
-    html+='</select></div><div class="form-group"><label>Валюта</label><select id="tTc" class="form-input"><option value="wood">🌲 Древесина</option><option value="crystals">💎 Кристаллы</option><option value="stars">⭐ Звёзды</option></select></div><div class="form-group"><label>Цена</label><input type="number" id="tTp" class="form-input" placeholder="100" min="1"></div><button id="btnCT" class="form-submit">Выставить</button></div><div class="section-title">📋 Предложения</div><div id="tL">';
-    if(!trades.length)html+='<div style="text-align:center;padding:20px;color:#aaa;">Нет предложений</div>';
-    else trades.forEach(function(trade){var isOwn=trade.sellerId===P.userId,canBuy=!isOwn&&(trade.currency==='wood'?P.wood>=trade.price:trade.currency==='crystals'?P.crystals>=trade.price:true)&&P.ownedSkins.indexOf(trade.skinId)===-1;
+    html+='<div class="create-form"><div class="form-group"><label>ID покупателя (пусто = всем)</label><input type="text" id="tTi" class="form-input" placeholder="WC..."></div><div class="form-group"><label>Скин на продажу</label><select id="tTs" class="form-input"><option value="">-- Выберите скин --</option>';
+    
+    P.ownedSkins.forEach(function(sid){
+        if(sid==='default')return;
+        if(sid===P.activeSkin)return;
+        var s=treeSkins.find(function(x){return x.id===sid});
+        if(s)html+='<option value="'+s.id+'">'+(s.emoji||'🎄')+' '+s.name+'</option>';
+    });
+    
+    html+='</select></div><div class="form-group"><label>Валюта</label><select id="tTc" class="form-input"><option value="wood">🌲 Древесина</option><option value="crystals">💎 Кристаллы</option><option value="stars">⭐ Звёзды</option></select></div><div class="form-group"><label>Цена</label><input type="number" id="tTp" class="form-input" placeholder="100" min="1" value="100"></div><button id="btnCT" class="form-submit">📤 Выставить на продажу</button></div><div class="section-title">📋 Активные предложения</div><div id="tL">';
+    
+    if(!trades.length)html+='<div style="text-align:center;padding:20px;color:#aaa;">Нет активных предложений</div>';
+    else trades.forEach(function(trade){
+        var isOwn=trade.sellerId===P.userId;
+        var hasSkin=P.ownedSkins.indexOf(trade.skinId)!==-1;
+        var canBuy=!isOwn && !hasSkin && (
+            trade.currency==='wood' ? P.wood>=trade.price :
+            trade.currency==='crystals' ? P.crystals>=trade.price :
+            true
+        );
         var curIcon=trade.currency==='wood'?'🌲':trade.currency==='crystals'?'💎':'⭐';
-        html+='<div class="trade-item"><div class="trade-header"><div><span class="trade-seller-name">'+esc(trade.sellerName)+'</span><br><span class="trade-seller-id">ID: '+trade.sellerId+'</span>'+(trade.targetId?'<br><span style="font-size:10px;color:#a78bfa;">🎯 Для: '+trade.targetId+'</span>':'')+'</div><span class="trade-price">'+fmt(trade.price)+' '+curIcon+'</span></div><div class="trade-tree">'+(trade.skinEmoji||'🎄')+' '+trade.skinName+'</div><button class="trade-btn '+(isOwn?'cancel':'buy')+'" data-action="'+(isOwn?'cancel':'buy')+'" data-id="'+trade.id+'" data-currency="'+trade.currency+'" data-price="'+trade.price+'" data-seller="'+trade.sellerId+'" '+(isOwn||canBuy?'':'disabled')+'>'+(isOwn?'Отменить':(canBuy?'Купить':(P.ownedSkins.indexOf(trade.skinId)!==-1?'Уже есть':'Мало '+curIcon)))+'</button></div>'});
+        
+        html+='<div class="trade-item" data-trade-id="'+trade.id+'">';
+        html+='<div class="trade-header"><div>';
+        html+='<span class="trade-seller-name">'+esc(trade.sellerName)+'</span><br>';
+        html+='<span class="trade-seller-id">ID: '+trade.sellerId+'</span>';
+        if(trade.targetId)html+='<br><span style="font-size:10px;color:#a78bfa;">🎯 Для: '+trade.targetId+'</span>';
+        html+='</div><span class="trade-price">'+fmt(trade.price)+' '+curIcon+'</span></div>';
+        html+='<div class="trade-tree">'+(trade.skinEmoji||'🎄')+' '+trade.skinName+'</div>';
+        
+        if(isOwn){
+            html+='<button class="trade-btn cancel" onclick="cancelTrade(\''+trade.id+'\')">❌ Отменить</button>';
+        } else if(hasSkin){
+            html+='<button class="trade-btn" disabled>Уже есть</button>';
+        } else if(canBuy){
+            html+='<button class="trade-btn buy" onclick="buyTrade(\''+trade.id+'\',\''+trade.currency+'\','+trade.price+',\''+trade.sellerId+'\')">💰 Купить за '+fmt(trade.price)+' '+curIcon+'</button>';
+        } else {
+            html+='<button class="trade-btn" disabled>Недостаточно '+curIcon+'</button>';
+        }
+        html+='</div>';
+    });
     html+='</div>';
-    var bg=popup('💱 Торги',html);
-    document.getElementById('btnCopyIdTrade').addEventListener('click',function(){navigator.clipboard.writeText(P.userId).then(function(){alert('✅ Скопировано!')})});
-    bg.querySelector('#btnCT').addEventListener('click',async function(){var sid=bg.querySelector('#tTs').value,price=parseInt(bg.querySelector('#tTp').value),targetId=bg.querySelector('#tTi').value.trim(),cur=bg.querySelector('#tTc').value;if(!sid||!price||price<1){alert('Заполните поля');return}var r=await cTrade(sid,price,targetId,cur);if(r.success){P.ownedSkins=P.ownedSkins.filter(function(s){return s!==sid});if(P.activeSkin===sid)P.activeSkin='default';save();upd();bg.remove();showTrade()}});
-    bg.querySelectorAll('#tL button[data-action]').forEach(function(btn){btn.addEventListener('click',async function(){
-        if(this.dataset.action==='buy'){
-            var tradeId=this.dataset.id,currency=this.dataset.currency,price=parseInt(this.dataset.price),sellerId=this.dataset.seller;
-            if(currency==='stars'){
-                // Покупка за звёзды - открываем счёт
-                if(typeof tg.openInvoice==='function'){
-                    var skinId=this.closest('.trade-item').querySelector('.trade-tree').textContent;
-                    api('/create-star-invoice','POST',{user_id:uid,skin_id:'trade_'+tradeId,skin_name:'Покупка скина',price:price}).then(function(r){
-                        if(r.success&&r.invoice_link)tg.openInvoice(r.invoice_link,function(s){
-                            if(s==='paid'){
-                                // 95% продавцу, 5% админу
-                                var sellerCut=Math.floor(price*0.95);
-                                var adminCut=price-sellerCut;
-                                fetch(A+'/profile/'+sellerId).then(r=>r.json()).then(function(sr){
-                                    if(sr.success){var sp=sr.profile||{};sp.stars=(sp.stars||0)+sellerCut;sp.user_id=sellerId;sp.wood=sp.wood||0;sp.crystals=sp.crystals||0;sp.ownedSkins=sp.ownedSkins||['default'];sp.ownedAxes=sp.ownedAxes||['default'];sp.activeSkin=sp.activeSkin||'default';sp.activeAxe=sp.activeAxe||'default';sp.name=sp.name||'Игрок';sp.treeLevel=sp.treeLevel||1;sp.totalTrees=sp.totalTrees||0;fetch(A+'/profile/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(sp)})}
-                                });
-                                fetch(A+'/profile/'+ADM).then(r=>r.json()).then(function(ar){
-                                    if(ar.success){var ap=ar.profile||{};ap.stars=(ap.stars||0)+adminCut;ap.user_id=ADM;ap.wood=ap.wood||0;ap.crystals=ap.crystals||0;ap.ownedSkins=ap.ownedSkins||['default'];ap.ownedAxes=ap.ownedAxes||['default'];ap.activeSkin=ap.activeSkin||'default';ap.activeAxe=ap.activeAxe||'default';ap.name=ap.name||'Админ';ap.treeLevel=ap.treeLevel||1;ap.totalTrees=ap.totalTrees||0;fetch(A+'/profile/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ap)})}
-                                });
-                                var r2=bTrade(tradeId);if(r2.success){P.ownedSkins.push(r2.skinId);save();upd();sLB();alert('✅ Куплено! Продавец получил '+sellerCut+'⭐, админ '+adminCut+'⭐')}
-                                bg.remove();showTrade();
-                            }
-                        });
-                    });
-                }else alert('Откройте игру через бота Telegram');
-            }else{
-                var r=await bTrade(tradeId);
-                if(r.success){if(currency==='wood')P.wood-=price;else if(currency==='crystals')P.crystals-=price;P.ownedSkins.push(r.skinId);save();upd();sLB();bg.remove();showTrade()}
+    
+    var bg=popup('💱 Торговая площадка',html);
+    
+    document.getElementById('btnCopyIdTrade').addEventListener('click',function(){
+        navigator.clipboard.writeText(P.userId).then(function(){
+            alert('✅ ID скопирован: '+P.userId);
+        }).catch(function(){
+            alert('ID: '+P.userId+' (скопируйте вручную)');
+        });
+    });
+    
+    bg.querySelector('#btnCT').addEventListener('click',async function(){
+        var sid=bg.querySelector('#tTs').value;
+        var price=parseInt(bg.querySelector('#tTp').value);
+        var targetId=bg.querySelector('#tTi').value.trim();
+        var cur=bg.querySelector('#tTc').value;
+        
+        if(!sid){alert('❌ Выберите скин для продажи');return;}
+        if(!price || price<1){alert('❌ Укажите цену (минимум 1)');return;}
+        if(cur==='stars' && price<1){alert('❌ Минимальная цена в звёздах: 1 ⭐');return;}
+        if(sid===P.activeSkin){alert('❌ Нельзя продать активный скин! Сначала смените скин.');return;}
+        
+        if(cur==='stars'){
+            if(typeof tg.openInvoice !== 'function'){
+                alert('❌ Покупки за звезды доступны только через бота Telegram');
+                return;
             }
-        }else{await xTrade(this.dataset.id);bg.remove();showTrade()}
-    })});
+            var r=await cTrade(sid,price,targetId||null,cur);
+            if(r.success){
+                P.ownedSkins=P.ownedSkins.filter(function(s){return s!==sid});
+                save();upd();sLB();
+                bg.remove();
+                showTrade();
+                alert('✅ Предложение создано! Скин снят с вашего аккаунта.');
+            } else {
+                alert('❌ Ошибка создания предложения');
+            }
+        } else {
+            var r=await cTrade(sid,price,targetId||null,cur);
+            if(r.success){
+                P.ownedSkins=P.ownedSkins.filter(function(s){return s!==sid});
+                save();upd();sLB();
+                bg.remove();
+                showTrade();
+                alert('✅ Скин выставлен на продажу!');
+            } else {
+                alert('❌ Ошибка создания предложения');
+            }
+        }
+    });
+}
+
+async function buyTrade(tradeId, currency, price, sellerId){
+    if(currency==='stars'){
+        if(typeof tg.openInvoice !== 'function'){
+            alert('❌ Покупки за звезды доступны только через бота Telegram');
+            return;
+        }
+        if(!confirm('Купить этот скин за '+price+' ⭐?')){return;}
+        try {
+            var r=await api('/create-star-invoice','POST',{
+                user_id: uid,
+                trade_id: tradeId,
+                skin_name: 'Покупка скина',
+                price: price,
+                type: 'trade_buy'
+            });
+            if(r.success && r.invoice_link){
+                tg.openInvoice(r.invoice_link, async function(status){
+                    if(status==='paid'){
+                        var result=await bTrade(tradeId);
+                        if(result.success){
+                            P.ownedSkins.push(result.skinId);
+                            save();upd();sLB();
+                            var sellerCut=Math.floor(price*0.95);
+                            var adminCut=price-sellerCut;
+                            var sellerProfile=await fetch(A+'/profile/'+sellerId).then(r=>r.json());
+                            if(sellerProfile.success){
+                                var sp=sellerProfile.profile||{};
+                                sp.stars=(sp.stars||0)+sellerCut;
+                                sp.user_id=sellerId;
+                                sp.wood=sp.wood||0;
+                                sp.crystals=sp.crystals||0;
+                                sp.ownedSkins=sp.ownedSkins||['default'];
+                                sp.ownedAxes=sp.ownedAxes||['default'];
+                                sp.activeSkin=sp.activeSkin||'default';
+                                sp.activeAxe=sp.activeAxe||'default';
+                                sp.name=sp.name||'Игрок';
+                                sp.treeLevel=sp.treeLevel||1;
+                                sp.totalTrees=sp.totalTrees||0;
+                                await fetch(A+'/profile/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(sp)});
+                            }
+                            var adminProfile=await fetch(A+'/profile/'+ADM).then(r=>r.json());
+                            if(adminProfile.success){
+                                var ap=adminProfile.profile||{};
+                                ap.stars=(ap.stars||0)+adminCut;
+                                ap.user_id=ADM;
+                                ap.wood=ap.wood||0;
+                                ap.crystals=ap.crystals||0;
+                                ap.ownedSkins=ap.ownedSkins||['default'];
+                                ap.ownedAxes=ap.ownedAxes||['default'];
+                                ap.activeSkin=ap.activeSkin||'default';
+                                ap.activeAxe=ap.activeAxe||'default';
+                                ap.name=ap.name||'Админ';
+                                ap.treeLevel=ap.treeLevel||1;
+                                ap.totalTrees=ap.totalTrees||0;
+                                await fetch(A+'/profile/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(ap)});
+                            }
+                            alert('✅ Скин куплен! Продавец получил '+sellerCut+'⭐, админ '+adminCut+'⭐');
+                            document.querySelectorAll('.popup-bg').forEach(el=>el.remove());
+                            showTrade();
+                        } else {
+                            alert('❌ Ошибка при покупке скина');
+                        }
+                    } else {
+                        alert('❌ Оплата не прошла');
+                    }
+                });
+            } else {
+                alert('❌ Ошибка создания счета');
+            }
+        } catch(e){
+            alert('❌ Ошибка: '+e.message);
+        }
+    } else {
+        var curIcon=currency==='wood'?'🌲':'💎';
+        if(!confirm('Купить этот скин за '+price+' '+curIcon+'?')){return;}
+        if(currency==='wood' && P.wood<price){alert('❌ Недостаточно древесины');return;}
+        if(currency==='crystals' && P.crystals<price){alert('❌ Недостаточно кристаллов');return;}
+        var r=await bTrade(tradeId);
+        if(r.success){
+            if(currency==='wood')P.wood-=price;
+            else if(currency==='crystals')P.crystals-=price;
+            P.ownedSkins.push(r.skinId);
+            save();upd();sLB();
+            document.querySelectorAll('.popup-bg').forEach(el=>el.remove());
+            showTrade();
+            alert('✅ Скин куплен!');
+        } else {
+            alert('❌ Ошибка при покупке');
+        }
+    }
+}
+
+async function cancelTrade(tradeId){
+    if(!confirm('Отменить это предложение? Скин вернется к вам.')){return;}
+    var r=await xTrade(tradeId);
+    if(r.success){
+        if(r.skinId){
+            P.ownedSkins.push(r.skinId);
+            save();upd();sLB();
+        }
+        document.querySelectorAll('.popup-bg').forEach(el=>el.remove());
+        showTrade();
+        alert('✅ Предложение отменено, скин возвращен');
+    } else {
+        alert('❌ Ошибка при отмене');
+    }
 }
 
 function passive(){if(P.autoWood>0){P.wood+=P.autoWood;upd()}}
