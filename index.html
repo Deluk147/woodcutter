@@ -147,11 +147,12 @@
 </div>
 </div>
 
+<!-- Админ-панель -->
 <div class="admin-panel" id="adminPanel">
     <div class="admin-inner">
         <h2>👑 Админ-панель</h2>
         <h3>💰 Выдать ресурсы</h3>
-        <input type="text" id="adminTargetId" class="admin-input" placeholder="ID игрока">
+        <input type="text" id="adminTargetId" class="admin-input" placeholder="ID игрока (например WC046190)">
         <input type="number" id="adminWood" class="admin-input" placeholder="Древесина">
         <input type="number" id="adminCrystals" class="admin-input" placeholder="Кристаллы">
         <button onclick="adminGiveResources()" class="admin-btn green">Выдать</button>
@@ -208,16 +209,20 @@ async function adminGiveResources() {
     const result = await api('/profile/' + targetId);
     if (result.success) {
         const profile = result.profile || {};
+        profile.user_id = targetId;
         profile.wood = (profile.wood || 0) + wood;
         profile.crystals = (profile.crystals || 0) + crystals;
-        await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood, crystals: profile.crystals, ownedSkins: profile.ownedSkins || ['default'], activeSkin: profile.activeSkin || 'default', name: profile.name || 'Игрок', treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
-        await api('/leaderboard/update', 'POST', { user_id: targetId, name: profile.name || 'Игрок', wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
+        profile.ownedSkins = profile.ownedSkins || ['default'];
+        profile.activeSkin = profile.activeSkin || 'default';
+        profile.name = profile.name || 'Игрок';
+        profile.treeLevel = profile.treeLevel || 1;
+        profile.totalTrees = profile.totalTrees || 0;
+        await api('/profile/save', 'POST', profile);
+        await api('/leaderboard/update', 'POST', { user_id: targetId, name: profile.name, wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel, totalTrees: profile.totalTrees });
         alert(`✅ Выдано: +${wood}🌲 +${crystals}💎 игроку ${targetId}`);
         document.getElementById('adminWood').value = '';
         document.getElementById('adminCrystals').value = '';
-    } else {
-        alert('❌ Игрок не найден');
-    }
+    } else { alert('❌ Игрок не найден'); }
 }
 
 async function adminTakeResources() {
@@ -228,16 +233,20 @@ async function adminTakeResources() {
     const result = await api('/profile/' + targetId);
     if (result.success) {
         const profile = result.profile || {};
+        profile.user_id = targetId;
         profile.wood = Math.max(0, (profile.wood || 0) - wood);
         profile.crystals = Math.max(0, (profile.crystals || 0) - crystals);
-        await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood, crystals: profile.crystals, ownedSkins: profile.ownedSkins || ['default'], activeSkin: profile.activeSkin || 'default', name: profile.name || 'Игрок', treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
-        await api('/leaderboard/update', 'POST', { user_id: targetId, name: profile.name || 'Игрок', wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
+        profile.ownedSkins = profile.ownedSkins || ['default'];
+        profile.activeSkin = profile.activeSkin || 'default';
+        profile.name = profile.name || 'Игрок';
+        profile.treeLevel = profile.treeLevel || 1;
+        profile.totalTrees = profile.totalTrees || 0;
+        await api('/profile/save', 'POST', profile);
+        await api('/leaderboard/update', 'POST', { user_id: targetId, name: profile.name, wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel, totalTrees: profile.totalTrees });
         alert(`✅ Забрано: -${wood}🌲 -${crystals}💎 у игрока ${targetId}`);
         document.getElementById('adminTakeWood').value = '';
         document.getElementById('adminTakeCrystals').value = '';
-    } else {
-        alert('❌ Игрок не найден');
-    }
+    } else { alert('❌ Игрок не найден'); }
 }
 
 async function adminGiveSkin() {
@@ -250,13 +259,19 @@ async function adminGiveSkin() {
         const skins = profile.ownedSkins || ['default'];
         if (!skins.includes(skinId)) {
             skins.push(skinId);
-            await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood || 0, crystals: profile.crystals || 0, ownedSkins: skins, activeSkin: skinId, name: profile.name || 'Игрок', treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
+            profile.user_id = targetId;
+            profile.wood = profile.wood || 0;
+            profile.crystals = profile.crystals || 0;
+            profile.ownedSkins = skins;
+            profile.activeSkin = skinId;
+            profile.name = profile.name || 'Игрок';
+            profile.treeLevel = profile.treeLevel || 1;
+            profile.totalTrees = profile.totalTrees || 0;
+            await api('/profile/save', 'POST', profile);
             alert(`✅ Скин выдан игроку ${targetId}`);
             document.getElementById('adminSkinTargetId').value = '';
         } else { alert('У игрока уже есть этот скин'); }
-    } else {
-        alert('❌ Игрок не найден');
-    }
+    } else { alert('❌ Игрок не найден'); }
 }
 
 async function api(endpoint, method='GET', body=null) {
@@ -471,7 +486,7 @@ async function showLB() {
 
 async function showTrade() {
     const trades = await loadTrades();
-    let html = `<div class="player-id-box" style="margin-bottom:12px;"><span style="color:#aaa;font-size:12px;">Ваш ID: <span style="color:#e2a03f;font-weight:700;font-family:monospace;font-size:13px;">${player.userId}</span></span><button class="copy-btn" id="btnCopyIdTrade" style="background:#e2a03f;color:#000;border:none;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;">📋 Копировать</button></div>`;
+    let html = `<div class="player-id-box" style="background:#1e2a3a;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;border:1px solid #2a2a4a;"><span style="color:#aaa;font-size:12px;">Ваш ID: <span style="color:#e2a03f;font-weight:700;font-family:monospace;font-size:13px;">${player.userId}</span></span><button id="btnCopyIdTrade" style="background:#e2a03f;color:#000;border:none;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;">📋 Копировать</button></div>`;
     html += `<div class="create-form">
         <div class="form-group"><label>ID игрока (пусто = всем)</label><input type="text" id="tradeTargetId" class="form-input" placeholder="Вставьте ID..."></div>
         <div class="form-group"><label>Скин</label><select id="tradeSkinSelect" class="form-input"><option value="">-- Выберите --</option>`;
