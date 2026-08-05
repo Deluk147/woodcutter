@@ -99,7 +99,7 @@
         .form-submit { width:100%; padding:12px; border-radius:10px; border:none; background:#e2a03f; color:#000; font-weight:700; cursor:pointer; }
         .lb-table { width:100%; border-collapse:collapse; }
         .lb-table th { color:#aaa; font-size:10px; padding:8px 6px; text-align:left; border-bottom:1px solid #2a2a4a; }
-        .lb-table td { color:#ffffff; font-size:12px; padding:8px 6px; border-bottom:1px solid #2a2a4a; }
+        .lb-table td { color:#ffffff; font-size:12px; padding:8px 6px; border-bottom:1px solid #2a2a4a; cursor:pointer; }
         .lb-rank { font-weight:700; font-size:14px; text-align:center; width:35px; }
         .lb-gold { color:#ffd700; } .lb-silver { color:#c0c0c0; } .lb-bronze { color:#cd7f32; }
         .lb-me { background:rgba(226,160,63,0.15); } .lb-me td { font-weight:600; }
@@ -127,7 +127,6 @@
             <div class="resource-card"><span class="resource-icon">🌲</span><div class="resource-info"><span class="resource-value" id="woodCount">0</span><span class="resource-label">Древесина</span></div></div>
             <div class="resource-card"><span class="resource-icon">💎</span><div class="resource-info"><span class="resource-value" id="crystalCount">0</span><span class="resource-label">Кристаллы</span></div></div>
         </div>
-        <!-- ВАШ ID ВСЕГДА НА ЭКРАНЕ -->
         <div class="player-id-box">
             <span style="color:#aaa;font-size:12px;">Ваш ID: <span class="id-value" id="myPlayerId">...</span></span>
             <button class="copy-btn" id="btnCopyId2">📋 Копировать</button>
@@ -155,7 +154,6 @@
 </div>
 </div>
 
-<!-- Админ-панель -->
 <div class="admin-panel" id="adminPanel">
     <div class="admin-inner">
         <h2>👑 Админ-панель</h2>
@@ -163,18 +161,19 @@
         <input type="text" id="adminTargetId" class="admin-input" placeholder="ID игрока">
         <input type="number" id="adminWood" class="admin-input" placeholder="Древесина">
         <input type="number" id="adminCrystals" class="admin-input" placeholder="Кристаллы">
-        <button onclick="adminGiveResources()" class="admin-btn green">Выдать ресурсы</button>
+        <button onclick="adminGiveResources()" class="admin-btn green">Выдать</button>
         <h3>🎄 Выдать скин</h3>
         <input type="text" id="adminSkinTargetId" class="admin-input" placeholder="ID игрока">
-        <select id="adminSkinSelect" class="admin-input">
-            <option value="autumn">🍂 Осеннее</option><option value="cherry">🌸 Сакура</option><option value="crystal">💎 Кристальное</option><option value="golden">✨ Золотое</option><option value="inferno">🔥 Огненное</option><option value="ocean">🌊 Океанское</option><option value="void">🕳️ Бездны</option><option value="rainbow">🌈 Радужное</option>
-        </select>
+        <select id="adminSkinSelect" class="admin-input"><option value="autumn">🍂 Осеннее</option><option value="cherry">🌸 Сакура</option><option value="crystal">💎 Кристальное</option><option value="golden">✨ Золотое</option><option value="inferno">🔥 Огненное</option><option value="ocean">🌊 Океанское</option><option value="void">🕳️ Бездны</option><option value="rainbow">🌈 Радужное</option></select>
         <button onclick="adminGiveSkin()" class="admin-btn purple">Выдать скин</button>
+        <h3>🗑️ Забрать ресурсы</h3>
+        <input type="text" id="adminTakeId" class="admin-input" placeholder="ID игрока">
+        <input type="number" id="adminTakeWood" class="admin-input" placeholder="Древесина">
+        <input type="number" id="adminTakeCrystals" class="admin-input" placeholder="Кристаллы">
+        <button onclick="adminTakeResources()" class="admin-btn red">Забрать</button>
         <h3>📊 Статистика</h3>
         <button onclick="adminLoadStats()" class="admin-btn gold">Загрузить</button>
         <div id="adminStats" style="color:#eee;font-size:13px;margin-bottom:10px;"></div>
-        <h3>🗑️ Очистить торги</h3>
-        <button onclick="adminClearTrades()" class="admin-btn red">Очистить все торги</button>
         <button onclick="document.getElementById('adminPanel').style.display='none'" class="admin-btn close" style="margin-top:15px;">Закрыть</button>
     </div>
 </div>
@@ -188,7 +187,7 @@ const tgUser = tg.initDataUnsafe?.user;
 const userId = tgUser ? 'WC' + String(tgUser.id).slice(-6).padStart(6,'0') : 'WC' + Math.random().toString(36).substr(2,6).toUpperCase();
 const playerName = tgUser ? (tgUser.first_name + (tgUser.last_name?' '+tgUser.last_name:'')) : 'Игрок';
 const STORAGE_KEY = 'wc_' + userId;
-const ADMIN_ID = 'WC046190';
+const ADMIN_ID = 'WC3DQ05G';
 
 console.log('Woodcutter | ID:', userId, '| Админ:', userId === ADMIN_ID);
 
@@ -197,13 +196,11 @@ if(tgUser?.photo_url) {
     document.getElementById('headerAvatar').textContent = '';
 }
 
-// Показываем ID на экране
 document.getElementById('myPlayerId').textContent = userId;
 document.getElementById('btnCopyId2').addEventListener('click', () => {
     navigator.clipboard.writeText(userId).then(() => alert('✅ ID скопирован: ' + userId));
 });
 
-// Админ-панель: 5 нажатий на заголовок
 let titleClicks = 0;
 document.getElementById('titleHeader').addEventListener('click', () => {
     titleClicks++;
@@ -229,8 +226,24 @@ async function adminGiveResources() {
         profile.wood = (profile.wood || 0) + wood;
         profile.crystals = (profile.crystals || 0) + crystals;
         await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood, crystals: profile.crystals, ownedSkins: profile.ownedSkins || ['default'], activeSkin: profile.activeSkin || 'default' });
-        await api('/leaderboard/update', 'POST', { user_id: targetId, name: 'Игрок', wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
+        await api('/leaderboard/update', 'POST', { user_id: targetId, name: profile.name || 'Игрок', wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
         alert(`✅ Выдано: +${wood}🌲 +${crystals}💎 игроку ${targetId}`);
+    }
+}
+
+async function adminTakeResources() {
+    const targetId = document.getElementById('adminTakeId').value;
+    const wood = parseInt(document.getElementById('adminTakeWood').value) || 0;
+    const crystals = parseInt(document.getElementById('adminTakeCrystals').value) || 0;
+    if (!targetId) { alert('Введите ID игрока'); return; }
+    const result = await api('/profile/' + targetId);
+    if (result.success) {
+        const profile = result.profile || {};
+        profile.wood = Math.max(0, (profile.wood || 0) - wood);
+        profile.crystals = Math.max(0, (profile.crystals || 0) - crystals);
+        await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood, crystals: profile.crystals, ownedSkins: profile.ownedSkins || ['default'], activeSkin: profile.activeSkin || 'default' });
+        await api('/leaderboard/update', 'POST', { user_id: targetId, name: profile.name || 'Игрок', wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
+        alert(`✅ Забрано: -${wood}🌲 -${crystals}💎 у игрока ${targetId}`);
     }
 }
 
@@ -254,13 +267,6 @@ async function adminLoadStats() {
     const ping = await api('/ping');
     const lb = await api('/leaderboard');
     document.getElementById('adminStats').innerHTML = `Игроков: ${ping.players || 0}<br>В рейтинге: ${lb.players ? lb.players.length : 0}`;
-}
-
-async function adminClearTrades() {
-    if (confirm('Точно очистить ВСЕ торги?')) {
-        await api('/trades/clear', 'POST', { admin: true });
-        alert('✅ Торги очищены');
-    }
 }
 
 async function api(endpoint, method='GET', body=null) {
@@ -445,10 +451,27 @@ async function showLB() {
     const lb = await loadLB();
     let html = '<table class="lb-table"><thead><tr><th>#</th><th>Игрок</th><th>🌲</th><th>💎</th><th>🎄</th></tr></thead><tbody>';
     if(!lb.length) html+='<tr><td colspan="5" class="no-data">Игроков пока нет</td></tr>';
-    else lb.forEach((e,i)=>{const r=i+1;let rc='',ri=r;if(r===1){rc='lb-gold';ri='🥇';}else if(r===2){rc='lb-silver';ri='🥈';}else if(r===3){rc='lb-bronze';ri='🥉';}
-        html+=`<tr class="${(e.user_id||e.userId)===player.userId?'lb-me':''}"><td class="lb-rank ${rc}">${ri}</td><td>${esc(e.name)}</td><td>${fmt(e.wood)}</td><td>${fmt(e.crystals)}</td><td>${e.treeLevel||1}</td></tr>`;});
+    else lb.forEach((e,i)=>{
+        const r=i+1;let rc='',ri=r;
+        if(r===1){rc='lb-gold';ri='🥇';}else if(r===2){rc='lb-silver';ri='🥈';}else if(r===3){rc='lb-bronze';ri='🥉';}
+        const uid = e.user_id || e.userId;
+        const isMe = uid === player.userId;
+        html+=`<tr class="${isMe?'lb-me':''}" data-uid="${uid}" style="cursor:pointer;"><td class="lb-rank ${rc}">${ri}</td><td>${esc(e.name)}</td><td>${fmt(e.wood)}</td><td>${fmt(e.crystals)}</td><td>${e.treeLevel||1}</td></tr>`;
+    });
     html+='</tbody></table>';
-    popup('🏆 Рейтинг', html);
+    const bg = popup('🏆 Рейтинг', html);
+    if (userId === ADMIN_ID) {
+        bg.querySelectorAll('tr[data-uid]').forEach(tr => {
+            tr.addEventListener('click', async function() {
+                const uid = this.dataset.uid;
+                const result = await api('/profile/' + uid);
+                if (result.success && result.profile) {
+                    const p = result.profile;
+                    alert(`Информация об игроке ${uid}:\n🌲 Древесина: ${fmt(p.wood || 0)}\n💎 Кристаллы: ${fmt(p.crystals || 0)}\n🎄 Скинов: ${(p.ownedSkins || ['default']).length}\n📊 Уровень: ${p.treeLevel || 1}`);
+                }
+            });
+        });
+    }
 }
 
 async function showTrade() {
