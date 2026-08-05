@@ -113,7 +113,6 @@ if(tgUser?.photo_url) {
     document.getElementById('headerAvatar').textContent = '';
 }
 
-// API
 async function api(endpoint, method='GET', body=null) {
     try {
         const opts = { method, headers: {'Content-Type':'application/json'} };
@@ -234,7 +233,6 @@ function chopTree() {
     updateUI(); save(); sendLB();
 }
 
-// Всплывающее окно
 function popup(title, content, onClose) {
     const bg = document.createElement('div');
     bg.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
@@ -248,9 +246,8 @@ function popup(title, content, onClose) {
 function showShop() {
     let html = '';
     let cat = '';
-    const cats = {'axe':'🌲 За древесину','crystal1':'💎 За кристаллы'};
     shopItems.forEach(item=>{
-        const catName = item.id.startsWith('crystal')||item.id==='critDamage1'||item.id==='comboBoost1' ? '💎 За кристаллы' : '🌲 За древесину';
+        const catName = item.cur==='wood' ? '🌲 За древесину' : '💎 За кристаллы';
         if(cat!==catName){cat=catName;html+=`<div style="color:#e2a03f;font-size:13px;font-weight:700;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid #2a2a4a;">${cat}</div>`;}
         const cost=item.cost(), afford=item.cur==='wood'?player.wood>=cost:player.crystals>=cost;
         html+=`<div style="background:#1e2a3a;border-radius:12px;padding:12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border:1px solid #2a2a4a;gap:8px;"><div><span style="font-weight:600;color:#eee;font-size:14px;">${item.name}</span><br><span style="font-size:11px;color:#aaa;">${item.desc}</span>${(player.upgrades[item.id]||0)>0?`<br><span style="font-size:10px;color:#e2a03f;">Ур. ${player.upgrades[item.id]}</span>`:''}</div><button style="padding:8px 14px;border-radius:10px;border:none;font-weight:600;font-size:12px;background:${item.cur==='wood'?'#4caf84':'#a78bfa'};color:#fff;${!afford?'opacity:0.4;':''}" ${!afford?'disabled':''} data-id="${item.id}">${fmt(cost)} ${item.cur==='wood'?'🌲':'💎'}</button></div>`;
@@ -305,18 +302,34 @@ async function showLB() {
     const lb = await loadLB();
     let html = '<table style="width:100%;border-collapse:collapse;"><thead><tr style="color:#aaa;font-size:10px;"><th style="padding:8px 6px;text-align:left;">#</th><th style="padding:8px 6px;text-align:left;">Игрок</th><th style="padding:8px 6px;text-align:left;">🌲</th><th style="padding:8px 6px;text-align:left;">💎</th><th style="padding:8px 6px;text-align:left;">🎄</th></tr></thead><tbody>';
     if(!lb.length){html+='<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa;">Игроков пока нет</td></tr>';}
-    else {lb.forEach((e,i)=>{const r=i+1;let rc='',ri=r;if(r===1){rc='color:#ffd700;';ri='🥇';}else if(r===2){rc='color:#c0c0c0;';ri='🥈';}else if(r===3){rc='color:#cd7f32;';ri='🥉';}html+=`<tr style="${(e.user_id||e.userId)===player.userId?'background:rgba(226,160,63,0.15);':''}"><td style="padding:8px 6px;font-weight:700;font-size:14px;text-align:center;${rc}">${ri}</td><td style="padding:8px 6px;color:#eee;font-size:12px;">${esc(e.name)}</td><td style="padding:8px 6px;color:#eee;font-size:12px;">${fmt(e.wood)}</td><td style="padding:8px 6px;color:#eee;font-size:12px;">${fmt(e.crystals)}</td><td style="padding:8px 6px;color:#eee;font-size:12px;">${e.treeLevel||1}</td></tr>`;});}
+    else {lb.forEach((e,i)=>{const r=i+1;let rc='',ri=r;if(r===1){rc='color:#ffd700;';ri='🥇';}else if(r===2){rc='color:#c0c0c0;';ri='🥈';}else if(r===3){rc='color:#cd7f32;';ri='🥉';}html+=`<tr style="${(e.user_id||e.userId)===player.userId?'background:rgba(226,160,63,0.15);':''}"><td style="padding:8px 6px;font-weight:700;font-size:14px;text-align:center;${rc}">${ri}</td><td style="padding:8px 6px;color:#fff;font-size:12px;">${esc(e.name)}</td><td style="padding:8px 6px;color:#fff;font-size:12px;">${fmt(e.wood)}</td><td style="padding:8px 6px;color:#fff;font-size:12px;">${fmt(e.crystals)}</td><td style="padding:8px 6px;color:#fff;font-size:12px;">${e.treeLevel||1}</td></tr>`;});}
     html+='</tbody></table>';
     popup('🏆 Рейтинг', html);
 }
 
 async function showTrade() {
     const trades = await loadTrades();
-    let html = `<div style="background:#1e2a3a;border-radius:12px;padding:12px;margin-bottom:12px;"><div style="margin-bottom:8px;"><label style="color:#aaa;font-size:11px;">ID игрока (пусто = всем)</label><input type="text" id="tradeTargetId" placeholder="Вставьте ID..." style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a2a4a;background:#16213e;color:#eee;font-size:14px;margin-top:3px;"></div><div style="margin-bottom:8px;"><label style="color:#aaa;font-size:11px;">Скин</label><select id="tradeSkinSelect" style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a2a4a;background:#16213e;color:#eee;font-size:14px;margin-top:3px;"><option value="">-- Выберите --</option>`;
+    let html = `<div style="background:#1e2a3a;border-radius:12px;padding:12px;margin-bottom:12px;">
+        <div style="margin-bottom:8px;">
+            <label style="color:#aaa;font-size:11px;">ID игрока (пусто = всем)</label>
+            <input type="text" id="tradeTargetId" placeholder="Вставьте ID..." style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a2a4a;background:#16213e;color:#eee;font-size:14px;margin-top:3px;">
+        </div>
+        <div style="margin-bottom:8px;">
+            <label style="color:#aaa;font-size:11px;">Скин</label>
+            <select id="tradeSkinSelect" style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a2a4a;background:#16213e;color:#eee;font-size:14px;margin-top:3px;">
+                <option value="">-- Выберите --</option>`;
     player.ownedSkins.forEach(sid=>{if(sid==='default')return;const s=treeSkins.find(x=>x.id===sid);if(s)html+=`<option value="${s.id}">${s.emoji} ${s.name}${sid===player.activeSkin?' (активен)':''}</option>`;});
-    html+=`</select></div><div style="margin-bottom:8px;"><label style="color:#aaa;font-size:11px;">Цена 🌲</label><input type="number" id="tradePriceInput" placeholder="100" min="1" style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a2a4a;background:#16213e;color:#eee;font-size:14px;margin-top:3px;"></div><button id="btnCreateTrade" style="width:100%;padding:12px;border-radius:10px;border:none;background:#e2a03f;color:#000;font-weight:700;font-size:14px;">Выставить</button></div><h4 style="color:#eee;margin:12px 0 8px;">📋 Предложения</h4><div id="tradeList">`;
+    html+=`</select></div>
+        <div style="margin-bottom:8px;">
+            <label style="color:#aaa;font-size:11px;">Цена 🌲</label>
+            <input type="number" id="tradePriceInput" placeholder="100" min="1" style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a2a4a;background:#16213e;color:#eee;font-size:14px;margin-top:3px;">
+        </div>
+        <button id="btnCreateTrade" style="width:100%;padding:12px;border-radius:10px;border:none;background:#e2a03f;color:#000;font-weight:700;font-size:14px;">Выставить</button>
+    </div>
+    <div style="color:#e2a03f;font-size:13px;font-weight:700;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid #2a2a4a;">📋 Предложения</div>
+    <div id="tradeList">`;
     if(!trades.length){html+='<div style="text-align:center;padding:20px;color:#aaa;">Нет предложений</div>';}
-    else {trades.forEach(trade=>{const isOwn=trade.sellerId===player.userId, canBuy=!isOwn&&player.wood>=trade.price&&!player.ownedSkins.includes(trade.skinId);html+=`<div style="background:#1e2a3a;border-radius:12px;padding:12px;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><div><span style="font-weight:600;color:#eee;font-size:13px;">${esc(trade.sellerName)}</span><br><span style="font-size:10px;color:#aaa;">ID: ${trade.sellerId}</span></div><span style="color:#e2a03f;font-weight:700;">${fmt(trade.price)} 🌲</span></div><div style="font-size:20px;text-align:center;margin:6px 0;">${trade.skinEmoji} ${trade.skinName}</div>${trade.targetId?`<div style="font-size:10px;color:#a78bfa;text-align:center;">🎯 Для: ${trade.targetId}</div>`:''}<button style="width:100%;padding:10px;border-radius:10px;border:none;color:#fff;font-weight:600;margin-top:6px;background:${isOwn?'#e74c3c':'#4caf84'};" data-action="${isOwn?'cancel':'buy'}" data-id="${trade.id}" ${!isOwn&&!canBuy?'disabled':''}>${isOwn?'Отменить':(canBuy?'Купить':(player.ownedSkins.includes(trade.skinId)?'Уже есть':'Мало 🌲'))}</button></div>`;});}
+    else {trades.forEach(trade=>{const isOwn=trade.sellerId===player.userId, canBuy=!isOwn&&player.wood>=trade.price&&!player.ownedSkins.includes(trade.skinId);html+=`<div style="background:#1e2a3a;border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid #2a2a4a;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><div><span style="font-weight:600;color:#eee;font-size:13px;">${esc(trade.sellerName)}</span><br><span style="font-size:10px;color:#aaa;">ID: ${trade.sellerId}</span>${trade.targetId?`<br><span style="font-size:10px;color:#a78bfa;">🎯 Для: ${trade.targetId}</span>`:''}</div><span style="color:#e2a03f;font-weight:700;">${fmt(trade.price)} 🌲</span></div><div style="font-size:20px;text-align:center;margin:6px 0;">${trade.skinEmoji} ${trade.skinName}</div><button style="width:100%;padding:10px;border-radius:10px;border:none;color:#fff;font-weight:600;margin-top:6px;background:${isOwn?'#e74c3c':'#4caf84'};" data-action="${isOwn?'cancel':'buy'}" data-id="${trade.id}" ${!isOwn&&!canBuy?'disabled':''}>${isOwn?'Отменить':(canBuy?'Купить':(player.ownedSkins.includes(trade.skinId)?'Уже есть':'Мало 🌲'))}</button></div>`;});}
     html+='</div>';
     
     const bg = popup('💱 Торги', html);
