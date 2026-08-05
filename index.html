@@ -293,56 +293,124 @@ function showShop(){
 }
 
 function showSkins(){
-    let ct='tree';
+    var ct='tree';
     function render(tab){
         ct=tab;
-        let html='<div class="skin-tabs">';
-        html+=`<div class="skin-tab ${tab==='tree'?'active':''}" data-tab="tree">🎄 Деревья</div>`;
-        html+=`<div class="skin-tab ${tab==='axe'?'active':''}" data-tab="axe">🪓 Топоры</div>`;
+        var html='<div class="skin-tabs">';
+        html+='<div class="skin-tab '+(tab==='tree'?'active':'')+'" data-tab="tree">🎄 Деревья</div>';
+        html+='<div class="skin-tab '+(tab==='axe'?'active':'')+'" data-tab="axe">🪓 Топоры</div>';
         html+='</div><div class="skin-grid">';
-        const skins=tab==='tree'?treeSkins:axeSkins;
-        const owned=tab==='tree'?P.ownedSkins:P.ownedAxes;
-        const active=tab==='tree'?P.activeSkin:P.activeAxe;
-        skins.forEach(skin=>{
-            if(skin.hidden&&!owned.includes(skin.id))return;
-            const ow=owned.includes(skin.id),ac=active===skin.id;
-            let ph='';
-            if(!ow){if(skin.cur==='free')ph='<div class="skin-price">Бесплатно</div>';else if(skin.cur==='crystals')ph=`<div class="skin-price">🔒 ${fmt(skin.price)} 💎</div>`;else ph=`<div class="skin-price" style="color:#ffd700">⭐ ${skin.price} звёзд</div>`}
-            const isC=skin.id.startsWith('custom_');
-            html+=`<div class="skin-card ${ac?'active':''}" data-sid="${skin.id}" data-type="${tab}">
-                ${isC&&uid===ADM?`<button class="skin-delete-btn" data-del="${skin.id}" data-dt="${tab}">✕</button>`:''}
-                <span class="skin-emoji">${skin.emoji||'🎄'}</span><div class="skin-name">${skin.name}</div>${ph}${ac?'<div style="color:#ffd700;font-size:10px;">✅</div>':''}</div>`;
+        var skins=tab==='tree'?treeSkins:axeSkins;
+        var owned=tab==='tree'?P.ownedSkins:P.ownedAxes;
+        var active=tab==='tree'?P.activeSkin:P.activeAxe;
+        
+        skins.forEach(function(skin){
+            if(skin.hidden && owned.indexOf(skin.id)===-1) return;
+            var ow=owned.indexOf(skin.id)!==-1;
+            var ac=active===skin.id;
+            var ph='';
+            if(!ow){
+                if(skin.cur==='free') ph='<div class="skin-price">Бесплатно</div>';
+                else if(skin.cur==='crystals') ph='<div class="skin-price">🔒 '+fmt(skin.price)+' 💎</div>';
+                else ph='<div class="skin-price" style="color:#ffd700">⭐ '+skin.price+' звёзд</div>';
+            }
+            var isC=skin.id.indexOf('custom_')===0;
+            
+            // Картинка или эмодзи
+            var imgHTML = '';
+            if (skin.img) {
+                imgHTML = '<img src="'+skin.img+'" style="width:48px;height:48px;object-fit:contain;display:block;margin:0 auto 6px;border-radius:8px;" onerror="this.style.display=\'none\'">';
+            } else {
+                imgHTML = '<span class="skin-emoji">'+(skin.emoji||'🎄')+'</span>';
+            }
+            
+            html+='<div class="skin-card '+(ac?'active':'')+'" data-sid="'+skin.id+'" data-type="'+tab+'">'+
+                (isC&&uid===ADM?'<button class="skin-delete-btn" data-del="'+skin.id+'" data-dt="'+tab+'">✕</button>':'')+
+                imgHTML+
+                '<div class="skin-name">'+skin.name+'</div>'+ph+
+                (ac?'<div style="color:#ffd700;font-size:10px;">✅</div>':'')+
+            '</div>';
         });
         html+='</div>';
-        if(uid===ADM)html+='<button class="add-skin-btn" id="addBtn">➕ Добавить скин</button>';
-        const bg=popup('🎨 Скины',html);
-        bg.querySelectorAll('.skin-tab').forEach(t=>t.addEventListener('click',()=>{bg.remove();render(t.dataset.tab)}));
-        bg.querySelectorAll('[data-sid]').forEach(el=>el.addEventListener('click',function(e){
-            if(e.target.classList.contains('skin-delete-btn'))return;
-            const sid=this.dataset.sid,type=this.dataset.type;
-            const skins=type==='tree'?treeSkins:axeSkins;
-            const skin=skins.find(s=>s.id===sid);
-            const owned=type==='tree'?P.ownedSkins:P.ownedAxes;
-            if(owned.includes(sid)){if(type==='tree')P.activeSkin=sid;else P.activeAxe=sid;upd();save();bg.remove();render(ct)}
-            else if(skin.cur==='free'){owned.push(sid);if(type==='tree')P.activeSkin=sid;else P.activeAxe=sid;upd();save();bg.remove();render(ct)}
-            else if(skin.cur==='crystals'){if(P.crystals>=skin.price){if(confirm(`Купить за ${skin.price}💎?`)){P.crystals-=skin.price;owned.push(sid);if(type==='tree')P.activeSkin=sid;else P.activeAxe=sid;upd();save();bg.remove();render(ct)}}else alert('Недостаточно кристаллов!')}
-            else alert('⭐ Звёзды временно недоступны');
-        }));
-        bg.querySelectorAll('.skin-delete-btn').forEach(btn=>btn.addEventListener('click',function(e){
-            e.stopPropagation();
-            const sid=this.dataset.del,type=this.dataset.dt;
-            if(confirm(`Удалить "${sid}"?`)){
-                if(type==='tree'){treeSkins.splice(treeSkins.findIndex(s=>s.id===sid),1);localStorage.setItem('c_ts',JSON.stringify(treeSkins.filter(s=>s.id.startsWith('custom_'))))}
-                else{axeSkins.splice(axeSkins.findIndex(s=>s.id===sid),1);localStorage.setItem('c_as',JSON.stringify(axeSkins.filter(s=>s.id.startsWith('custom_'))))}
-                bg.remove();render(ct);
-            }
-        }));
-        const ab=bg.querySelector('#addBtn');
-        if(ab)ab.addEventListener('click',()=>{bg.remove();addSkinForm()});
+        if(uid===ADM) html+='<button class="add-skin-btn" id="addBtn">➕ Добавить скин</button>';
+        
+        var bg = document.createElement('div');
+        bg.className = 'popup-bg';
+        bg.innerHTML = '<div class="popup"><h3>🎨 Скины</h3>'+html+'<button class="popup-close">Закрыть</button></div>';
+        document.body.appendChild(bg);
+        
+        bg.querySelector('.popup-close').addEventListener('click', function(){ bg.remove(); });
+        bg.addEventListener('click', function(e){ if(e.target === bg) bg.remove(); });
+        
+        // Переключение вкладок
+        var tabs = bg.querySelectorAll('.skin-tab');
+        for (var i = 0; i < tabs.length; i++) {
+            tabs[i].addEventListener('click', function(){
+                bg.remove();
+                render(this.dataset.tab);
+            });
+        }
+        
+        // Клик по скину
+        var cards = bg.querySelectorAll('[data-sid]');
+        for (var i = 0; i < cards.length; i++) {
+            cards[i].addEventListener('click', function(e){
+                if (e.target.classList.contains('skin-delete-btn')) return;
+                var sid = this.dataset.sid;
+                var type = this.dataset.type;
+                var skins = type === 'tree' ? treeSkins : axeSkins;
+                var skin = skins.find(function(s){ return s.id === sid; });
+                var owned = type === 'tree' ? P.ownedSkins : P.ownedAxes;
+                
+                if (owned.indexOf(sid) !== -1) {
+                    if (type === 'tree') P.activeSkin = sid;
+                    else P.activeAxe = sid;
+                    upd(); save(); bg.remove(); render(ct);
+                } else if (skin.cur === 'free') {
+                    owned.push(sid);
+                    if (type === 'tree') P.activeSkin = sid;
+                    else P.activeAxe = sid;
+                    upd(); save(); bg.remove(); render(ct);
+                } else if (skin.cur === 'crystals') {
+                    if (P.crystals >= skin.price) {
+                        if (confirm('Купить за ' + skin.price + '💎?')) {
+                            P.crystals -= skin.price;
+                            owned.push(sid);
+                            if (type === 'tree') P.activeSkin = sid;
+                            else P.activeAxe = sid;
+                            upd(); save(); bg.remove(); render(ct);
+                        }
+                    } else alert('Недостаточно кристаллов!');
+                }
+            });
+        }
+        
+        // Удаление скинов
+        var delBtns = bg.querySelectorAll('.skin-delete-btn');
+        for (var i = 0; i < delBtns.length; i++) {
+            delBtns[i].addEventListener('click', function(e){
+                e.stopPropagation();
+                var sid = this.dataset.del;
+                var type = this.dataset.dt;
+                if (confirm('Удалить скин "' + sid + '"?')) {
+                    if (type === 'tree') {
+                        treeSkins.splice(treeSkins.findIndex(function(s){ return s.id === sid; }), 1);
+                        localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s){ return s.id.indexOf('custom_') === 0; })));
+                    } else {
+                        axeSkins.splice(axeSkins.findIndex(function(s){ return s.id === sid; }), 1);
+                        localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(s){ return s.id.indexOf('custom_') === 0; })));
+                    }
+                    bg.remove(); render(ct);
+                }
+            });
+        }
+        
+        // Кнопка добавления
+        var addBtn = bg.querySelector('#addBtn');
+        if (addBtn) addBtn.addEventListener('click', function(){ bg.remove(); addSkinForm(); });
     }
     render('tree');
 }
-
 
         
 
