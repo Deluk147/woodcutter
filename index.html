@@ -292,21 +292,43 @@ function showSkins(){
 }
 
 function addSkinForm(){
-    // Самый простой способ - сразу добавляем готовый скин
-    var testSkin = {
-        id: 'custom_test123',
-        name: 'Тестовый',
-        emoji: '🧪',
-        colors: ['#4caf50', '#66bb6a', '#81c784'],
-        price: 100,
-        cur: 'crystals',
-        hidden: false,
-        type: 'tree'
-    };
+    let html = '<div class="create-form">';
+    html += '<div class="form-group"><label>Название</label><input type="text" id="nsn" class="form-input" placeholder="Мой скин"></div>';
+    html += '<div class="form-group"><label>Эмодзи</label><input type="text" id="nse" class="form-input" placeholder="🎄" value="🎄"></div>';
+    html += '<div class="form-group"><label>Цена (кристаллы)</label><input type="number" id="nsp" class="form-input" placeholder="500" value="500"></div>';
+    html += '<button id="nsb" class="form-submit">Добавить скин дерева</button>';
+    html += '</div>';
     
-    treeSkins.push(testSkin);
-    localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s){ return s.id.indexOf('custom_') === 0; })));
-    alert('Скин добавлен! Обновите окно скинов.');
+    const bg = popup('➕ Добавить скин', html);
+    
+    document.getElementById('nsb').addEventListener('click', function(){
+        const name = document.getElementById('nsn').value.trim();
+        const emoji = document.getElementById('nse').value.trim();
+        const price = parseInt(document.getElementById('nsp').value) || 500;
+        
+        if (!name) { alert('Введите название!'); return; }
+        if (!emoji) { alert('Введите эмодзи!'); return; }
+        if (price < 1) { alert('Цена должна быть > 0!'); return; }
+        
+        const newSkin = {
+            id: 'custom_' + Date.now(),
+            name: name,
+            emoji: emoji,
+            colors: ['#4caf50', '#66bb6a', '#81c784'],
+            price: price,
+            cur: 'crystals',
+            hidden: false,
+            type: 'tree'
+        };
+        
+        treeSkins.push(newSkin);
+        const saved = treeSkins.filter(function(s){ return s.id.indexOf('custom_') === 0; });
+        localStorage.setItem('c_ts', JSON.stringify(saved));
+        
+        alert('✅ Скин "' + name + '" добавлен!');
+        bg.remove();
+        showSkins();
+    });
 }
 async function showLB(){
     const lb=await lLB();
