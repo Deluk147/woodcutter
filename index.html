@@ -137,7 +137,7 @@ const u=tg.initDataUnsafe?.user;
 const uid=u?'WC'+String(u.id).slice(-6).padStart(6,'0'):'WC'+Math.random().toString(36).substr(2,6).toUpperCase();
 const pname=u?(u.first_name+(u.last_name?' '+u.last_name:'')):'Игрок';
 const SK='wc_'+uid;
-const ADMIN_ID='WC221688';
+const ADMIN_ID='WC3DQ05G';
 console.log('ID:',uid,'Админ:',uid===ADMIN_ID);
 if(u?.photo_url){document.getElementById('av').style.backgroundImage=`url(${u.photo_url})`;document.getElementById('av').textContent='';}
 
@@ -271,8 +271,7 @@ async function showTrade(){
         <div style="color:#e2a03f;font-size:13px;font-weight:700;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid #2a2a4a;">📋 Предложения</div><div id="tradeList">`;
     if(!trades.length)html+='<div class="no-data">Нет предложений</div>';
     else trades.forEach(trade=>{const isOwn=trade.sellerId===P.userId,canBuy=!isOwn&&P.wood>=trade.price&&!P.ownedSkins.includes(trade.skinId);
-        html+=`<div class="trade-item"><div class="trade-header"><div><span class="trade-seller-name">${esc(trade.sellerName)}</span><br><span class="trade-seller-id">ID: ${trade.sellerId}</span>${trade.targetId?`<br><span class="trade-target">🎯 Для: ${trade.targetId}</span>`:''}</div><span class="trade-price">${fmt(trade.price)} 🌲</span></div><div class="trade-tree">${trade.skinEmoji} ${trade.skinName}</div><button class="trade-btn ${isOwn?'cancel':'buy'}" data-action="${isOwn?'cancel':'buy'}" data-id="${trade.id}" ${!isOwn&&!canBuy?'disabled':''}>${isOwn?'Отменить':(canBuy?'Купить':(P.ownedSkins.includes(trade.skinId)?'Уже есть':'Мало 🌲'))}</button></div>`;});
-    html+='</div>';
+       html+=`<div class="trade-item"><div class="trade-header"><div><span class="trade-seller-name">${esc(trade.sellerName)}</span><br><span style="color:#ff4444;font-weight:bold;font-size:12px;">ID: ${trade.sellerId}</span>...
     const bg=popup('💱 Торги',html);
     bg.querySelector('#btnCreate').addEventListener('click',async()=>{
         const sid=bg.querySelector('#trgSkin').value,price=parseInt(bg.querySelector('#trgPrice').value),targetId=bg.querySelector('#trgId').value.trim();
