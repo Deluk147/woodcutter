@@ -2395,6 +2395,11 @@ if (photo) {
     saveSkin(null);
 }
 
+
+            });
+        }
+    }
+
     function showTrade() {
         fetch(API_URL + '/trades?user_id=' + userId)
             .then(function(response) { return response.json(); })
