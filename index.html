@@ -292,51 +292,21 @@ function showSkins(){
 }
 
 function addSkinForm(){
-    var type = prompt('Тип скина:\n1 - Дерево\n2 - Топор', '1');
-    if (!type) return;
-    type = (type === '2') ? 'axe' : 'tree';
-    
-    var name = prompt('Название скина:', 'Мой скин');
-    if (!name) return;
-    
-    var emoji = prompt('Эмодзи:', '🎄');
-    if (!emoji) return;
-    
-    var price = parseInt(prompt('Цена (кристаллы):', '500'));
-    if (!price || price < 1) { alert('Цена должна быть больше 0!'); return; }
-    
-    var ns = {
-        id: 'custom_' + Date.now(),
-        name: name,
-        emoji: emoji,
+    // Самый простой способ - сразу добавляем готовый скин
+    var testSkin = {
+        id: 'custom_test123',
+        name: 'Тестовый',
+        emoji: '🧪',
         colors: ['#4caf50', '#66bb6a', '#81c784'],
-        price: price,
+        price: 100,
         cur: 'crystals',
         hidden: false,
-        type: type
+        type: 'tree'
     };
     
-    try {
-        if (type === 'tree') {
-            treeSkins.push(ns);
-            var saved = [];
-            for (var i = 0; i < treeSkins.length; i++) {
-                if (treeSkins[i].id.indexOf('custom_') === 0) saved.push(treeSkins[i]);
-            }
-            localStorage.setItem('c_ts', JSON.stringify(saved));
-        } else {
-            axeSkins.push(ns);
-            var saved = [];
-            for (var i = 0; i < axeSkins.length; i++) {
-                if (axeSkins[i].id.indexOf('custom_') === 0) saved.push(axeSkins[i]);
-            }
-            localStorage.setItem('c_as', JSON.stringify(saved));
-        }
-        alert('✅ Скин "' + name + '" добавлен!');
-        showSkins();
-    } catch(e) {
-        alert('❌ Ошибка: ' + e.message);
-    }
+    treeSkins.push(testSkin);
+    localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s){ return s.id.indexOf('custom_') === 0; })));
+    alert('Скин добавлен! Обновите окно скинов.');
 }
 async function showLB(){
     const lb=await lLB();
