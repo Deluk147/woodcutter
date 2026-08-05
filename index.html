@@ -2374,32 +2374,26 @@
                     updateAdminSelects();
                 }
                 
-                               if (photo) {
-                    var reader = new FileReader();
-                    reader.onload = function(ev) {
-                        var img = new Image();
-                        img.onload = function() {
-                            var canvas = document.createElement('canvas');
-                            var maxWidth = 200;
-                            var scale = maxWidth / img.width;
-                            canvas.width = maxWidth;
-                            canvas.height = img.height * scale;
-                            var ctx = canvas.getContext('2d');
-                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            saveSkin(canvas.toDataURL('image/png'));
-                        };
-                        img.src = ev.target.result;
-                    };
-                    reader.readAsDataURL(photo);
-                } else {
-                    saveSkin(null);
-                }
-                } else {
-                    saveSkin(null);
-                }
-            });
-        }
-    }
+if (photo) {
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+        var img = new Image();
+        img.onload = function() {
+            var canvas = document.createElement('canvas');
+            var maxWidth = 200;
+            var scale = maxWidth / img.width;
+            canvas.width = maxWidth;
+            canvas.height = img.height * scale;
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            saveSkin(canvas.toDataURL('image/png'));  // ← эта строка изменена
+        };
+        img.src = ev.target.result;
+    };
+    reader.readAsDataURL(photo);
+} else {
+    saveSkin(null);
+}
 
     function showTrade() {
         fetch(API_URL + '/trades?user_id=' + userId)
