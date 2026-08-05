@@ -17,9 +17,10 @@
         .header .subtitle { font-size:11px; color:var(--text-secondary); }
         .game-area { flex:1; display:flex; flex-direction:column; padding:10px; overflow-y:auto; gap:8px; -webkit-overflow-scrolling:touch; padding-bottom:20px; }
         .resources { display:flex; gap:8px; }
-        .resource-card { flex:1; background:var(--panel); border-radius:12px; padding:10px 14px; display:flex; align-items:center; gap:10px; border:1px solid var(--border); }
-        .resource-icon { font-size:22px; }
-        .resource-value { font-size:18px; font-weight:700; color:var(--text); }
+        .resource-card { flex:1; background:var(--panel); border-radius:12px; padding:10px 14px; display:flex; align-items:center; gap:12px; border:1px solid var(--border); }
+        .resource-icon { font-size:24px; }
+        .resource-info { display:flex; flex-direction:column; gap:4px; }
+        .resource-value { font-size:20px; font-weight:700; color:var(--text); line-height:1; }
         .resource-label { font-size:10px; color:var(--text-secondary); }
         .tree-scene { background:var(--panel); border-radius:16px; padding:12px; display:flex; flex-direction:column; align-items:center; gap:8px; border:1px solid var(--border); }
         .tree-container { position:relative; width:100%; max-width:240px; aspect-ratio:3/4; cursor:pointer; }
@@ -29,7 +30,7 @@
         .tree-fall { animation:fall 0.6s ease forwards; }
         @keyframes fall { 0%{transform:rotate(0);opacity:1} 100%{transform:rotate(80deg) translateX(60px);opacity:0} }
         .tree-svg { width:100%; height:100%; pointer-events:none; }
-        .axe-emoji { position:absolute; right:8%; top:42%; font-size:40px; pointer-events:none; z-index:6; }
+        .axe-emoji { position:absolute; right:8%; top:42%; font-size:40px; pointer-events:none; z-index:6; filter:drop-shadow(2px 3px 3px rgba(0,0,0,0.4)); }
         .axe-emoji.swing { animation:axeSwing 0.3s ease; }
         @keyframes axeSwing { 0%{transform:rotate(-40deg)} 50%{transform:rotate(20deg)} 100%{transform:rotate(0deg)} }
         .tree-level-badge { position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.8); color:var(--gold); padding:3px 8px; border-radius:12px; font-size:12px; font-weight:700; border:1px solid var(--gold); }
@@ -112,14 +113,15 @@
     <div class="header"><div class="avatar" id="av">🪓</div><div><div class="title" id="th">Woodcutter</div><div class="subtitle" id="nd">...</div></div></div>
     <div class="game-area">
         <div class="resources">
-            <div class="resource-card"><span class="resource-icon">🌲</span><div><span class="resource-value" id="wv">0</span><span class="resource-label">Древесина</span></div></div>
-            <div class="resource-card"><span class="resource-icon">💎</span><div><span class="resource-value" id="cv">0</span><span class="resource-label">Кристаллы</span></div></div>
+            <div class="resource-card"><span class="resource-icon">🌲</span><div class="resource-info"><span class="resource-value" id="wv">0</span><span class="resource-label">Древесина</span></div></div>
+            <div class="resource-card"><span class="resource-icon">💎</span><div class="resource-info"><span class="resource-value" id="cv">0</span><span class="resource-label">Кристаллы</span></div></div>
         </div>
         <div class="tree-scene">
             <div class="tree-container" id="tc">
                 <div class="tree-level-badge" id="lb">🌲 Ур. 1</div>
                 <div class="axe-emoji" id="ax">🪓</div>
                 <svg class="tree-svg" viewBox="0 0 260 360"><ellipse cx="130" cy="330" rx="110" ry="20" fill="#3d2b1f" opacity="0.6"/><rect x="115" y="180" width="30" height="152" rx="7" fill="#6b4226" id="tr"/><ellipse cx="130" cy="130" rx="85" ry="75" fill="#3a7d3a" id="c1"/><ellipse cx="130" cy="85" rx="70" ry="65" fill="#4caf50" id="c2"/><ellipse cx="130" cy="45" rx="55" ry="55" fill="#66bb6a" id="c3"/></svg>
+                <div id="floatTextContainer" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></div>
             </div>
             <div class="hp-bar-container"><div class="hp-bar high" id="hp" style="width:100%"></div></div>
             <div class="hp-text" id="ht">15 / 15 HP</div>
@@ -144,7 +146,7 @@
         <input type="number" id="aw" class="admin-input" placeholder="Древесина">
         <input type="number" id="ac" class="admin-input" placeholder="Кристаллы">
         <button onclick="admGive()" class="admin-btn green">Выдать</button>
-        <h3>🎄 Выдать скин</h3>
+        <h3>🎄 Выдать скин дерева</h3>
         <input type="text" id="asid" class="admin-input" placeholder="ID игрока">
         <select id="ass" class="admin-input"><option value="autumn">🍂 Осеннее</option><option value="cherry">🌸 Сакура</option><option value="crystal">💎 Кристальное</option><option value="golden">✨ Золотое</option><option value="inferno">🔥 Огненное</option><option value="ocean">🌊 Океанское</option><option value="void">🕳️ Бездны</option><option value="rainbow">🌈 Радужное</option></select>
         <button onclick="admSkin()" class="admin-btn purple">Выдать скин</button>
@@ -224,7 +226,7 @@ async function admAxe(){
     if(r.success){var p=r.profile||{};var axes=p.ownedAxes||['default'];
         if(axes.indexOf(aid)===-1){axes.push(aid);p.user_id=tid;p.wood=p.wood||0;p.crystals=p.crystals||0;p.ownedSkins=p.ownedSkins||['default'];p.ownedAxes=axes;p.activeAxe=aid;p.activeSkin=p.activeSkin||'default';p.name=p.name||'Игрок';p.treeLevel=p.treeLevel||1;p.totalTrees=p.totalTrees||0;
             await fetch(A+'/profile/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
-            alert('✅ Топор выдан');document.getElementById('aaxid').value='';
+            alert('✅ Топор выдан!');document.getElementById('aaxid').value='';
             if(tid===uid){P.ownedAxes=axes;P.activeAxe=aid;upd();save();}
         }else alert('Уже есть');
     }else alert('❌ Не найден');
@@ -278,14 +280,27 @@ function upd(){
 const COMBO_TIMEOUT=5000;var comboTimer=null;
 function resetCombo(){if(comboTimer)clearTimeout(comboTimer);var bar=document.getElementById('ctb'),fill=document.getElementById('ctf');if(P.combo>0){bar.style.display='block';fill.style.transition='none';fill.style.width='100%';requestAnimationFrame(function(){fill.style.transition='width '+COMBO_TIMEOUT+'ms linear';fill.style.width='0%'});comboTimer=setTimeout(function(){P.combo=0;P.comboMultiplier=1;bar.style.display='none';fill.style.transition='none';fill.style.width='100%';upd()},COMBO_TIMEOUT)}else{bar.style.display='none'}}
 
+const axeEmoji=document.getElementById('ax'),treeContainer=document.getElementById('tc'),floatContainer=document.getElementById('floatTextContainer');
+function animAxe(){axeEmoji.classList.remove('swing');void axeEmoji.offsetWidth;axeEmoji.classList.add('swing')}
+function animShake(){treeContainer.classList.add('shake');setTimeout(function(){treeContainer.classList.remove('shake')},400)}
+function animFall(cb){treeContainer.classList.add('tree-fall');setTimeout(function(){treeContainer.classList.remove('tree-fall');if(cb)cb()},600)}
+function floatText(text,color,x,y){var el=document.createElement('div');el.className='float-text';el.textContent=text;el.style.color=color;el.style.left=x+'px';el.style.top=y+'px';floatContainer.appendChild(el);setTimeout(function(){el.remove()},1000)}
+
 function chop(){
     if(P.treeHP<=0){P.maxTreeHP=calcHP(P.treeLevel);P.treeHP=P.maxTreeHP;upd();return}
-    var dmg=P.axePower;if(Math.random()*100<P.critChance)dmg=Math.floor(dmg*P.critMultiplier);
+    var dmg=P.axePower;var crit=Math.random()*100<P.critChance;if(crit)dmg=Math.floor(dmg*P.critMultiplier);
     P.combo=Math.min(50,P.combo+1);P.comboMultiplier=1+P.combo*(0.01+P.comboBonus/100);
     dmg=Math.max(1,Math.floor(dmg*P.comboMultiplier));P.treeHP-=dmg;P.wood+=dmg;
-    document.getElementById('ax').classList.remove('swing');void document.getElementById('ax').offsetWidth;document.getElementById('ax').classList.add('swing');
-    resetCombo();var r=document.getElementById('tc').getBoundingClientRect();
-    if(P.treeHP<=0){P.crystals+=P.crystalBonus;if(P.crystalToWoodRate>0&&P.crystals>0){var conv=Math.floor(P.crystals*P.crystalToWoodRate);P.wood+=conv}P.totalTrees++;P.treeLevel=Math.min(Math.floor(P.totalTrees/2)+1,9999);P.maxTreeHP=calcHP(P.treeLevel);P.treeHP=P.maxTreeHP}
+    animAxe();resetCombo();
+    var r=treeContainer.getBoundingClientRect();
+    floatText((crit?'💥+':'+')+fmt(dmg)+'🌲',crit?'#ff6b6b':'#e2a03f',r.width/2,r.height*0.5);
+    if(P.treeHP<=0){
+        P.crystals+=P.crystalBonus;
+        if(P.crystalToWoodRate>0&&P.crystals>0){var conv=Math.floor(P.crystals*P.crystalToWoodRate);P.wood+=conv;floatText('🔄+'+fmt(conv)+'🌲','#4caf84',r.width/2,r.height*0.5+20)}
+        P.totalTrees++;P.treeLevel=Math.min(Math.floor(P.totalTrees/2)+1,9999);
+        animFall(function(){P.maxTreeHP=calcHP(P.treeLevel);P.treeHP=P.maxTreeHP;upd()});
+        floatText('🎉+'+P.crystalBonus+'💎','#a78bfa',r.width/2,r.height*0.5-25);
+    }else{animShake()}
     upd();save();sLB();
 }
 
