@@ -308,71 +308,60 @@ function addSkinForm(){
     html += '<button class="form-submit" id="saveSkinBtn">Добавить скин</button>';
     html += '</div>';
     
-    var popupEl = popup('➕ Добавить скин', html);
+    var bg = document.createElement('div');
+    bg.className = 'popup-bg';
+    bg.innerHTML = '<div class="popup"><h3>➕ Добавить скин</h3>' + html + '<button class="popup-close">Закрыть</button></div>';
+    document.body.appendChild(bg);
     
-    // Ждём пока popup отрендерится в DOM
-    setTimeout(function(){
-        var saveBtn = document.getElementById('saveSkinBtn');
-        if (!saveBtn) {
-            alert('Ошибка: кнопка не найдена');
-            return;
+    bg.querySelector('.popup-close').addEventListener('click', function(){ bg.remove(); });
+    bg.addEventListener('click', function(e){ if(e.target === bg) bg.remove(); });
+    
+    bg.querySelector('#saveSkinBtn').addEventListener('click', function(){
+        var type = bg.querySelector('#skinType').value;
+        var name = bg.querySelector('#skinName').value.trim();
+        var emoji = bg.querySelector('#skinEmoji').value.trim();
+        var price = parseInt(bg.querySelector('#skinPrice').value) || 500;
+        var hidden = bg.querySelector('#skinHidden').checked;
+        
+        if (!name) { alert('Введите название!'); return; }
+        if (!emoji) { alert('Введите эмодзи!'); return; }
+        if (price < 1) { alert('Цена должна быть > 0!'); return; }
+        
+        var newSkin = {
+            id: 'custom_' + Date.now(),
+            name: name,
+            emoji: emoji,
+            colors: ['#4caf50', '#66bb6a', '#81c784'],
+            price: price,
+            cur: 'crystals',
+            hidden: hidden,
+            type: type
+        };
+        
+        if (type === 'tree') {
+            treeSkins.push(newSkin);
+            var saved = [];
+            for (var i = 0; i < treeSkins.length; i++) {
+                if (treeSkins[i].id.indexOf('custom_') === 0) saved.push(treeSkins[i]);
+            }
+            localStorage.setItem('c_ts', JSON.stringify(saved));
+        } else {
+            axeSkins.push(newSkin);
+            var saved = [];
+            for (var i = 0; i < axeSkins.length; i++) {
+                if (axeSkins[i].id.indexOf('custom_') === 0) saved.push(axeSkins[i]);
+            }
+            localStorage.setItem('c_as', JSON.stringify(saved));
         }
         
-        saveBtn.onclick = function(){
-            var typeEl = document.getElementById('skinType');
-            var nameEl = document.getElementById('skinName');
-            var emojiEl = document.getElementById('skinEmoji');
-            var priceEl = document.getElementById('skinPrice');
-            var hiddenEl = document.getElementById('skinHidden');
-            
-            if (!nameEl || !emojiEl || !priceEl) {
-                alert('Ошибка: поля не найдены');
-                return;
-            }
-            
-            var type = typeEl ? typeEl.value : 'tree';
-            var name = nameEl.value.trim();
-            var emoji = emojiEl.value.trim();
-            var price = parseInt(priceEl.value) || 500;
-            var hidden = hiddenEl ? hiddenEl.checked : false;
-            
-            if (!name) { alert('Введите название!'); return; }
-            if (!emoji) { alert('Введите эмодзи!'); return; }
-            if (price < 1) { alert('Цена должна быть > 0!'); return; }
-            
-            var newSkin = {
-                id: 'custom_' + Date.now(),
-                name: name,
-                emoji: emoji,
-                colors: ['#4caf50', '#66bb6a', '#81c784'],
-                price: price,
-                cur: 'crystals',
-                hidden: hidden,
-                type: type
-            };
-            
-            if (type === 'tree') {
-                treeSkins.push(newSkin);
-                var saved = [];
-                for (var i = 0; i < treeSkins.length; i++) {
-                    if (treeSkins[i].id.indexOf('custom_') === 0) saved.push(treeSkins[i]);
-                }
-                localStorage.setItem('c_ts', JSON.stringify(saved));
-            } else {
-                axeSkins.push(newSkin);
-                var saved = [];
-                for (var i = 0; i < axeSkins.length; i++) {
-                    if (axeSkins[i].id.indexOf('custom_') === 0) saved.push(axeSkins[i]);
-                }
-                localStorage.setItem('c_as', JSON.stringify(saved));
-            }
-            
-            alert('✅ Скин "' + name + '" добавлен!');
-            popupEl.remove();
-            showSkins();
-        };
-    }, 100);
+        alert('✅ Скин "' + name + '" добавлен!');
+        bg.remove();
+        showSkins();
+    });
 }
+        
+       
+    
 
 
 
