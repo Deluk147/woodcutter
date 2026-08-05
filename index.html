@@ -2384,9 +2384,19 @@
     
                 if (photo) {
                     var reader = new FileReader();
-                    reader.onload = function(ev) {
-                        // Сохраняем оригинальный Data URL напрямую
-                        saveSkin(ev.target.result);
+            
+                                        reader.onload = function(ev) {
+                        // Проверяем, что изображение действительно PNG
+                        var dataUrl = ev.target.result;
+                        var isPng = dataUrl.startsWith('data:image/png');
+                        console.log('Is PNG:', isPng);
+                        console.log('Data URL starts with:', dataUrl.substring(0, 50));
+                        
+                        if (!isPng) {
+                            alert('⚠️ Изображение не в формате PNG! Конвертируйте в PNG с прозрачным фоном.');
+                        }
+                        
+                        saveSkin(dataUrl);
                     };
                     reader.readAsDataURL(photo);
                 } else {
