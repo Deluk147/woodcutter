@@ -26,9 +26,6 @@
         .resource-info { display:flex; flex-direction:column; gap:2px; }
         .resource-value { font-size:18px; font-weight:700; color:var(--text); line-height:1; }
         .resource-label { font-size:10px; color:var(--text-secondary); }
-        .player-id-box { background:var(--panel); border-radius:10px; padding:8px 12px; display:flex; align-items:center; justify-content:space-between; border:1px solid var(--border); }
-        .id-value { color:var(--accent); font-weight:700; font-family:monospace; font-size:13px; }
-        .copy-btn { background:var(--accent); color:#000; border:none; padding:6px 10px; border-radius:8px; font-size:11px; cursor:pointer; }
         .tree-scene { background:var(--panel); border-radius:16px; padding:12px; display:flex; flex-direction:column; align-items:center; gap:8px; border:1px solid var(--border); }
         .tree-container { position:relative; width:100%; max-width:240px; aspect-ratio:3/4; cursor:pointer; }
         .tree-container:active { transform:scale(0.96); }
@@ -127,10 +124,6 @@
             <div class="resource-card"><span class="resource-icon">🌲</span><div class="resource-info"><span class="resource-value" id="woodCount">0</span><span class="resource-label">Древесина</span></div></div>
             <div class="resource-card"><span class="resource-icon">💎</span><div class="resource-info"><span class="resource-value" id="crystalCount">0</span><span class="resource-label">Кристаллы</span></div></div>
         </div>
-        <div class="player-id-box">
-            <span style="color:#aaa;font-size:12px;">Ваш ID: <span class="id-value" id="myPlayerId">...</span></span>
-            <button class="copy-btn" id="btnCopyId2">📋 Копировать</button>
-        </div>
         <div class="tree-scene">
             <div class="tree-container" id="treeContainer">
                 <div class="tree-level-badge" id="treeLevelBadge">🌲 Ур. 1</div>
@@ -171,9 +164,6 @@
         <input type="number" id="adminTakeWood" class="admin-input" placeholder="Древесина">
         <input type="number" id="adminTakeCrystals" class="admin-input" placeholder="Кристаллы">
         <button onclick="adminTakeResources()" class="admin-btn red">Забрать</button>
-        <h3>📊 Статистика</h3>
-        <button onclick="adminLoadStats()" class="admin-btn gold">Загрузить</button>
-        <div id="adminStats" style="color:#eee;font-size:13px;margin-bottom:10px;"></div>
         <button onclick="document.getElementById('adminPanel').style.display='none'" class="admin-btn close" style="margin-top:15px;">Закрыть</button>
     </div>
 </div>
@@ -196,11 +186,6 @@ if(tgUser?.photo_url) {
     document.getElementById('headerAvatar').textContent = '';
 }
 
-document.getElementById('myPlayerId').textContent = userId;
-document.getElementById('btnCopyId2').addEventListener('click', () => {
-    navigator.clipboard.writeText(userId).then(() => alert('✅ ID скопирован: ' + userId));
-});
-
 let titleClicks = 0;
 document.getElementById('titleHeader').addEventListener('click', () => {
     titleClicks++;
@@ -216,7 +201,7 @@ document.getElementById('titleHeader').addEventListener('click', () => {
 });
 
 async function adminGiveResources() {
-    const targetId = document.getElementById('adminTargetId').value;
+    const targetId = document.getElementById('adminTargetId').value.trim();
     const wood = parseInt(document.getElementById('adminWood').value) || 0;
     const crystals = parseInt(document.getElementById('adminCrystals').value) || 0;
     if (!targetId) { alert('Введите ID игрока'); return; }
@@ -225,14 +210,18 @@ async function adminGiveResources() {
         const profile = result.profile || {};
         profile.wood = (profile.wood || 0) + wood;
         profile.crystals = (profile.crystals || 0) + crystals;
-        await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood, crystals: profile.crystals, ownedSkins: profile.ownedSkins || ['default'], activeSkin: profile.activeSkin || 'default' });
+        await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood, crystals: profile.crystals, ownedSkins: profile.ownedSkins || ['default'], activeSkin: profile.activeSkin || 'default', name: profile.name || 'Игрок', treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
         await api('/leaderboard/update', 'POST', { user_id: targetId, name: profile.name || 'Игрок', wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
         alert(`✅ Выдано: +${wood}🌲 +${crystals}💎 игроку ${targetId}`);
+        document.getElementById('adminWood').value = '';
+        document.getElementById('adminCrystals').value = '';
+    } else {
+        alert('❌ Игрок не найден');
     }
 }
 
 async function adminTakeResources() {
-    const targetId = document.getElementById('adminTakeId').value;
+    const targetId = document.getElementById('adminTakeId').value.trim();
     const wood = parseInt(document.getElementById('adminTakeWood').value) || 0;
     const crystals = parseInt(document.getElementById('adminTakeCrystals').value) || 0;
     if (!targetId) { alert('Введите ID игрока'); return; }
@@ -241,14 +230,18 @@ async function adminTakeResources() {
         const profile = result.profile || {};
         profile.wood = Math.max(0, (profile.wood || 0) - wood);
         profile.crystals = Math.max(0, (profile.crystals || 0) - crystals);
-        await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood, crystals: profile.crystals, ownedSkins: profile.ownedSkins || ['default'], activeSkin: profile.activeSkin || 'default' });
+        await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood, crystals: profile.crystals, ownedSkins: profile.ownedSkins || ['default'], activeSkin: profile.activeSkin || 'default', name: profile.name || 'Игрок', treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
         await api('/leaderboard/update', 'POST', { user_id: targetId, name: profile.name || 'Игрок', wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
         alert(`✅ Забрано: -${wood}🌲 -${crystals}💎 у игрока ${targetId}`);
+        document.getElementById('adminTakeWood').value = '';
+        document.getElementById('adminTakeCrystals').value = '';
+    } else {
+        alert('❌ Игрок не найден');
     }
 }
 
 async function adminGiveSkin() {
-    const targetId = document.getElementById('adminSkinTargetId').value;
+    const targetId = document.getElementById('adminSkinTargetId').value.trim();
     const skinId = document.getElementById('adminSkinSelect').value;
     if (!targetId) { alert('Введите ID игрока'); return; }
     const result = await api('/profile/' + targetId);
@@ -257,16 +250,13 @@ async function adminGiveSkin() {
         const skins = profile.ownedSkins || ['default'];
         if (!skins.includes(skinId)) {
             skins.push(skinId);
-            await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood || 0, crystals: profile.crystals || 0, ownedSkins: skins, activeSkin: skinId });
+            await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood || 0, crystals: profile.crystals || 0, ownedSkins: skins, activeSkin: skinId, name: profile.name || 'Игрок', treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
             alert(`✅ Скин выдан игроку ${targetId}`);
+            document.getElementById('adminSkinTargetId').value = '';
         } else { alert('У игрока уже есть этот скин'); }
+    } else {
+        alert('❌ Игрок не найден');
     }
-}
-
-async function adminLoadStats() {
-    const ping = await api('/ping');
-    const lb = await api('/leaderboard');
-    document.getElementById('adminStats').innerHTML = `Игроков: ${ping.players || 0}<br>В рейтинге: ${lb.players ? lb.players.length : 0}`;
 }
 
 async function api(endpoint, method='GET', body=null) {
@@ -346,7 +336,6 @@ function updateUI() {
     document.getElementById('crown1').setAttribute('fill',colors[0]);
     document.getElementById('crown2').setAttribute('fill',colors[1]);
     document.getElementById('crown3').setAttribute('fill',colors[2]);
-    document.getElementById('myPlayerId').textContent = player.userId;
 }
 
 function fmt(n) { return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':Math.floor(n).toString(); }
@@ -467,7 +456,13 @@ async function showLB() {
                 const result = await api('/profile/' + uid);
                 if (result.success && result.profile) {
                     const p = result.profile;
-                    alert(`Информация об игроке ${uid}:\n🌲 Древесина: ${fmt(p.wood || 0)}\n💎 Кристаллы: ${fmt(p.crystals || 0)}\n🎄 Скинов: ${(p.ownedSkins || ['default']).length}\n📊 Уровень: ${p.treeLevel || 1}`);
+                    const info = `👤 Игрок: ${uid}\n🌲 Древесина: ${fmt(p.wood || 0)}\n💎 Кристаллы: ${fmt(p.crystals || 0)}\n🎄 Скинов: ${(p.ownedSkins || ['default']).length}\n📊 Уровень: ${p.treeLevel || 1}\n🎯 Срублено: ${p.totalTrees || 0}`;
+                    if (confirm(info + '\n\n🗑️ Удалить этого игрока?')) {
+                        await api('/profile/save', 'POST', { user_id: uid, wood: 0, crystals: 0, ownedSkins: ['default'], activeSkin: 'default', name: 'Игрок', treeLevel: 1, totalTrees: 0 });
+                        await api('/leaderboard/update', 'POST', { user_id: uid, name: 'Игрок', wood: 0, crystals: 0, treeLevel: 1, totalTrees: 0 });
+                        alert('✅ Игрок удалён и обнулён');
+                        bg.remove(); showLB();
+                    }
                 }
             });
         });
@@ -476,7 +471,8 @@ async function showLB() {
 
 async function showTrade() {
     const trades = await loadTrades();
-    let html = `<div class="create-form">
+    let html = `<div class="player-id-box" style="margin-bottom:12px;"><span style="color:#aaa;font-size:12px;">Ваш ID: <span style="color:#e2a03f;font-weight:700;font-family:monospace;font-size:13px;">${player.userId}</span></span><button class="copy-btn" id="btnCopyIdTrade" style="background:#e2a03f;color:#000;border:none;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;">📋 Копировать</button></div>`;
+    html += `<div class="create-form">
         <div class="form-group"><label>ID игрока (пусто = всем)</label><input type="text" id="tradeTargetId" class="form-input" placeholder="Вставьте ID..."></div>
         <div class="form-group"><label>Скин</label><select id="tradeSkinSelect" class="form-input"><option value="">-- Выберите --</option>`;
     player.ownedSkins.forEach(sid=>{if(sid==='default')return;const s=treeSkins.find(x=>x.id===sid);if(s)html+=`<option value="${s.id}">${s.emoji} ${s.name}${sid===player.activeSkin?' (активен)':''}</option>`;});
@@ -489,6 +485,9 @@ async function showTrade() {
         html+=`<div class="trade-item"><div class="trade-header"><div><span class="trade-seller-name">${esc(trade.sellerName)}</span><br><span class="trade-seller-id">ID: ${trade.sellerId}</span>${trade.targetId?`<br><span class="trade-target">🎯 Для: ${trade.targetId}</span>`:''}</div><span class="trade-price">${fmt(trade.price)} 🌲</span></div><div class="trade-tree">${trade.skinEmoji} ${trade.skinName}</div><button class="trade-btn ${isOwn?'cancel':'buy'}" data-action="${isOwn?'cancel':'buy'}" data-id="${trade.id}" ${!isOwn&&!canBuy?'disabled':''}>${isOwn?'Отменить':(canBuy?'Купить':(player.ownedSkins.includes(trade.skinId)?'Уже есть':'Мало 🌲'))}</button></div>`;});
     html+='</div>';
     const bg = popup('💱 Торги', html);
+    document.getElementById('btnCopyIdTrade').addEventListener('click', () => {
+        navigator.clipboard.writeText(player.userId).then(() => alert('✅ ID скопирован: ' + player.userId));
+    });
     bg.querySelector('#btnCreateTrade').addEventListener('click', async ()=>{
         const sid=bg.querySelector('#tradeSkinSelect').value,price=parseInt(bg.querySelector('#tradePriceInput').value),targetId=bg.querySelector('#tradeTargetId').value.trim();
         if(!sid||!price||price<1){alert('Заполните поля');return;}
