@@ -17,7 +17,7 @@
         .phone-frame { width:100%; height:100%; max-width:430px; background:var(--bg); display:flex; flex-direction:column; position:relative; overflow:hidden; }
         .header { background:var(--panel); padding:12px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); flex-shrink:0; }
         .header .avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#e2a03f,#c47f2a); display:flex; align-items:center; justify-content:center; font-size:20px; overflow:hidden; background-size:cover; }
-        .header .title { font-weight:600; color:var(--text); font-size:15px; }
+        .header .title { font-weight:600; color:var(--text); font-size:15px; cursor:pointer; }
         .header .subtitle { font-size:11px; color:var(--text-secondary); }
         .game-area { flex:1; display:flex; flex-direction:column; padding:10px; overflow-y:auto; gap:8px; -webkit-overflow-scrolling:touch; padding-bottom:20px; }
         .resources { display:flex; gap:8px; }
@@ -58,6 +58,13 @@
         .btn-trees { background:linear-gradient(135deg,#4caf50,#2d6b2d); color:#fff; }
         .btn-trade { background:linear-gradient(135deg,#a78bfa,#7c3aed); color:#fff; }
         .passive-info { text-align:center; color:var(--text-secondary); font-size:11px; }
+        .admin-input { width:100%; padding:10px; border-radius:10px; border:1px solid #2a2a4a; background:#1a1a2e; color:#eee; margin-bottom:8px; font-size:14px; }
+        .admin-btn { width:100%; padding:12px; border-radius:10px; border:none; font-weight:700; font-size:14px; cursor:pointer; margin-bottom:8px; color:#fff; }
+        .admin-btn.green { background:#4caf84; }
+        .admin-btn.purple { background:#a78bfa; }
+        .admin-btn.gold { background:#e2a03f; color:#000; }
+        .admin-btn.red { background:#e74c3c; }
+        .admin-btn.close { background:#16213e; color:#eee; border:1px solid #2a2a4a; }
     </style>
 </head>
 <body>
@@ -66,7 +73,7 @@
 <div class="phone-frame">
     <div class="header">
         <div class="avatar" id="headerAvatar">🪓</div>
-        <div><div class="title">Woodcutter</div><div class="subtitle" id="playerNameDisplay">...</div></div>
+        <div><div class="title" id="titleHeader">Woodcutter</div><div class="subtitle" id="playerNameDisplay">...</div></div>
     </div>
     <div class="game-area">
         <div class="resources">
@@ -96,6 +103,42 @@
 </div>
 </div>
 
+<!-- Админ-панель -->
+<div id="adminPanel" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:99999;overflow-y:auto;padding:20px;">
+    <div style="max-width:500px;margin:0 auto;background:#16213e;border-radius:16px;padding:20px;">
+        <h2 style="color:#ffd700;text-align:center;margin-bottom:20px;">👑 Админ-панель</h2>
+        
+        <h3 style="color:#e2a03f;margin-bottom:10px;">💰 Выдать ресурсы</h3>
+        <input type="text" id="adminTargetId" class="admin-input" placeholder="ID игрока">
+        <input type="number" id="adminWood" class="admin-input" placeholder="Древесина">
+        <input type="number" id="adminCrystals" class="admin-input" placeholder="Кристаллы">
+        <button onclick="adminGiveResources()" class="admin-btn green">Выдать ресурсы</button>
+        
+        <h3 style="color:#e2a03f;margin-bottom:10px;margin-top:20px;">🎄 Выдать скин</h3>
+        <input type="text" id="adminSkinTargetId" class="admin-input" placeholder="ID игрока">
+        <select id="adminSkinSelect" class="admin-input">
+            <option value="autumn">🍂 Осеннее</option>
+            <option value="cherry">🌸 Сакура</option>
+            <option value="crystal">💎 Кристальное</option>
+            <option value="golden">✨ Золотое</option>
+            <option value="inferno">🔥 Огненное</option>
+            <option value="ocean">🌊 Океанское</option>
+            <option value="void">🕳️ Бездны</option>
+            <option value="rainbow">🌈 Радужное</option>
+        </select>
+        <button onclick="adminGiveSkin()" class="admin-btn purple">Выдать скин</button>
+        
+        <h3 style="color:#e2a03f;margin-bottom:10px;margin-top:20px;">📊 Статистика</h3>
+        <button onclick="adminLoadStats()" class="admin-btn gold">Загрузить</button>
+        <div id="adminStats" style="color:#eee;font-size:13px;margin-bottom:10px;"></div>
+        
+        <h3 style="color:#e2a03f;margin-bottom:10px;margin-top:20px;">🗑️ Очистить торги</h3>
+        <button onclick="adminClearTrades()" class="admin-btn red">Очистить все торги</button>
+        
+        <button onclick="document.getElementById('adminPanel').style.display='none'" class="admin-btn close" style="margin-top:20px;">Закрыть</button>
+    </div>
+</div>
+
 <script>
 const API_URL = 'https://delay.pythonanywhere.com/api';
 const tg = window.Telegram.WebApp;
@@ -106,13 +149,80 @@ const userId = tgUser ? 'WC' + String(tgUser.id).slice(-6).padStart(6,'0') : 'WC
 const playerName = tgUser ? (tgUser.first_name + (tgUser.last_name?' '+tgUser.last_name:'')) : 'Игрок';
 const STORAGE_KEY = 'wc_' + userId;
 
-console.log('Woodcutter | ID:', userId);
+// АДМИН ID — ЗАМЕНИТЕ НА СВОЙ!
+const ADMIN_ID = 'WC221688';
+
+console.log('Woodcutter | ID:', userId, '| Админ:', userId === ADMIN_ID);
 
 if(tgUser?.photo_url) {
     document.getElementById('headerAvatar').style.backgroundImage = `url(${tgUser.photo_url})`;
     document.getElementById('headerAvatar').textContent = '';
 }
 
+// 5 нажатий на заголовок = админ-панель
+let titleClicks = 0;
+document.getElementById('titleHeader').addEventListener('click', () => {
+    titleClicks++;
+    if (titleClicks >= 5) {
+        titleClicks = 0;
+        if (userId === ADMIN_ID) {
+            document.getElementById('adminPanel').style.display = 'block';
+        } else {
+            alert('⛔ Доступ запрещён');
+        }
+    }
+    setTimeout(() => titleClicks = 0, 2000);
+});
+
+// Админ-функции
+async function adminGiveResources() {
+    const targetId = document.getElementById('adminTargetId').value;
+    const wood = parseInt(document.getElementById('adminWood').value) || 0;
+    const crystals = parseInt(document.getElementById('adminCrystals').value) || 0;
+    if (!targetId) { alert('Введите ID игрока'); return; }
+    
+    const result = await api('/profile/' + targetId);
+    if (result.success) {
+        const profile = result.profile || {};
+        profile.wood = (profile.wood || 0) + wood;
+        profile.crystals = (profile.crystals || 0) + crystals;
+        await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood, crystals: profile.crystals, ownedSkins: profile.ownedSkins || ['default'], activeSkin: profile.activeSkin || 'default' });
+        await api('/leaderboard/update', 'POST', { user_id: targetId, name: 'Игрок', wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel || 1, totalTrees: profile.totalTrees || 0 });
+        alert(`✅ Выдано: +${wood}🌲 +${crystals}💎 игроку ${targetId}`);
+    }
+}
+
+async function adminGiveSkin() {
+    const targetId = document.getElementById('adminSkinTargetId').value;
+    const skinId = document.getElementById('adminSkinSelect').value;
+    if (!targetId) { alert('Введите ID игрока'); return; }
+    
+    const result = await api('/profile/' + targetId);
+    if (result.success) {
+        const profile = result.profile || {};
+        const skins = profile.ownedSkins || ['default'];
+        if (!skins.includes(skinId)) {
+            skins.push(skinId);
+            await api('/profile/save', 'POST', { user_id: targetId, wood: profile.wood || 0, crystals: profile.crystals || 0, ownedSkins: skins, activeSkin: skinId });
+            alert(`✅ Скин выдан игроку ${targetId}`);
+        } else { alert('У игрока уже есть этот скин'); }
+    }
+}
+
+async function adminLoadStats() {
+    const ping = await api('/ping');
+    const lb = await api('/leaderboard');
+    document.getElementById('adminStats').innerHTML = `Игроков: ${ping.players || 0}<br>В рейтинге: ${lb.players ? lb.players.length : 0}`;
+}
+
+async function adminClearTrades() {
+    if (confirm('Точно очистить ВСЕ торги?')) {
+        await api('/trades/clear', 'POST', { admin: true });
+        alert('✅ Торги очищены');
+    }
+}
+
+// API
 async function api(endpoint, method='GET', body=null) {
     try {
         const opts = { method, headers: {'Content-Type':'application/json'} };
@@ -244,8 +354,7 @@ function popup(title, content, onClose) {
 }
 
 function showShop() {
-    let html = '';
-    let cat = '';
+    let html = ''; let cat = '';
     shopItems.forEach(item=>{
         const catName = item.cur==='wood' ? '🌲 За древесину' : '💎 За кристаллы';
         if(cat!==catName){cat=catName;html+=`<div style="color:#e2a03f;font-size:13px;font-weight:700;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid #2a2a4a;">${cat}</div>`;}
@@ -255,13 +364,11 @@ function showShop() {
     const bg = popup('🏪 Магазин', html);
     bg.querySelectorAll('button[data-id]').forEach(b=>b.addEventListener('click', function(){
         const item=shopItems.find(i=>i.id===this.dataset.id);
-        if(!item)return;
-        const cost=item.cost();
+        if(!item)return; const cost=item.cost();
         if(item.cur==='wood'&&player.wood<cost)return;
         if(item.cur==='crystals'&&player.crystals<cost)return;
         if(item.cur==='wood')player.wood-=cost;else player.crystals-=cost;
-        item.eff();updateUI();save();sendLB();
-        bg.remove(); showShop();
+        item.eff();updateUI();save();sendLB(); bg.remove(); showShop();
     }));
 }
 
@@ -276,33 +383,22 @@ function showSkins() {
     html += '</div>';
     const bg = popup('🎄 Скины', html);
     bg.querySelectorAll('[data-skin]').forEach(el=>el.addEventListener('click', function(){
-        const skinId = this.dataset.skin;
-        const skin = treeSkins.find(s=>s.id===skinId);
-        const owned = player.ownedSkins.includes(skinId);
+        const skinId = this.dataset.skin, skin = treeSkins.find(s=>s.id===skinId), owned = player.ownedSkins.includes(skinId);
         if(owned){player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}
         else if(skin.cur==='free'){player.ownedSkins.push(skinId);player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}
-        else if(skin.cur==='crystals'){
-            if(player.crystals>=skin.price){
-                if(confirm(`Купить "${skin.name}" за ${skin.price}💎?`)){player.crystals-=skin.price;player.ownedSkins.push(skinId);player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}
-            }else alert('Недостаточно кристаллов!');
-        } else if(skin.cur==='stars'){
-            if(typeof tg.openInvoice === 'function'){
-                api('/create-star-invoice','POST',{user_id:userId,skin_id:skin.id,skin_name:skin.name,price:skin.price}).then(result=>{
-                    if(result.success && result.invoice_link){tg.openInvoice(result.invoice_link,(status)=>{if(status==='paid'){player.ownedSkins.push(skinId);player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}});}
-                    else alert('Ошибка создания счёта');
-                });
-            } else if(typeof tg.sendStarInvoice === 'function'){
-                tg.sendStarInvoice({title:'Скин: '+skin.name,description:'Скин для Woodcutter',payload:'skin_'+skin.id+'_'+userId,currency:'XTR',prices:[{amount:skin.price,label:skin.name}]},(status)=>{if(status==='paid'){player.ownedSkins.push(skinId);player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}});
-            } else alert('Откройте игру через бота Telegram');
+        else if(skin.cur==='crystals'){if(player.crystals>=skin.price){if(confirm(`Купить "${skin.name}" за ${skin.price}💎?`)){player.crystals-=skin.price;player.ownedSkins.push(skinId);player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}}else alert('Недостаточно кристаллов!');}
+        else if(skin.cur==='stars'){
+            if(typeof tg.openInvoice === 'function'){api('/create-star-invoice','POST',{user_id:userId,skin_id:skin.id,skin_name:skin.name,price:skin.price}).then(r=>{if(r.success&&r.invoice_link)tg.openInvoice(r.invoice_link,s=>{if(s==='paid'){player.ownedSkins.push(skinId);player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}});});}
+            else if(typeof tg.sendStarInvoice === 'function'){tg.sendStarInvoice({title:'Скин: '+skin.name,description:'Скин для Woodcutter',payload:'skin_'+skin.id,currency:'XTR',prices:[{amount:skin.price,label:skin.name}]},s=>{if(s==='paid'){player.ownedSkins.push(skinId);player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}});}
         }
     }));
 }
 
 async function showLB() {
     const lb = await loadLB();
-    let html = '<table style="width:100%;border-collapse:collapse;"><thead><tr style="color:#aaa;font-size:10px;"><th style="padding:8px 6px;text-align:left;">#</th><th style="padding:8px 6px;text-align:left;">Игрок</th><th style="padding:8px 6px;text-align:left;">🌲</th><th style="padding:8px 6px;text-align:left;">💎</th><th style="padding:8px 6px;text-align:left;">🎄</th></tr></thead><tbody>';
-    if(!lb.length){html+='<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa;">Игроков пока нет</td></tr>';}
-    else {lb.forEach((e,i)=>{const r=i+1;let rc='',ri=r;if(r===1){rc='color:#ffd700;';ri='🥇';}else if(r===2){rc='color:#c0c0c0;';ri='🥈';}else if(r===3){rc='color:#cd7f32;';ri='🥉';}html+=`<tr style="${(e.user_id||e.userId)===player.userId?'background:rgba(226,160,63,0.15);':''}"><td style="padding:8px 6px;font-weight:700;font-size:14px;text-align:center;${rc}">${ri}</td><td style="padding:8px 6px;color:#fff;font-size:12px;">${esc(e.name)}</td><td style="padding:8px 6px;color:#fff;font-size:12px;">${fmt(e.wood)}</td><td style="padding:8px 6px;color:#fff;font-size:12px;">${fmt(e.crystals)}</td><td style="padding:8px 6px;color:#fff;font-size:12px;">${e.treeLevel||1}</td></tr>`;});}
+    let html = '<table style="width:100%;border-collapse:collapse;"><thead><tr style="color:#aaa;font-size:10px;"><th>#</th><th>Игрок</th><th>🌲</th><th>💎</th><th>🎄</th></tr></thead><tbody>';
+    if(!lb.length) html+='<tr><td colspan="5" style="text-align:center;padding:20px;color:#aaa;">Игроков пока нет</td></tr>';
+    else lb.forEach((e,i)=>{const r=i+1;let rc='',ri=r;if(r===1){rc='color:#ffd700;';ri='🥇';}else if(r===2){rc='color:#c0c0c0;';ri='🥈';}else if(r===3){rc='color:#cd7f32;';ri='🥉';}html+=`<tr style="${(e.user_id||e.userId)===player.userId?'background:rgba(226,160,63,0.15);':''}"><td style="padding:8px 6px;font-weight:700;font-size:14px;text-align:center;${rc}">${ri}</td><td style="padding:8px 6px;color:#fff;font-size:12px;">${esc(e.name)}</td><td style="padding:8px 6px;color:#fff;font-size:12px;">${fmt(e.wood)}</td><td style="padding:8px 6px;color:#fff;font-size:12px;">${fmt(e.crystals)}</td><td style="padding:8px 6px;color:#fff;font-size:12px;">${e.treeLevel||1}</td></tr>`;});
     html+='</tbody></table>';
     popup('🏆 Рейтинг', html);
 }
@@ -310,38 +406,22 @@ async function showLB() {
 async function showTrade() {
     const trades = await loadTrades();
     let html = `<div style="background:#1e2a3a;border-radius:12px;padding:12px;margin-bottom:12px;">
-        <div style="margin-bottom:8px;">
-            <label style="color:#aaa;font-size:11px;">ID игрока (пусто = всем)</label>
-            <input type="text" id="tradeTargetId" placeholder="Вставьте ID..." style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a2a4a;background:#16213e;color:#eee;font-size:14px;margin-top:3px;">
-        </div>
-        <div style="margin-bottom:8px;">
-            <label style="color:#aaa;font-size:11px;">Скин</label>
-            <select id="tradeSkinSelect" style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a2a4a;background:#16213e;color:#eee;font-size:14px;margin-top:3px;">
-                <option value="">-- Выберите --</option>`;
+        <div style="margin-bottom:8px;"><label style="color:#aaa;font-size:11px;">ID игрока (пусто = всем)</label><input type="text" id="tradeTargetId" placeholder="Вставьте ID..." style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a2a4a;background:#16213e;color:#eee;font-size:14px;margin-top:3px;"></div>
+        <div style="margin-bottom:8px;"><label style="color:#aaa;font-size:11px;">Скин</label><select id="tradeSkinSelect" style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a2a4a;background:#16213e;color:#eee;font-size:14px;margin-top:3px;"><option value="">-- Выберите --</option>`;
     player.ownedSkins.forEach(sid=>{if(sid==='default')return;const s=treeSkins.find(x=>x.id===sid);if(s)html+=`<option value="${s.id}">${s.emoji} ${s.name}${sid===player.activeSkin?' (активен)':''}</option>`;});
-    html+=`</select></div>
-        <div style="margin-bottom:8px;">
-            <label style="color:#aaa;font-size:11px;">Цена 🌲</label>
-            <input type="number" id="tradePriceInput" placeholder="100" min="1" style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a2a4a;background:#16213e;color:#eee;font-size:14px;margin-top:3px;">
-        </div>
-        <button id="btnCreateTrade" style="width:100%;padding:12px;border-radius:10px;border:none;background:#e2a03f;color:#000;font-weight:700;font-size:14px;">Выставить</button>
-    </div>
-    <div style="color:#e2a03f;font-size:13px;font-weight:700;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid #2a2a4a;">📋 Предложения</div>
-    <div id="tradeList">`;
-    if(!trades.length){html+='<div style="text-align:center;padding:20px;color:#aaa;">Нет предложений</div>';}
-    else {trades.forEach(trade=>{const isOwn=trade.sellerId===player.userId, canBuy=!isOwn&&player.wood>=trade.price&&!player.ownedSkins.includes(trade.skinId);html+=`<div style="background:#1e2a3a;border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid #2a2a4a;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><div><span style="font-weight:600;color:#eee;font-size:13px;">${esc(trade.sellerName)}</span><br><span style="font-size:10px;color:#aaa;">ID: ${trade.sellerId}</span>${trade.targetId?`<br><span style="font-size:10px;color:#a78bfa;">🎯 Для: ${trade.targetId}</span>`:''}</div><span style="color:#e2a03f;font-weight:700;">${fmt(trade.price)} 🌲</span></div><div style="font-size:20px;text-align:center;margin:6px 0;">${trade.skinEmoji} ${trade.skinName}</div><button style="width:100%;padding:10px;border-radius:10px;border:none;color:#fff;font-weight:600;margin-top:6px;background:${isOwn?'#e74c3c':'#4caf84'};" data-action="${isOwn?'cancel':'buy'}" data-id="${trade.id}" ${!isOwn&&!canBuy?'disabled':''}>${isOwn?'Отменить':(canBuy?'Купить':(player.ownedSkins.includes(trade.skinId)?'Уже есть':'Мало 🌲'))}</button></div>`;});}
+    html+=`</select></div><div style="margin-bottom:8px;"><label style="color:#aaa;font-size:11px;">Цена 🌲</label><input type="number" id="tradePriceInput" placeholder="100" min="1" style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a2a4a;background:#16213e;color:#eee;font-size:14px;margin-top:3px;"></div>
+        <button id="btnCreateTrade" style="width:100%;padding:12px;border-radius:10px;border:none;background:#e2a03f;color:#000;font-weight:700;">Выставить</button></div>
+        <div style="color:#e2a03f;font-size:13px;font-weight:700;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid #2a2a4a;">📋 Предложения</div><div id="tradeList">`;
+    if(!trades.length) html+='<div style="text-align:center;padding:20px;color:#aaa;">Нет предложений</div>';
+    else trades.forEach(trade=>{const isOwn=trade.sellerId===player.userId,canBuy=!isOwn&&player.wood>=trade.price&&!player.ownedSkins.includes(trade.skinId);html+=`<div style="background:#1e2a3a;border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid #2a2a4a;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><div><span style="font-weight:600;color:#eee;font-size:13px;">${esc(trade.sellerName)}</span><br><span style="font-size:10px;color:#aaa;">ID: ${trade.sellerId}</span>${trade.targetId?`<br><span style="font-size:10px;color:#a78bfa;">🎯 Для: ${trade.targetId}</span>`:''}</div><span style="color:#e2a03f;font-weight:700;">${fmt(trade.price)} 🌲</span></div><div style="font-size:20px;text-align:center;margin:6px 0;">${trade.skinEmoji} ${trade.skinName}</div><button style="width:100%;padding:10px;border-radius:10px;border:none;color:#fff;font-weight:600;margin-top:6px;background:${isOwn?'#e74c3c':'#4caf84'};" data-action="${isOwn?'cancel':'buy'}" data-id="${trade.id}" ${!isOwn&&!canBuy?'disabled':''}>${isOwn?'Отменить':(canBuy?'Купить':(player.ownedSkins.includes(trade.skinId)?'Уже есть':'Мало 🌲'))}</button></div>`;});
     html+='</div>';
-    
     const bg = popup('💱 Торги', html);
-    
     bg.querySelector('#btnCreateTrade').addEventListener('click', async ()=>{
-        const sid=bg.querySelector('#tradeSkinSelect').value, price=parseInt(bg.querySelector('#tradePriceInput').value), targetId=bg.querySelector('#tradeTargetId').value.trim();
+        const sid=bg.querySelector('#tradeSkinSelect').value,price=parseInt(bg.querySelector('#tradePriceInput').value),targetId=bg.querySelector('#tradeTargetId').value.trim();
         if(!sid||!price||price<1){alert('Заполните поля');return;}
-        if(sid==='default'){alert('Нельзя продать стандартный скин!');return;}
         const r=await createServerTrade(sid,price,targetId);
         if(r.success){player.ownedSkins=player.ownedSkins.filter(s=>s!==sid);if(player.activeSkin===sid)player.activeSkin='default';save();updateUI();bg.remove();showTrade();}
     });
-    
     bg.querySelectorAll('#tradeList button[data-action]').forEach(btn=>btn.addEventListener('click', async function(){
         if(this.dataset.action==='buy'){const r=await buyServerTrade(this.dataset.id);if(r.success){player.wood-=r.price;player.ownedSkins.push(r.skinId);save();updateUI();sendLB();}}
         else{await cancelServerTrade(this.dataset.id);}
@@ -358,11 +438,8 @@ document.getElementById('btnTrade').addEventListener('click', showTrade);
 treeContainer.addEventListener('click', chopTree);
 document.addEventListener('keydown', e=>{if(e.code==='Space'){e.preventDefault();chopTree();}});
 
-updateUI();
-sendLB();
-setInterval(passiveIncome,1000);
-setInterval(save,10000);
-setInterval(sendLB,30000);
+updateUI(); sendLB();
+setInterval(passiveIncome,1000); setInterval(save,10000); setInterval(sendLB,30000);
 </script>
 </body>
 </html>
