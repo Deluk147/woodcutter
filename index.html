@@ -531,14 +531,20 @@
             margin-bottom: 6px; 
         }
         
-        .skin-img { 
+          .skin-img { 
             width: 48px; 
             height: 48px; 
             object-fit: contain; 
             display: block; 
             margin: 0 auto 6px; 
             border-radius: 8px; 
-            background: transparent; 
+            background: transparent !important; 
+            mix-blend-mode: normal;
+        }
+        
+        #skinOverlay {
+            background: transparent !important;
+            mix-blend-mode: normal;
         }
         
         .skin-name { 
@@ -2375,52 +2381,19 @@
                     updateAdminSelects();
                 }
                 
+    
                 if (photo) {
                     var reader = new FileReader();
                     reader.onload = function(ev) {
-                        var img = new Image();
-                        img.onload = function() {
-                            // Создаем canvas
-                            var canvas = document.createElement('canvas');
-                            var maxWidth = 200;
-                            var scale = maxWidth / img.width;
-                            canvas.width = maxWidth;
-                            canvas.height = img.height * scale;
-                            
-                            // ВАЖНО: не используем getContext('2d') с альфой
-                            // Вместо этого создаем ImageData с прозрачностью
-                            var ctx = canvas.getContext('2d');
-                            
-                            // Заполняем прозрачным фоном (а не черным)
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            
-                            // Рисуем изображение
-                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            
-                            // Получаем данные изображения
-                            var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                            
-                            // Создаем новый canvas для чистого результата
-                            var cleanCanvas = document.createElement('canvas');
-                            cleanCanvas.width = canvas.width;
-                            cleanCanvas.height = canvas.height;
-                            var cleanCtx = cleanCanvas.getContext('2d');
-                            
-                            // Создаем ImageBitmap из ImageData
-                            createImageBitmap(imageData).then(function(bitmap) {
-                                cleanCtx.drawImage(bitmap, 0, 0);
-                                saveSkin(cleanCanvas.toDataURL('image/png'));
-                            }).catch(function() {
-                                // Fallback если createImageBitmap не работает
-                                saveSkin(canvas.toDataURL('image/png'));
-                            });
-                        };
-                        img.src = ev.target.result;
+                        // Сохраняем оригинальный Data URL напрямую
+                        saveSkin(ev.target.result);
                     };
                     reader.readAsDataURL(photo);
                 } else {
                     saveSkin(null);
                 }
+
+
             });
         }
     }
