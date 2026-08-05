@@ -12,9 +12,12 @@
         .app-container { width:100%; height:100%; display:flex; justify-content:center; align-items:center; background:var(--bg); }
         .phone-frame { width:100%; height:100%; max-width:430px; background:var(--bg); display:flex; flex-direction:column; position:relative; overflow:hidden; }
         .header { background:var(--panel); padding:12px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); flex-shrink:0; }
-        .header .avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#e2a03f,#c47f2a); display:flex; align-items:center; justify-content:center; font-size:20px; overflow:hidden; background-size:cover; }
-        .header .title { font-weight:600; color:var(--text); font-size:15px; cursor:pointer; }
+        .header .avatar { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#e2a03f,#c47f2a); display:flex; align-items:center; justify-content:center; font-size:20px; overflow:hidden; background-size:cover; flex-shrink:0; }
+        .header-info { flex:1; min-width:0; }
+        .header .title { font-weight:600; color:var(--text); font-size:15px; }
         .header .subtitle { font-size:11px; color:var(--text-secondary); }
+        .admin-btn-header { width:32px; height:32px; border-radius:8px; background:linear-gradient(135deg,#ffd700,#ffaa00); border:none; color:#000; font-size:16px; cursor:pointer; display:none; align-items:center; justify-content:center; flex-shrink:0; }
+        .admin-btn-header:active { transform:scale(0.9); }
         .game-area { flex:1; display:flex; flex-direction:column; padding:10px; overflow-y:auto; gap:8px; -webkit-overflow-scrolling:touch; padding-bottom:20px; }
         .resources { display:flex; gap:8px; }
         .resource-card { flex:1; background:var(--panel); border-radius:12px; padding:10px 14px; display:flex; align-items:center; gap:12px; border:1px solid var(--border); }
@@ -113,10 +116,11 @@
 <div class="app-container"><div class="phone-frame">
     <div class="header">
         <div class="avatar" id="av">🪓</div>
-        <div>
-            <div class="title" id="th">Woodcutter</div>
+        <div class="header-info">
+            <div class="title">Woodcutter</div>
             <div class="subtitle" id="nd">...</div>
         </div>
+        <button class="admin-btn-header" id="adminBtn" title="Админ-панель">👑</button>
     </div>
     <div class="game-area">
         <div class="resources">
@@ -163,7 +167,6 @@
     </div>
 </div></div>
 
-<!-- АДМИН-ПАНЕЛЬ -->
 <div class="admin-panel" id="ap">
     <div class="admin-inner">
         <h2>👑 Админ-панель</h2>
@@ -172,25 +175,33 @@
         <input type="number" id="aw" class="admin-input" placeholder="🌲 Древесина">
         <input type="number" id="ac" class="admin-input" placeholder="💎 Кристаллы">
         <button onclick="admGive()" class="admin-btn green">Выдать</button>
+        
         <h3>🎄 Выдать скин</h3>
         <input type="text" id="asid" class="admin-input" placeholder="ID игрока">
         <select id="ass" class="admin-input"></select>
         <button onclick="admGiveSkin()" class="admin-btn purple">Выдать скин</button>
+        
         <h3>🪓 Выдать топор</h3>
         <input type="text" id="aaxid" class="admin-input" placeholder="ID игрока">
         <select id="aaxs" class="admin-input"></select>
         <button onclick="admGiveAxe()" class="admin-btn gold">Выдать топор</button>
+        
         <h3>🗑️ Забрать ресурсы</h3>
         <input type="text" id="atkid" class="admin-input" placeholder="ID игрока">
         <input type="number" id="atkw" class="admin-input" placeholder="🌲 Древесина">
         <input type="number" id="atkc" class="admin-input" placeholder="💎 Кристаллы">
         <button onclick="admTake()" class="admin-btn red">Забрать</button>
+        
+        <h3>📊 Статистика игрока</h3>
+        <input type="text" id="astatid" class="admin-input" placeholder="ID игрока">
+        <button onclick="admStat()" class="admin-btn" style="background:#a78bfa;">Показать статистику</button>
+        <div id="astatres" style="color:#eee;font-size:12px;margin-top:8px;"></div>
+        
         <button onclick="document.getElementById('ap').style.display='none'" class="admin-btn" style="background:#16213e;color:#eee;border:1px solid #2a2a4a;margin-top:15px;">Закрыть</button>
     </div>
 </div>
 
 <script>
-// ==================== КОНФИГУРАЦИЯ ====================
 var API_URL = 'https://delay.pythonanywhere.com/api';
 var tg = window.Telegram.WebApp;
 tg.expand();
@@ -202,105 +213,146 @@ var userName = user ? (user.first_name + (user.last_name ? ' ' + user.last_name 
 var STORAGE_KEY = 'wc_' + userId;
 var ADMIN_ID = 'WC046190';
 
-console.log('🌲 Woodcutter v5.0');
+console.log('🌲 Woodcutter v7.0 - Full Version');
 console.log('👤 User ID:', userId);
 console.log('👑 Admin:', userId === ADMIN_ID);
-console.log('📱 sendStarInvoice:', typeof tg.sendStarInvoice === 'function');
-console.log('📱 openInvoice:', typeof tg.openInvoice === 'function');
+console.log('📱 Telegram Methods:', {
+    sendStarInvoice: typeof tg.sendStarInvoice === 'function',
+    openInvoice: typeof tg.openInvoice === 'function'
+});
+
+if (userId === ADMIN_ID) {
+    document.getElementById('adminBtn').style.display = 'flex';
+}
 
 if (user && user.photo_url) {
     document.getElementById('av').style.backgroundImage = 'url(' + user.photo_url + ')';
     document.getElementById('av').textContent = '';
 }
 
-// Секретный доступ к админ-панели (5 нажатий)
-var titleClicks = 0;
-document.getElementById('th').addEventListener('click', function() {
-    titleClicks++;
-    if (titleClicks >= 5) {
-        titleClicks = 0;
-        if (userId === ADMIN_ID) {
-            document.getElementById('ap').style.display = 'block';
-            updateAdminSelects();
-        } else {
-            alert('⛔ Нет доступа');
-        }
+document.getElementById('adminBtn').addEventListener('click', function() {
+    if (userId === ADMIN_ID) {
+        document.getElementById('ap').style.display = 'block';
+        updateAdminSelects();
+    } else {
+        alert('⛔ Нет доступа');
     }
-    setTimeout(function() { titleClicks = 0; }, 2000);
 });
 
-// ==================== ДАННЫЕ ИГРОКА ====================
 var playerData = {
-    name: userName,
-    userId: userId,
-    wood: 0,
-    crystals: 0,
-    stars: 0,
-    axePower: 1,
-    crystalBonus: 1,
-    autoWood: 0,
-    critChance: 0,
-    critMultiplier: 2,
-    crystalToWoodRate: 0,
-    comboBonus: 0,
-    combo: 0,
-    comboMultiplier: 1,
-    treeHP: 15,
-    maxTreeHP: 15,
-    totalTrees: 0,
-    treeLevel: 1,
-    activeSkin: 'default',
-    ownedSkins: ['default'],
-    activeAxe: 'default',
-    ownedAxes: ['default'],
-    upgrades: {}
+    name: userName, userId: userId, wood: 0, crystals: 0, stars: 0,
+    axePower: 1, crystalBonus: 1, autoWood: 0, critChance: 0, critMultiplier: 2,
+    crystalToWoodRate: 0, comboBonus: 0, combo: 0, comboMultiplier: 1,
+    treeHP: 15, maxTreeHP: 15, totalTrees: 0, treeLevel: 1,
+    activeSkin: 'default', ownedSkins: ['default'],
+    activeAxe: 'default', ownedAxes: ['default'], upgrades: {}
 };
 
-// Загрузка из localStorage
 try {
     var saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
         var parsed = JSON.parse(saved);
         for (var key in parsed) {
-            if (parsed.hasOwnProperty(key)) {
-                playerData[key] = parsed[key];
-            }
+            if (parsed.hasOwnProperty(key)) playerData[key] = parsed[key];
         }
     }
 } catch (e) {
-    console.error('Ошибка загрузки:', e);
+    console.error('Load error:', e);
 }
 
-// Восстановление значений по умолчанию
 playerData.name = userName;
 playerData.userId = userId;
-if (!playerData.maxTreeHP || playerData.maxTreeHP < 10) {
-    playerData.maxTreeHP = 15;
-    playerData.treeHP = 15;
-}
+if (!playerData.maxTreeHP || playerData.maxTreeHP < 10) { playerData.maxTreeHP = 15; playerData.treeHP = 15; }
 if (!playerData.ownedSkins || !playerData.ownedSkins.length) playerData.ownedSkins = ['default'];
 if (!playerData.ownedAxes || !playerData.ownedAxes.length) playerData.ownedAxes = ['default'];
 if (!playerData.activeSkin) playerData.activeSkin = 'default';
 if (!playerData.activeAxe) playerData.activeAxe = 'default';
 if (!playerData.upgrades) playerData.upgrades = {};
 
-// Инициализация апгрейдов
-var upgradeIds = [
-    'axe', 'strength', 'crystal1', 'crystal2', 
-    'auto1', 'auto2', 'auto3', 'auto4',
-    'crit1', 'crit2', 
-    'crystalToWood1', 'crystalToWood2', 
-    'crystalAuto1', 'crystalAuto2', 
-    'critDamage1', 'comboBoost1'
-];
-
+var upgradeIds = ['axe','strength','crystal1','crystal2','auto1','auto2','auto3','auto4','crit1','crit2','crystalToWood1','crystalToWood2','crystalAuto1','crystalAuto2','critDamage1','comboBoost1'];
 for (var i = 0; i < upgradeIds.length; i++) {
-    if (!(upgradeIds[i] in playerData.upgrades)) {
-        playerData.upgrades[upgradeIds[i]] = 0;
-    }
+    if (!(upgradeIds[i] in playerData.upgrades)) playerData.upgrades[upgradeIds[i]] = 0;
 }
 
-// Загрузка профиля с сервера
+var treeSkins = [
+    {id:'default',name:'Обычное',emoji:'🌳',colors:['#3a7d3a','#4caf50','#66bb6a'],price:0,cur:'free'},
+    {id:'autumn',name:'Осеннее',emoji:'🍂',colors:['#c47f2a','#d4943a','#e2a03f'],price:500,cur:'crystals'},
+    {id:'cherry',name:'Сакура',emoji:'🌸',colors:['#ff9ec4','#ffbdd4','#ffd1e4'],price:800,cur:'crystals'},
+    {id:'crystal',name:'Кристальное',emoji:'💎',colors:['#a78bfa','#c4b5fd','#ddd6fe'],price:1200,cur:'crystals'},
+    {id:'golden',name:'Золотое',emoji:'✨',colors:['#d4a017','#e6c22a','#f0d840'],price:2000,cur:'crystals'},
+    {id:'inferno',name:'Огненное',emoji:'🔥',colors:['#cc3300','#e64d00','#ff6600'],price:3500,cur:'crystals'},
+    {id:'ocean',name:'Океанское',emoji:'🌊',colors:['#0066cc','#0088e6','#00aaff'],price:10,cur:'stars'},
+    {id:'void',name:'Бездны',emoji:'🕳️',colors:['#1a0033','#2d004d','#400066'],price:25,cur:'stars'},
+    {id:'rainbow',name:'Радужное',emoji:'🌈',colors:['#ff0000','#ff7700','#ffff00'],price:50,cur:'stars'}
+];
+
+var axeSkins = [
+    {id:'default',name:'Обычный',emoji:'🪓',price:0,cur:'free'},
+    {id:'gold_axe',name:'Золотой',emoji:'🥇',price:1000,cur:'crystals'},
+    {id:'diamond_axe',name:'Алмазный',emoji:'💎',price:3000,cur:'crystals'},
+    {id:'fire_axe',name:'Огненный',emoji:'🔥',price:5000,cur:'crystals'}
+];
+
+try {
+    var ct = JSON.parse(localStorage.getItem('c_ts') || '[]');
+    ct.forEach(function(s) { treeSkins.push(s); });
+} catch(e) {}
+try {
+    var ca = JSON.parse(localStorage.getItem('c_as') || '[]');
+    ca.forEach(function(a) { axeSkins.push(a); });
+} catch(e) {}
+
+var shopItems = [
+    {id:'axe',name:'🪓 Топор получше',desc:'+1 к силе удара',base:10,mult:1.5,cur:'wood',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.axePower++;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'strength',name:'💪 Силашка',desc:'+2 к силе удара',base:25,mult:1.6,cur:'wood',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.axePower+=2;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'crit1',name:'🎯 Заточка',desc:'+5% шанс крита',base:30,mult:1.7,cur:'wood',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.critChance=Math.min(80,playerData.critChance+5);playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'crit2',name:'✨ Благословение',desc:'+10% шанс крита',base:80,mult:1.8,cur:'wood',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.critChance=Math.min(80,playerData.critChance+10);playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'auto1',name:'🌱 Саженец',desc:'+1 🌲/сек',base:50,mult:1.4,cur:'wood',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.autoWood++;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'auto2',name:'🌿 Росток',desc:'+2 🌲/сек',base:150,mult:1.5,cur:'wood',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.autoWood+=2;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'auto3',name:'🌳 Дерево',desc:'+5 🌲/сек',base:400,mult:1.6,cur:'wood',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.autoWood+=5;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'auto4',name:'🏭 Лесопилка',desc:'+10 🌲/сек',base:1000,mult:1.7,cur:'wood',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.autoWood+=10;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'crystal1',name:'💎 Кристальный глаз',desc:'+1 💎 за сруб',base:5,mult:2,cur:'crystals',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.crystalBonus++;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'crystal2',name:'💎 Кристальная аура',desc:'+2 💎 за сруб',base:15,mult:2.2,cur:'crystals',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.crystalBonus+=2;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'crystalToWood1',name:'🔄 Конвертер',desc:'+1 🌲 за каждый 💎',base:10,mult:1.8,cur:'crystals',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.crystalToWoodRate++;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'crystalToWood2',name:'🔄 Мощный конвертер',desc:'+3 🌲 за каждый 💎',base:30,mult:2,cur:'crystals',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.crystalToWoodRate+=3;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'crystalAuto1',name:'💎 Кристальный дровосек',desc:'+2 🌲/сек',base:15,mult:1.6,cur:'crystals',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.autoWood+=2;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'crystalAuto2',name:'💎 Кристальная пила',desc:'+5 🌲/сек',base:40,mult:1.7,cur:'crystals',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.autoWood+=5;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'critDamage1',name:'💥 Кристальный удар',desc:'+0.5x к крит. урону',base:20,mult:2.5,cur:'crystals',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.critMultiplier+=0.5;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
+    {id:'comboBoost1',name:'🔥 Кристальное комбо',desc:'+0.5% за удар комбо',base:25,mult:2,cur:'crystals',
+     cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},
+     effect:function(){playerData.comboBonus+=0.5;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}}
+];
+
 (function() {
     fetch(API_URL + '/profile/' + userId)
         .then(function(r) { return r.json(); })
@@ -316,126 +368,23 @@ for (var i = 0; i < upgradeIds.length; i++) {
                 if (p.activeAxe) playerData.activeAxe = p.activeAxe;
                 updateUI();
                 saveData();
-                console.log('✅ Профиль загружен с сервера');
             }
-        })
-        .catch(function(e) {
-            console.log('⚠️ Сервер недоступен, играем локально');
-        });
+        }).catch(function(e) {});
 })();
 
-// ==================== СКИНЫ ====================
-var treeSkins = [
-    {id: 'default', name: 'Обычное', emoji: '🌳', colors: ['#3a7d3a', '#4caf50', '#66bb6a'], price: 0, cur: 'free'},
-    {id: 'autumn', name: 'Осеннее', emoji: '🍂', colors: ['#c47f2a', '#d4943a', '#e2a03f'], price: 500, cur: 'crystals'},
-    {id: 'cherry', name: 'Сакура', emoji: '🌸', colors: ['#ff9ec4', '#ffbdd4', '#ffd1e4'], price: 800, cur: 'crystals'},
-    {id: 'crystal', name: 'Кристальное', emoji: '💎', colors: ['#a78bfa', '#c4b5fd', '#ddd6fe'], price: 1200, cur: 'crystals'},
-    {id: 'golden', name: 'Золотое', emoji: '✨', colors: ['#d4a017', '#e6c22a', '#f0d840'], price: 2000, cur: 'crystals'},
-    {id: 'inferno', name: 'Огненное', emoji: '🔥', colors: ['#cc3300', '#e64d00', '#ff6600'], price: 3500, cur: 'crystals'},
-    {id: 'ocean', name: 'Океанское', emoji: '🌊', colors: ['#0066cc', '#0088e6', '#00aaff'], price: 10, cur: 'stars'},
-    {id: 'void', name: 'Бездны', emoji: '🕳️', colors: ['#1a0033', '#2d004d', '#400066'], price: 25, cur: 'stars'},
-    {id: 'rainbow', name: 'Радужное', emoji: '🌈', colors: ['#ff0000', '#ff7700', '#ffff00'], price: 50, cur: 'stars'}
-];
-
-var axeSkins = [
-    {id: 'default', name: 'Обычный', emoji: '🪓', price: 0, cur: 'free'},
-    {id: 'gold_axe', name: 'Золотой', emoji: '🥇', price: 1000, cur: 'crystals'},
-    {id: 'diamond_axe', name: 'Алмазный', emoji: '💎', price: 3000, cur: 'crystals'},
-    {id: 'fire_axe', name: 'Огненный', emoji: '🔥', price: 5000, cur: 'crystals'}
-];
-
-// Загрузка кастомных скинов
-try {
-    var customTrees = JSON.parse(localStorage.getItem('c_ts') || '[]');
-    customTrees.forEach(function(s) { treeSkins.push(s); });
-} catch(e) {}
-try {
-    var customAxes = JSON.parse(localStorage.getItem('c_as') || '[]');
-    customAxes.forEach(function(a) { axeSkins.push(a); });
-} catch(e) {}
-
-// ==================== МАГАЗИН ====================
-var shopItems = [
-    // === За wood ===
-    {id: 'axe', name: '🪓 Топор получше', desc: '+1 к силе удара', base: 10, mult: 1.5, cur: 'wood',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.axePower++; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'strength', name: '💪 Силашка', desc: '+2 к силе удара', base: 25, mult: 1.6, cur: 'wood',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.axePower += 2; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'crit1', name: '🎯 Заточка', desc: '+5% шанс крита', base: 30, mult: 1.7, cur: 'wood',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.critChance = Math.min(80, playerData.critChance + 5); playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'crit2', name: '✨ Благословение', desc: '+10% шанс крита', base: 80, mult: 1.8, cur: 'wood',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.critChance = Math.min(80, playerData.critChance + 10); playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'auto1', name: '🌱 Саженец', desc: '+1 🌲/сек', base: 50, mult: 1.4, cur: 'wood',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.autoWood++; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'auto2', name: '🌿 Росток', desc: '+2 🌲/сек', base: 150, mult: 1.5, cur: 'wood',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.autoWood += 2; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'auto3', name: '🌳 Дерево', desc: '+5 🌲/сек', base: 400, mult: 1.6, cur: 'wood',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.autoWood += 5; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'auto4', name: '🏭 Лесопилка', desc: '+10 🌲/сек', base: 1000, mult: 1.7, cur: 'wood',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.autoWood += 10; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    // === За crystals ===
-    {id: 'crystal1', name: '💎 Кристальный глаз', desc: '+1 💎 за сруб', base: 5, mult: 2, cur: 'crystals',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.crystalBonus++; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'crystal2', name: '💎 Кристальная аура', desc: '+2 💎 за сруб', base: 15, mult: 2.2, cur: 'crystals',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.crystalBonus += 2; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'crystalToWood1', name: '🔄 Конвертер', desc: '+1 🌲 за каждый 💎', base: 10, mult: 1.8, cur: 'crystals',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.crystalToWoodRate++; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'crystalToWood2', name: '🔄 Мощный конвертер', desc: '+3 🌲 за каждый 💎', base: 30, mult: 2, cur: 'crystals',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.crystalToWoodRate += 3; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'crystalAuto1', name: '💎 Кристальный дровосек', desc: '+2 🌲/сек', base: 15, mult: 1.6, cur: 'crystals',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.autoWood += 2; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'crystalAuto2', name: '💎 Кристальная пила', desc: '+5 🌲/сек', base: 40, mult: 1.7, cur: 'crystals',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.autoWood += 5; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'critDamage1', name: '💥 Кристальный удар', desc: '+0.5x к крит. урону', base: 20, mult: 2.5, cur: 'crystals',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.critMultiplier += 0.5; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }},
-    {id: 'comboBoost1', name: '🔥 Кристальное комбо', desc: '+0.5% за удар комбо', base: 25, mult: 2, cur: 'crystals',
-     cost: function() { return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0)); },
-     effect: function() { playerData.comboBonus += 0.5; playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1; }}
-];
-
-// ==================== ФУНКЦИИ СОХРАНЕНИЯ ====================
 function saveData() {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(playerData));
-    } catch(e) {
-        console.error('Ошибка сохранения:', e);
-    }
-    
-    // Синхронизация с сервером
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(playerData)); } catch(e) {}
     fetch(API_URL + '/profile/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            user_id: userId,
-            wood: playerData.wood,
-            crystals: playerData.crystals,
-            stars: playerData.stars,
-            ownedSkins: playerData.ownedSkins,
-            ownedAxes: playerData.ownedAxes,
-            activeSkin: playerData.activeSkin,
-            activeAxe: playerData.activeAxe,
-            name: playerData.name,
-            treeLevel: playerData.treeLevel,
-            totalTrees: playerData.totalTrees
+            user_id: userId, wood: playerData.wood, crystals: playerData.crystals,
+            stars: playerData.stars, ownedSkins: playerData.ownedSkins,
+            ownedAxes: playerData.ownedAxes, activeSkin: playerData.activeSkin,
+            activeAxe: playerData.activeAxe, name: playerData.name,
+            treeLevel: playerData.treeLevel, totalTrees: playerData.totalTrees
         })
-    }).catch(function(e) {
-        console.log('⚠️ Сервер не ответил');
-    });
+    }).catch(function(e) {});
 }
 
 function formatNumber(n) {
@@ -450,32 +399,219 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ==================== АДМИН ФУНКЦИИ ====================
+function updateUI() {
+    document.getElementById('wv').textContent = formatNumber(playerData.wood);
+    document.getElementById('cv').textContent = formatNumber(playerData.crystals);
+    
+    var hpPercent = Math.max(0, (playerData.treeHP / Math.max(1, playerData.maxTreeHP)) * 100);
+    var hpBar = document.getElementById('hp');
+    hpBar.style.width = hpPercent + '%';
+    hpBar.className = 'hp-bar ' + (hpPercent > 60 ? 'high' : hpPercent > 30 ? 'medium' : 'low');
+    
+    document.getElementById('ht').textContent = formatNumber(Math.max(0, playerData.treeHP)) + ' / ' + formatNumber(playerData.maxTreeHP) + ' HP';
+    document.getElementById('lb').textContent = '🌲 Ур. ' + playerData.treeLevel;
+    document.getElementById('nd').textContent = playerData.name;
+    
+    document.getElementById('cd').innerHTML = playerData.combo > 1 
+        ? '<span class="combo-fire">🔥 Комбо x' + playerData.combo + ' (+' + Math.floor((playerData.comboMultiplier - 1) * 100) + '%)</span>'
+        : 'Нажимай на дерево! 🪓';
+    
+    document.getElementById('pi').textContent = playerData.autoWood > 0 ? '⏳ +' + playerData.autoWood + ' 🌲/сек' : '';
+    
+    var skin = treeSkins.find(function(s) { return s.id === playerData.activeSkin; }) || treeSkins[0];
+    var colors = hpPercent > 60 ? skin.colors : (hpPercent > 30 ? ['#e67e22', '#f39c12', '#f1c40f'] : ['#c0392b', '#e74c3c', '#ff6b6b']);
+    
+    var treeContainer = document.getElementById('tc');
+    var svg = treeContainer.querySelector('svg');
+    var overlay = document.getElementById('skinOverlay');
+    
+    if (!overlay) {
+        overlay = document.createElement('img');
+        overlay.id = 'skinOverlay';
+        overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:5;';
+        treeContainer.appendChild(overlay);
+    }
+    
+    if (skin.img) {
+        svg.style.display = 'none';
+        overlay.src = skin.img;
+        overlay.style.display = 'block';
+    } else {
+        svg.style.display = 'block';
+        overlay.style.display = 'none';
+        document.getElementById('c1').setAttribute('fill', colors[0]);
+        document.getElementById('c2').setAttribute('fill', colors[1]);
+        document.getElementById('c3').setAttribute('fill', colors[2]);
+    }
+    
+    var axe = axeSkins.find(function(a) { return a.id === playerData.activeAxe; }) || axeSkins[0];
+    var axeEl = document.getElementById('ax');
+    if (axe.img) {
+        axeEl.textContent = '';
+        axeEl.style.backgroundImage = 'url(' + axe.img + ')';
+        axeEl.style.backgroundSize = 'contain';
+        axeEl.style.width = '50px';
+        axeEl.style.height = '50px';
+    } else {
+        axeEl.style.backgroundImage = '';
+        axeEl.style.width = '';
+        axeEl.style.height = '';
+        axeEl.textContent = axe.emoji || '🪓';
+    }
+    
+    updateAdminSelects();
+}
+
+var COMBO_TIMEOUT = 5000;
+var comboTimer = null;
+
+function resetCombo() {
+    if (comboTimer) clearTimeout(comboTimer);
+    var bar = document.getElementById('ctb'), fill = document.getElementById('ctf');
+    if (playerData.combo > 0) {
+        bar.style.display = 'block';
+        fill.style.transition = 'none';
+        fill.style.width = '100%';
+        requestAnimationFrame(function() {
+            fill.style.transition = 'width ' + COMBO_TIMEOUT + 'ms linear';
+            fill.style.width = '0%';
+        });
+        comboTimer = setTimeout(function() {
+            playerData.combo = 0;
+            playerData.comboMultiplier = 1;
+            bar.style.display = 'none';
+            fill.style.transition = 'none';
+            fill.style.width = '100%';
+            updateUI();
+        }, COMBO_TIMEOUT);
+    } else bar.style.display = 'none';
+}
+
+function animAxe() {
+    var a = document.getElementById('ax');
+    a.classList.remove('swing');
+    void a.offsetWidth;
+    a.classList.add('swing');
+}
+
+function animShake() {
+    var t = document.getElementById('tc');
+    t.classList.add('shake');
+    setTimeout(function() { t.classList.remove('shake'); }, 400);
+}
+
+function animFall(cb) {
+    var t = document.getElementById('tc');
+    t.classList.add('tree-fall');
+    setTimeout(function() {
+        t.classList.remove('tree-fall');
+        if (cb) cb();
+    }, 600);
+}
+
+function floatText(text, color, x, y) {
+    var el = document.createElement('div');
+    el.className = 'float-text';
+    el.textContent = text;
+    el.style.color = color;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    document.getElementById('floatTextContainer').appendChild(el);
+    setTimeout(function() { el.remove(); }, 1000);
+}
+
+function calculateTreeHP(lv) {
+    var bMin = 15, bMax = 30, m;
+    if (lv <= 10) m = 1 + (lv - 1) * 0.5;
+    else if (lv <= 50) m = 5.5 + (lv - 10) * 0.3;
+    else if (lv <= 200) m = 17.5 + (lv - 50) * 0.2;
+    else if (lv <= 1000) m = 47.5 + (lv - 200) * 0.1;
+    else if (lv <= 5000) m = 127.5 + (lv - 1000) * 0.05;
+    else m = 327.5 + (lv - 5000) * 0.02;
+    return Math.floor(Math.random() * (bMax * m - bMin * m) + bMin * m + (lv - 1) * 5);
+}
+
+function chop() {
+    if (playerData.treeHP <= 0) {
+        playerData.maxTreeHP = calculateTreeHP(playerData.treeLevel);
+        playerData.treeHP = playerData.maxTreeHP;
+        updateUI();
+        return;
+    }
+    
+    var damage = playerData.axePower;
+    var isCrit = Math.random() * 100 < playerData.critChance;
+    if (isCrit) damage = Math.floor(damage * playerData.critMultiplier);
+    
+    playerData.combo = Math.min(50, playerData.combo + 1);
+    playerData.comboMultiplier = 1 + playerData.combo * (0.01 + playerData.comboBonus / 100);
+    damage = Math.max(1, Math.floor(damage * playerData.comboMultiplier));
+    
+    playerData.treeHP -= damage;
+    playerData.wood += damage;
+    
+    animAxe();
+    resetCombo();
+    
+    var rect = document.getElementById('tc').getBoundingClientRect();
+    floatText((isCrit ? '💥+' : '+') + formatNumber(damage) + '🌲', isCrit ? '#ff6b6b' : '#e2a03f', rect.width / 2, rect.height * 0.5);
+    
+    if (playerData.treeHP <= 0) {
+        playerData.crystals += playerData.crystalBonus;
+        if (playerData.crystalToWoodRate > 0 && playerData.crystals > 0) {
+            var conv = Math.floor(playerData.crystals * playerData.crystalToWoodRate);
+            playerData.wood += conv;
+            floatText('🔄+' + formatNumber(conv) + '🌲', '#4caf84', rect.width / 2, rect.height * 0.5 + 20);
+        }
+        playerData.totalTrees++;
+        playerData.treeLevel = Math.min(Math.floor(playerData.totalTrees / 2) + 1, 9999);
+        animFall(function() {
+            playerData.maxTreeHP = calculateTreeHP(playerData.treeLevel);
+            playerData.treeHP = playerData.maxTreeHP;
+            updateUI();
+        });
+        floatText('🎉+' + playerData.crystalBonus + '💎', '#a78bfa', rect.width / 2, rect.height * 0.5 - 25);
+    } else animShake();
+    
+    updateUI();
+    saveData();
+}
+
+function showPopup(title, content) {
+    var bg = document.createElement('div');
+    bg.className = 'popup-bg';
+    bg.innerHTML = '<div class="popup"><h3>' + title + '</h3>' + content + '<button class="popup-close">Закрыть</button></div>';
+    bg.querySelector('button').addEventListener('click', function() { bg.remove(); });
+    bg.addEventListener('click', function(e) { if (e.target === bg) bg.remove(); });
+    document.body.appendChild(bg);
+    return bg;
+}
+
 function updateAdminSelects() {
     var ss = document.getElementById('ass');
-    if (!ss) return;
-    ss.innerHTML = '';
-    treeSkins.forEach(function(s) {
-        if (s.id !== 'default') {
-            ss.innerHTML += '<option value="' + s.id + '">' + (s.emoji || '🎄') + ' ' + s.name + '</option>';
-        }
-    });
-    
+    if (ss) {
+        ss.innerHTML = '';
+        treeSkins.forEach(function(s) {
+            if (s.id !== 'default') {
+                ss.innerHTML += '<option value="' + s.id + '">' + (s.emoji || '🎄') + ' ' + s.name + '</option>';
+            }
+        });
+    }
     var as = document.getElementById('aaxs');
-    if (!as) return;
-    as.innerHTML = '';
-    axeSkins.forEach(function(a) {
-        if (a.id !== 'default') {
-            as.innerHTML += '<option value="' + a.id + '">' + (a.emoji || '🪓') + ' ' + a.name + '</option>';
-        }
-    });
+    if (as) {
+        as.innerHTML = '';
+        axeSkins.forEach(function(a) {
+            if (a.id !== 'default') {
+                as.innerHTML += '<option value="' + a.id + '">' + (a.emoji || '🪓') + ' ' + a.name + '</option>';
+            }
+        });
+    }
 }
 
 function admGive() {
     var tid = document.getElementById('atid').value.trim();
     var w = parseInt(document.getElementById('aw').value) || 0;
     var c = parseInt(document.getElementById('ac').value) || 0;
-    
     if (!tid) { alert('Введите ID игрока'); return; }
     
     fetch(API_URL + '/profile/' + tid)
@@ -504,28 +640,16 @@ function admGive() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        user_id: tid,
-                        name: p.name,
-                        wood: p.wood,
-                        crystals: p.crystals,
-                        treeLevel: p.treeLevel,
-                        totalTrees: p.totalTrees
+                        user_id: tid, name: p.name, wood: p.wood,
+                        crystals: p.crystals, treeLevel: p.treeLevel, totalTrees: p.totalTrees
                     })
                 });
                 
                 alert('✅ Выдано: +' + w + '🌲 +' + c + '💎');
                 document.getElementById('aw').value = '';
                 document.getElementById('ac').value = '';
-                
-                if (tid === userId) {
-                    playerData.wood = p.wood;
-                    playerData.crystals = p.crystals;
-                    updateUI();
-                    saveData();
-                }
-            } else {
-                alert('❌ Игрок не найден');
-            }
+                if (tid === userId) { playerData.wood = p.wood; playerData.crystals = p.crystals; updateUI(); saveData(); }
+            } else alert('❌ Игрок не найден');
         });
 }
 
@@ -533,7 +657,6 @@ function admTake() {
     var tid = document.getElementById('atkid').value.trim();
     var w = parseInt(document.getElementById('atkw').value) || 0;
     var c = parseInt(document.getElementById('atkc').value) || 0;
-    
     if (!tid) { alert('Введите ID игрока'); return; }
     
     fetch(API_URL + '/profile/' + tid)
@@ -562,35 +685,22 @@ function admTake() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        user_id: tid,
-                        name: p.name,
-                        wood: p.wood,
-                        crystals: p.crystals,
-                        treeLevel: p.treeLevel,
-                        totalTrees: p.totalTrees
+                        user_id: tid, name: p.name, wood: p.wood,
+                        crystals: p.crystals, treeLevel: p.treeLevel, totalTrees: p.totalTrees
                     })
                 });
                 
                 alert('✅ Изъято: -' + w + '🌲 -' + c + '💎');
                 document.getElementById('atkw').value = '';
                 document.getElementById('atkc').value = '';
-                
-                if (tid === userId) {
-                    playerData.wood = p.wood;
-                    playerData.crystals = p.crystals;
-                    updateUI();
-                    saveData();
-                }
-            } else {
-                alert('❌ Игрок не найден');
-            }
+                if (tid === userId) { playerData.wood = p.wood; playerData.crystals = p.crystals; updateUI(); saveData(); }
+            } else alert('❌ Игрок не найден');
         });
 }
 
 function admGiveSkin() {
     var tid = document.getElementById('asid').value.trim();
     var sid = document.getElementById('ass').value;
-    
     if (!tid) { alert('Введите ID игрока'); return; }
     
     fetch(API_URL + '/profile/' + tid)
@@ -599,7 +709,6 @@ function admGiveSkin() {
             if (data.success) {
                 var p = data.profile || {};
                 var skins = p.ownedSkins || ['default'];
-                
                 if (skins.indexOf(sid) === -1) {
                     skins.push(sid);
                     p.user_id = tid;
@@ -619,28 +728,18 @@ function admGiveSkin() {
                         body: JSON.stringify(p)
                     });
                     
-                    alert('✅ Скин выдан!');
+                    var skinName = treeSkins.find(function(s) { return s.id === sid; });
+                    alert('✅ Скин "' + (skinName ? skinName.name : sid) + '" выдан игроку ' + tid);
                     document.getElementById('asid').value = '';
-                    
-                    if (tid === userId) {
-                        playerData.ownedSkins = skins;
-                        playerData.activeSkin = sid;
-                        updateUI();
-                        saveData();
-                    }
-                } else {
-                    alert('⚠️ У игрока уже есть этот скин');
-                }
-            } else {
-                alert('❌ Игрок не найден');
-            }
+                    if (tid === userId) { playerData.ownedSkins = skins; playerData.activeSkin = sid; updateUI(); saveData(); }
+                } else alert('⚠️ У игрока уже есть этот скин');
+            } else alert('❌ Игрок не найден');
         });
 }
 
 function admGiveAxe() {
     var tid = document.getElementById('aaxid').value.trim();
     var aid = document.getElementById('aaxs').value;
-    
     if (!tid) { alert('Введите ID игрока'); return; }
     
     fetch(API_URL + '/profile/' + tid)
@@ -649,7 +748,6 @@ function admGiveAxe() {
             if (data.success) {
                 var p = data.profile || {};
                 var axes = p.ownedAxes || ['default'];
-                
                 if (axes.indexOf(aid) === -1) {
                     axes.push(aid);
                     p.user_id = tid;
@@ -669,291 +767,69 @@ function admGiveAxe() {
                         body: JSON.stringify(p)
                     });
                     
-                    alert('✅ Топор выдан!');
+                    var axeName = axeSkins.find(function(a) { return a.id === aid; });
+                    alert('✅ Топор "' + (axeName ? axeName.name : aid) + '" выдан игроку ' + tid);
                     document.getElementById('aaxid').value = '';
-                    
-                    if (tid === userId) {
-                        playerData.ownedAxes = axes;
-                        playerData.activeAxe = aid;
-                        updateUI();
-                        saveData();
-                    }
-                } else {
-                    alert('⚠️ У игрока уже есть этот топор');
-                }
+                    if (tid === userId) { playerData.ownedAxes = axes; playerData.activeAxe = aid; updateUI(); saveData(); }
+                } else alert('⚠️ У игрока уже есть этот топор');
+            } else alert('❌ Игрок не найден');
+        });
+}
+
+function admStat() {
+    var tid = document.getElementById('astatid').value.trim();
+    if (!tid) { alert('Введите ID игрока'); return; }
+    
+    fetch(API_URL + '/profile/' + tid)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success && data.profile) {
+                var p = data.profile;
+                var info = '';
+                info += '👤 ID: ' + tid + '\n';
+                info += '📛 Имя: ' + (p.name || 'Неизвестно') + '\n';
+                info += '🌲 Древесина: ' + formatNumber(p.wood || 0) + '\n';
+                info += '💎 Кристаллы: ' + formatNumber(p.crystals || 0) + '\n';
+                info += '⭐ Звёзды: ' + (p.stars || 0) + '\n';
+                info += '🎄 Скинов: ' + (p.ownedSkins ? p.ownedSkins.length : 0) + '\n';
+                info += '🪓 Топоров: ' + (p.ownedAxes ? p.ownedAxes.length : 0) + '\n';
+                info += '📊 Уровень деревьев: ' + (p.treeLevel || 1) + '\n';
+                info += '🌳 Всего срублено: ' + (p.totalTrees || 0);
+                
+                document.getElementById('astatres').textContent = info;
             } else {
-                alert('❌ Игрок не найден');
+                document.getElementById('astatres').textContent = '❌ Игрок не найден';
             }
         });
 }
 
-// ==================== UI ОБНОВЛЕНИЕ ====================
-function updateUI() {
-    document.getElementById('wv').textContent = formatNumber(playerData.wood);
-    document.getElementById('cv').textContent = formatNumber(playerData.crystals);
-    
-    var hpPercent = Math.max(0, (playerData.treeHP / Math.max(1, playerData.maxTreeHP)) * 100);
-    var hpBar = document.getElementById('hp');
-    hpBar.style.width = hpPercent + '%';
-    hpBar.className = 'hp-bar ' + (hpPercent > 60 ? 'high' : hpPercent > 30 ? 'medium' : 'low');
-    
-    document.getElementById('ht').textContent = formatNumber(Math.max(0, playerData.treeHP)) + ' / ' + formatNumber(playerData.maxTreeHP) + ' HP';
-    document.getElementById('lb').textContent = '🌲 Ур. ' + playerData.treeLevel;
-    document.getElementById('nd').textContent = playerData.name;
-    
-    document.getElementById('cd').innerHTML = playerData.combo > 1 
-        ? '<span class="combo-fire">🔥 Комбо x' + playerData.combo + ' (+' + Math.floor((playerData.comboMultiplier - 1) * 100) + '%)</span>'
-        : 'Нажимай на дерево! 🪓';
-    
-    document.getElementById('pi').textContent = playerData.autoWood > 0 ? '⏳ +' + playerData.autoWood + ' 🌲/сек' : '';
-    
-    // Обновление скина дерева
-    var skin = treeSkins.find(function(s) { return s.id === playerData.activeSkin; }) || treeSkins[0];
-    var colors = hpPercent > 60 ? skin.colors : (hpPercent > 30 ? ['#e67e22', '#f39c12', '#f1c40f'] : ['#c0392b', '#e74c3c', '#ff6b6b']);
-    
-    var treeContainer = document.getElementById('tc');
-    var svg = treeContainer.querySelector('svg');
-    var overlay = document.getElementById('skinOverlay');
-    
-    if (!overlay) {
-        overlay = document.createElement('img');
-        overlay.id = 'skinOverlay';
-        overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:5;';
-        treeContainer.appendChild(overlay);
-    }
-    
-    if (skin.img) {
-        svg.style.display = 'none';
-        overlay.src = skin.img;
-        overlay.style.display = 'block';
-    } else {
-        svg.style.display = 'block';
-        overlay.style.display = 'none';
-        document.getElementById('c1').setAttribute('fill', colors[0]);
-        document.getElementById('c2').setAttribute('fill', colors[1]);
-        document.getElementById('c3').setAttribute('fill', colors[2]);
-    }
-    
-    // Обновление топора
-    var axe = axeSkins.find(function(a) { return a.id === playerData.activeAxe; }) || axeSkins[0];
-    var axeEl = document.getElementById('ax');
-    if (axe.img) {
-        axeEl.textContent = '';
-        axeEl.style.backgroundImage = 'url(' + axe.img + ')';
-        axeEl.style.backgroundSize = 'contain';
-        axeEl.style.width = '50px';
-        axeEl.style.height = '50px';
-    } else {
-        axeEl.style.backgroundImage = '';
-        axeEl.style.width = '';
-        axeEl.style.height = '';
-        axeEl.textContent = axe.emoji || '🪓';
-    }
-    
-    updateAdminSelects();
-}
-
-// ==================== КОМБО-СИСТЕМА ====================
-var COMBO_TIMEOUT = 5000;
-var comboTimer = null;
-
-function resetCombo() {
-    if (comboTimer) clearTimeout(comboTimer);
-    
-    var bar = document.getElementById('ctb');
-    var fill = document.getElementById('ctf');
-    
-    if (playerData.combo > 0) {
-        bar.style.display = 'block';
-        fill.style.transition = 'none';
-        fill.style.width = '100%';
-        
-        requestAnimationFrame(function() {
-            fill.style.transition = 'width ' + COMBO_TIMEOUT + 'ms linear';
-            fill.style.width = '0%';
-        });
-        
-        comboTimer = setTimeout(function() {
-            playerData.combo = 0;
-            playerData.comboMultiplier = 1;
-            bar.style.display = 'none';
-            fill.style.transition = 'none';
-            fill.style.width = '100%';
-            updateUI();
-        }, COMBO_TIMEOUT);
-    } else {
-        bar.style.display = 'none';
-    }
-}
-
-// ==================== АНИМАЦИИ ====================
-function animAxe() {
-    var axeEl = document.getElementById('ax');
-    axeEl.classList.remove('swing');
-    void axeEl.offsetWidth;
-    axeEl.classList.add('swing');
-}
-
-function animShake() {
-    var tc = document.getElementById('tc');
-    tc.classList.add('shake');
-    setTimeout(function() { tc.classList.remove('shake'); }, 400);
-}
-
-function animFall(callback) {
-    var tc = document.getElementById('tc');
-    tc.classList.add('tree-fall');
-    setTimeout(function() {
-        tc.classList.remove('tree-fall');
-        if (callback) callback();
-    }, 600);
-}
-
-function floatText(text, color, x, y) {
-    var el = document.createElement('div');
-    el.className = 'float-text';
-    el.textContent = text;
-    el.style.color = color;
-    el.style.left = x + 'px';
-    el.style.top = y + 'px';
-    document.getElementById('floatTextContainer').appendChild(el);
-    setTimeout(function() { el.remove(); }, 1000);
-}
-
-// ==================== РУБКА ДЕРЕВА ====================
-function calculateTreeHP(level) {
-    var baseMin = 15, baseMax = 30;
-    var multiplier;
-    
-    if (level <= 10) multiplier = 1 + (level - 1) * 0.5;
-    else if (level <= 50) multiplier = 5.5 + (level - 10) * 0.3;
-    else if (level <= 200) multiplier = 17.5 + (level - 50) * 0.2;
-    else if (level <= 1000) multiplier = 47.5 + (level - 200) * 0.1;
-    else if (level <= 5000) multiplier = 127.5 + (level - 1000) * 0.05;
-    else multiplier = 327.5 + (level - 5000) * 0.02;
-    
-    return Math.floor(Math.random() * (baseMax * multiplier - baseMin * multiplier) + baseMin * multiplier + (level - 1) * 5);
-}
-
-function chop() {
-    if (playerData.treeHP <= 0) {
-        playerData.maxTreeHP = calculateTreeHP(playerData.treeLevel);
-        playerData.treeHP = playerData.maxTreeHP;
-        updateUI();
-        return;
-    }
-    
-    var damage = playerData.axePower;
-    var isCrit = Math.random() * 100 < playerData.critChance;
-    if (isCrit) damage = Math.floor(damage * playerData.critMultiplier);
-    
-    playerData.combo = Math.min(50, playerData.combo + 1);
-    playerData.comboMultiplier = 1 + playerData.combo * (0.01 + playerData.comboBonus / 100);
-    damage = Math.max(1, Math.floor(damage * playerData.comboMultiplier));
-    
-    playerData.treeHP -= damage;
-    playerData.wood += damage;
-    
-    animAxe();
-    resetCombo();
-    
-    var rect = document.getElementById('tc').getBoundingClientRect();
-    floatText(
-        (isCrit ? '💥+' : '+') + formatNumber(damage) + '🌲',
-        isCrit ? '#ff6b6b' : '#e2a03f',
-        rect.width / 2,
-        rect.height * 0.5
-    );
-    
-    if (playerData.treeHP <= 0) {
-        playerData.crystals += playerData.crystalBonus;
-        
-        if (playerData.crystalToWoodRate > 0 && playerData.crystals > 0) {
-            var converted = Math.floor(playerData.crystals * playerData.crystalToWoodRate);
-            playerData.wood += converted;
-            floatText('🔄+' + formatNumber(converted) + '🌲', '#4caf84', rect.width / 2, rect.height * 0.5 + 20);
-        }
-        
-        playerData.totalTrees++;
-        playerData.treeLevel = Math.min(Math.floor(playerData.totalTrees / 2) + 1, 9999);
-        
-        animFall(function() {
-            playerData.maxTreeHP = calculateTreeHP(playerData.treeLevel);
-            playerData.treeHP = playerData.maxTreeHP;
-            updateUI();
-        });
-        
-        floatText('🎉+' + playerData.crystalBonus + '💎', '#a78bfa', rect.width / 2, rect.height * 0.5 - 25);
-    } else {
-        animShake();
-    }
-    
-    updateUI();
-    saveData();
-}
-
-// ==================== ПОПАПЫ ====================
-function showPopup(title, content) {
-    var bg = document.createElement('div');
-    bg.className = 'popup-bg';
-    bg.innerHTML = '<div class="popup"><h3>' + title + '</h3>' + content + '<button class="popup-close">Закрыть</button></div>';
-    
-    bg.querySelector('button').addEventListener('click', function() {
-        bg.remove();
-    });
-    
-    bg.addEventListener('click', function(e) {
-        if (e.target === bg) bg.remove();
-    });
-    
-    document.body.appendChild(bg);
-    return bg;
-}
-
-// ==================== МАГАЗИН ====================
 function showShop() {
     var html = '';
-    var category = '';
-    
+    var cat = '';
     shopItems.forEach(function(item) {
-        var categoryName = item.cur === 'wood' ? '🌲 За древесину' : '💎 За кристаллы';
-        if (category !== categoryName) {
-            category = categoryName;
-            html += '<div class="shop-cat">' + categoryName + '</div>';
-        }
-        
+        var cn = item.cur === 'wood' ? '🌲 За древесину' : '💎 За кристаллы';
+        if (cat !== cn) { cat = cn; html += '<div class="shop-cat">' + cn + '</div>'; }
         var cost = item.cost();
-        var canAfford = item.cur === 'wood' ? playerData.wood >= cost : playerData.crystals >= cost;
-        
+        var afford = item.cur === 'wood' ? playerData.wood >= cost : playerData.crystals >= cost;
         html += '<div class="shop-item">';
-        html += '<div>';
-        html += '<span class="shop-name">' + item.name + '</span><br>';
-        html += '<span class="shop-desc">' + item.desc + '</span>';
-        if (playerData.upgrades[item.id] > 0) {
-            html += '<br><span class="shop-lvl">Ур. ' + playerData.upgrades[item.id] + '</span>';
-        }
+        html += '<div><span class="shop-name">' + item.name + '</span><br><span class="shop-desc">' + item.desc + '</span>';
+        if (playerData.upgrades[item.id] > 0) html += '<br><span class="shop-lvl">Ур. ' + playerData.upgrades[item.id] + '</span>';
         html += '</div>';
-        html += '<button class="shop-buy ' + (item.cur === 'wood' ? 'wood' : 'crystal') + '" data-id="' + item.id + '" ' + (canAfford ? '' : 'disabled') + '>';
-        html += formatNumber(cost) + ' ' + (item.cur === 'wood' ? '🌲' : '💎');
-        html += '</button>';
+        html += '<button class="shop-buy ' + (item.cur === 'wood' ? 'wood' : 'crystal') + '" data-id="' + item.id + '" ' + (afford ? '' : 'disabled') + '>';
+        html += formatNumber(cost) + ' ' + (item.cur === 'wood' ? '🌲' : '💎') + '</button>';
         html += '</div>';
     });
     
     var bg = showPopup('🏪 Магазин', html);
-    
     bg.querySelectorAll('button[data-id]').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            var itemId = this.dataset.id;
-            var item = shopItems.find(function(i) { return i.id === itemId; });
+            var item = shopItems.find(function(i) { return i.id === this.dataset.id; });
             if (!item) return;
-            
             var cost = item.cost();
             if (item.cur === 'wood' && playerData.wood < cost) return;
             if (item.cur === 'crystals' && playerData.crystals < cost) return;
-            
             if (item.cur === 'wood') playerData.wood -= cost;
             else playerData.crystals -= cost;
-            
             item.effect();
             updateUI();
             saveData();
@@ -963,18 +839,14 @@ function showShop() {
     });
 }
 
-// ==================== СКИНЫ ====================
 function showSkins() {
-    var currentTab = 'tree';
-    
+    var ct = 'tree';
     function render(tab) {
-        currentTab = tab;
-        
+        ct = tab;
         var html = '<div class="skin-tabs">';
         html += '<div class="skin-tab ' + (tab === 'tree' ? 'active' : '') + '" data-tab="tree">🎄 Деревья</div>';
         html += '<div class="skin-tab ' + (tab === 'axe' ? 'active' : '') + '" data-tab="axe">🪓 Топоры</div>';
-        html += '</div>';
-        html += '<div class="skin-grid">';
+        html += '</div><div class="skin-grid">';
         
         var skins = tab === 'tree' ? treeSkins : axeSkins;
         var owned = tab === 'tree' ? playerData.ownedSkins : playerData.ownedAxes;
@@ -982,48 +854,30 @@ function showSkins() {
         
         skins.forEach(function(skin) {
             if (skin.hidden && owned.indexOf(skin.id) === -1) return;
+            var ow = owned.indexOf(skin.id) !== -1;
+            var ac = active === skin.id;
+            var ph = '';
             
-            var isOwned = owned.indexOf(skin.id) !== -1;
-            var isActive = active === skin.id;
-            var priceHtml = '';
-            
-            if (!isOwned) {
-                if (skin.cur === 'free') {
-                    priceHtml = '<div class="skin-price">Бесплатно</div>';
-                } else if (skin.cur === 'crystals') {
-                    priceHtml = '<div class="skin-price">🔒 ' + formatNumber(skin.price) + ' 💎</div>';
-                } else {
-                    priceHtml = '<div class="skin-price-star">⭐ ' + skin.price + ' звёзд</div>';
-                }
+            if (!ow) {
+                if (skin.cur === 'free') ph = '<div class="skin-price">Бесплатно</div>';
+                else if (skin.cur === 'crystals') ph = '<div class="skin-price">🔒 ' + formatNumber(skin.price) + ' 💎</div>';
+                else ph = '<div class="skin-price-star">⭐ ' + skin.price + ' звёзд</div>';
             }
             
-            var isCustom = skin.id.indexOf('custom_') === 0;
-            var imgHtml = skin.img 
-                ? '<img src="' + skin.img + '" class="skin-img" onerror="this.style.display=\'none\'">'
-                : '<span class="skin-emoji">' + (skin.emoji || '🎄') + '</span>';
+            var isC = skin.id.indexOf('custom_') === 0;
+            var imgH = skin.img ? '<img src="' + skin.img + '" class="skin-img" onerror="this.style.display=\'none\'">' : '<span class="skin-emoji">' + (skin.emoji || '🎄') + '</span>';
             
-            html += '<div class="skin-card ' + (isActive ? 'active' : '') + '" data-sid="' + skin.id + '" data-type="' + tab + '">';
-            
-            if (isCustom && userId === ADMIN_ID) {
-                html += '<button class="skin-delete-btn" data-del="' + skin.id + '" data-dt="' + tab + '">✕</button>';
-            }
-            
-            html += imgHtml;
+            html += '<div class="skin-card ' + (ac ? 'active' : '') + '" data-sid="' + skin.id + '" data-type="' + tab + '">';
+            if (isC && userId === ADMIN_ID) html += '<button class="skin-delete-btn" data-del="' + skin.id + '" data-dt="' + tab + '">✕</button>';
+            html += imgH;
             html += '<div class="skin-name">' + skin.name + '</div>';
-            html += priceHtml;
-            
-            if (isActive) {
-                html += '<div style="color:#ffd700;font-size:10px;">✅</div>';
-            }
-            
+            html += ph;
+            if (ac) html += '<div style="color:#ffd700;font-size:10px;">✅</div>';
             html += '</div>';
         });
         
         html += '</div>';
-        
-        if (userId === ADMIN_ID) {
-            html += '<button class="add-skin-btn" id="addBtn">➕ Добавить скин</button>';
-        }
+        if (userId === ADMIN_ID) html += '<button class="add-skin-btn" id="addBtn">➕ Добавить скин</button>';
         
         var bg = document.createElement('div');
         bg.className = 'popup-bg';
@@ -1032,64 +886,46 @@ function showSkins() {
         
         bg.querySelector('.popup-close').addEventListener('click', function() { bg.remove(); });
         bg.addEventListener('click', function(e) { if (e.target === bg) bg.remove(); });
+        bg.querySelectorAll('.skin-tab').forEach(function(t) { t.addEventListener('click', function() { bg.remove(); render(t.dataset.tab); }); });
         
-        // Переключение вкладок
-        bg.querySelectorAll('.skin-tab').forEach(function(t) {
-            t.addEventListener('click', function() {
-                bg.remove();
-                render(t.dataset.tab);
-            });
-        });
-        
-        // Выбор/покупка скина
         bg.querySelectorAll('[data-sid]').forEach(function(el) {
             el.addEventListener('click', function(e) {
                 if (e.target.classList.contains('skin-delete-btn')) return;
-                
-                var skinId = this.dataset.sid;
+                var sid = this.dataset.sid;
                 var type = this.dataset.type;
                 var skins = type === 'tree' ? treeSkins : axeSkins;
-                var skin = skins.find(function(s) { return s.id === skinId; });
+                var skin = skins.find(function(s) { return s.id === sid; });
                 var owned = type === 'tree' ? playerData.ownedSkins : playerData.ownedAxes;
                 
-                // Уже есть - просто выбираем
-                if (owned.indexOf(skinId) !== -1) {
-                    if (type === 'tree') playerData.activeSkin = skinId;
-                    else playerData.activeAxe = skinId;
+                if (owned.indexOf(sid) !== -1) {
+                    if (type === 'tree') playerData.activeSkin = sid;
+                    else playerData.activeAxe = sid;
                     updateUI();
                     saveData();
                     bg.remove();
-                    render(currentTab);
-                }
-                // Бесплатный
-                else if (skin.cur === 'free') {
-                    owned.push(skinId);
-                    if (type === 'tree') playerData.activeSkin = skinId;
-                    else playerData.activeAxe = skinId;
+                    render(ct);
+                } else if (skin.cur === 'free') {
+                    owned.push(sid);
+                    if (type === 'tree') playerData.activeSkin = sid;
+                    else playerData.activeAxe = sid;
                     updateUI();
                     saveData();
                     bg.remove();
-                    render(currentTab);
-                }
-                // За кристаллы
-                else if (skin.cur === 'crystals') {
+                    render(ct);
+                } else if (skin.cur === 'crystals') {
                     if (playerData.crystals >= skin.price) {
                         if (confirm('Купить скин "' + skin.name + '" за ' + skin.price + ' 💎?')) {
                             playerData.crystals -= skin.price;
-                            owned.push(skinId);
-                            if (type === 'tree') playerData.activeSkin = skinId;
-                            else playerData.activeAxe = skinId;
+                            owned.push(sid);
+                            if (type === 'tree') playerData.activeSkin = sid;
+                            else playerData.activeAxe = sid;
                             updateUI();
                             saveData();
                             bg.remove();
-                            render(currentTab);
+                            render(ct);
                         }
-                    } else {
-                        alert('❌ Недостаточно кристаллов! Нужно: ' + skin.price + ' 💎');
-                    }
-                }
-                // За звезды Telegram
-                else if (skin.cur === 'stars') {
+                    } else alert('❌ Недостаточно кристаллов! Нужно: ' + skin.price + ' 💎');
+                } else if (skin.cur === 'stars') {
                     if (!confirm('Купить скин "' + skin.name + '" за ' + skin.price + ' ⭐ Telegram Stars?')) return;
                     
                     if (typeof tg.sendStarInvoice === 'function') {
@@ -1110,7 +946,7 @@ function showSkins() {
                                     updateUI();
                                     saveData();
                                     bg.remove();
-                                    render(currentTab);
+                                    render(ct);
                                     alert('✅ Скин "' + skin.name + '" успешно куплен!');
                                 }
                             } else if (status === 'cancelled') {
@@ -1144,7 +980,7 @@ function showSkins() {
                                             updateUI();
                                             saveData();
                                             bg.remove();
-                                            render(currentTab);
+                                            render(ct);
                                             alert('✅ Скин куплен!');
                                         }
                                     } else {
@@ -1165,43 +1001,38 @@ function showSkins() {
             });
         });
         
-        // Удаление кастомных скинов
         bg.querySelectorAll('.skin-delete-btn').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                var skinId = this.dataset.del;
+                var sid = this.dataset.del;
                 var type = this.dataset.dt;
-                
                 if (confirm('Удалить этот скин навсегда?')) {
                     if (type === 'tree') {
-                        var idx = treeSkins.findIndex(function(s) { return s.id === skinId; });
+                        var idx = treeSkins.findIndex(function(s) { return s.id === sid; });
                         if (idx !== -1) treeSkins.splice(idx, 1);
                         localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s) { return s.id.indexOf('custom_') === 0; })));
                     } else {
-                        var idx = axeSkins.findIndex(function(s) { return s.id === skinId; });
+                        var idx = axeSkins.findIndex(function(s) { return s.id === sid; });
                         if (idx !== -1) axeSkins.splice(idx, 1);
                         localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(s) { return s.id.indexOf('custom_') === 0; })));
                     }
                     bg.remove();
-                    render(currentTab);
+                    render(ct);
                 }
             });
         });
         
-        // Кнопка добавления скина (админ)
-        var addBtn = bg.querySelector('#addBtn');
-        if (addBtn) {
-            addBtn.addEventListener('click', function() {
+        var ab = bg.querySelector('#addBtn');
+        if (ab) {
+            ab.addEventListener('click', function() {
                 bg.remove();
                 addSkinForm();
             });
         }
     }
-    
     render('tree');
 }
 
-// ==================== ДОБАВЛЕНИЕ КАСТОМНОГО СКИНА ====================
 function addSkinForm() {
     var html = '<div class="create-form">';
     html += '<div class="form-group"><label>Тип скина</label><select id="skinType" class="form-input"><option value="tree">🎄 Дерево</option><option value="axe">🪓 Топор</option></select></div>';
@@ -1222,7 +1053,6 @@ function addSkinForm() {
     bg.querySelector('.popup-close').addEventListener('click', function() { bg.remove(); });
     bg.addEventListener('click', function(e) { if (e.target === bg) bg.remove(); });
     
-    // Предпросмотр фото
     bg.querySelector('#skinPhoto').addEventListener('change', function(e) {
         var file = e.target.files[0];
         if (file) {
@@ -1234,7 +1064,6 @@ function addSkinForm() {
         }
     });
     
-    // Сохранение скина
     bg.querySelector('#saveSkinBtn').addEventListener('click', function() {
         var type = bg.querySelector('#skinType').value;
         var name = bg.querySelector('#skinName').value.trim();
@@ -1294,7 +1123,6 @@ function addSkinForm() {
     });
 }
 
-// ==================== ТОРГИ ====================
 function showTrade() {
     fetch(API_URL + '/trades?user_id=' + userId)
         .then(function(r) { return r.json(); })
@@ -1302,14 +1130,11 @@ function showTrade() {
             var trades = data.success ? data.trades : [];
             
             var html = '';
-            
-            // ID игрока
             html += '<div style="background:#1e2a3a;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;border:1px solid #2a2a4a;">';
             html += '<span style="color:#aaa;font-size:12px;">Ваш ID: <span style="color:#e2a03f;font-weight:700;font-family:monospace;font-size:13px;">' + userId + '</span></span>';
             html += '<button id="btnCopyIdTrade" style="background:#e2a03f;color:#000;border:none;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;">📋 Копировать</button>';
             html += '</div>';
             
-            // Форма создания предложения
             html += '<div class="create-form">';
             html += '<div class="form-group"><label>ID покупателя (пусто = всем)</label><input type="text" id="tradeTargetId" class="form-input" placeholder="WC..."></div>';
             html += '<div class="form-group"><label>Скин на продажу</label><select id="tradeSkinId" class="form-input"><option value="">-- Выберите скин --</option>';
@@ -1328,7 +1153,6 @@ function showTrade() {
             html += '<button id="createTradeBtn" class="form-submit">📤 Выставить на продажу</button>';
             html += '</div>';
             
-            // Список предложений
             html += '<div class="section-title">📋 Активные предложения</div><div id="tradesList">';
             
             if (!trades.length) {
@@ -1343,16 +1167,14 @@ function showTrade() {
                     var canBuy = !isOwn && !hasSkin && (
                         currency === 'wood' ? playerData.wood >= trade.price :
                         currency === 'crystals' ? playerData.crystals >= trade.price :
-                        true // Для звезд всегда можно
+                        true
                     );
                     
                     html += '<div class="trade-item">';
                     html += '<div class="trade-header"><div>';
                     html += '<span class="trade-seller-name">' + escapeHtml(trade.sellerName) + '</span><br>';
                     html += '<span class="trade-seller-id">ID: ' + trade.sellerId + '</span>';
-                    if (trade.targetId) {
-                        html += '<br><span style="font-size:10px;color:#a78bfa;">🎯 Для: ' + trade.targetId + '</span>';
-                    }
+                    if (trade.targetId) html += '<br><span style="font-size:10px;color:#a78bfa;">🎯 Для: ' + trade.targetId + '</span>';
                     html += '</div>';
                     html += '<span class="trade-price">' + formatNumber(trade.price) + ' ' + curIcon + '</span>';
                     html += '</div>';
@@ -1376,7 +1198,6 @@ function showTrade() {
             
             var bg = showPopup('💱 Торговая площадка', html);
             
-            // Копирование ID
             document.getElementById('btnCopyIdTrade').addEventListener('click', function() {
                 navigator.clipboard.writeText(userId).then(function() {
                     alert('✅ ID скопирован: ' + userId);
@@ -1385,7 +1206,6 @@ function showTrade() {
                 });
             });
             
-            // Создание предложения
             bg.querySelector('#createTradeBtn').addEventListener('click', function() {
                 var skinId = bg.querySelector('#tradeSkinId').value;
                 var price = parseInt(bg.querySelector('#tradePrice').value);
@@ -1415,7 +1235,6 @@ function showTrade() {
                 .then(function(r) { return r.json(); })
                 .then(function(result) {
                     if (result.success) {
-                        // Удаляем скин у продавца
                         playerData.ownedSkins = playerData.ownedSkins.filter(function(s) { return s !== skinId; });
                         if (playerData.activeSkin === skinId) playerData.activeSkin = 'default';
                         saveData();
@@ -1431,7 +1250,6 @@ function showTrade() {
                 });
             });
             
-            // Покупка/отмена
             bg.querySelectorAll('[data-action]').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     var action = this.dataset.action;
@@ -1466,7 +1284,6 @@ function showTrade() {
                         var curIcon = currency === 'wood' ? '🌲' : currency === 'crystals' ? '💎' : '⭐';
                         
                         if (currency === 'stars') {
-                            // Покупка за звезды
                             if (!confirm('Купить этот скин за ' + price + ' ⭐?')) return;
                             
                             if (typeof tg.sendStarInvoice === 'function') {
@@ -1516,7 +1333,6 @@ function showTrade() {
                                 alert('❌ Покупки за звезды доступны только через бота Telegram.\n\nОткройте игру через @WoodcutterBot');
                             }
                         } else {
-                            // Покупка за wood/crystals
                             if (!confirm('Купить за ' + price + ' ' + curIcon + '?')) return;
                             
                             if (currency === 'wood' && playerData.wood < price) {
@@ -1534,7 +1350,6 @@ function showTrade() {
                 });
             });
             
-            // Завершение покупки
             function completeTradePurchase(tradeId, paymentType, bg) {
                 fetch(API_URL + '/trades/buy', {
                     method: 'POST',
@@ -1567,7 +1382,6 @@ function showTrade() {
         });
 }
 
-// ==================== ЛИДЕРБОРД ====================
 function showLeaderboard() {
     fetch(API_URL + '/leaderboard')
         .then(function(r) { return r.json(); })
@@ -1611,7 +1425,6 @@ function showLeaderboard() {
         });
 }
 
-// ==================== ПАССИВНЫЙ ДОХОД ====================
 function passiveIncome() {
     if (playerData.autoWood > 0) {
         playerData.wood += playerData.autoWood;
@@ -1619,13 +1432,11 @@ function passiveIncome() {
     }
 }
 
-// ==================== ПРИВЯЗКА СОБЫТИЙ ====================
 document.getElementById('bs').addEventListener('click', showShop);
 document.getElementById('bl').addEventListener('click', showLeaderboard);
 document.getElementById('bt').addEventListener('click', showSkins);
 document.getElementById('btr').addEventListener('click', showTrade);
 document.getElementById('tc').addEventListener('click', chop);
-
 document.addEventListener('keydown', function(e) {
     if (e.code === 'Space') {
         e.preventDefault();
@@ -1633,25 +1444,19 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// ==================== ИНИЦИАЛИЗАЦИЯ ====================
 updateUI();
 updateAdminSelects();
 
-// Синхронизация с сервером
 fetch(API_URL + '/leaderboard/update', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-        user_id: userId,
-        name: userName,
-        wood: playerData.wood,
-        crystals: playerData.crystals,
-        treeLevel: playerData.treeLevel,
+        user_id: userId, name: userName, wood: playerData.wood,
+        crystals: playerData.crystals, treeLevel: playerData.treeLevel,
         totalTrees: playerData.totalTrees
     })
 }).catch(function() {});
 
-// Интервалы
 setInterval(passiveIncome, 1000);
 setInterval(saveData, 10000);
 setInterval(function() {
@@ -1659,18 +1464,15 @@ setInterval(function() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            user_id: userId,
-            name: userName,
-            wood: playerData.wood,
-            crystals: playerData.crystals,
-            treeLevel: playerData.treeLevel,
+            user_id: userId, name: userName, wood: playerData.wood,
+            crystals: playerData.crystals, treeLevel: playerData.treeLevel,
             totalTrees: playerData.totalTrees
         })
     }).catch(function() {});
 }, 30000);
 
-console.log('✅ Woodcutter полностью готов!');
-console.log('🎮 Функции: магазин, скины, торги, рейтинг, админ-панель');
+console.log('✅ Woodcutter v7.0 FULL - готов к работе');
+console.log('📊 Функции: Магазин(16), Скины(9+4), Торги, Рейтинг, Админ-панель');
 </script>
 </body>
 </html>
