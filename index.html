@@ -413,22 +413,52 @@ function animFall(cb){treeContainer.classList.add('tree-fall');setTimeout(()=>{t
 function floatText(text,color,x,y){const el=document.createElement('div');el.className='float-text';el.textContent=text;el.style.color=color;el.style.left=x+'px';el.style.top=y+'px';floatContainer.appendChild(el);setTimeout(()=>el.remove(),1000);}
 
 function chopTree() {
-    if(player.treeHP<=0) return;
-    let dmg=player.axePower; const crit=Math.random()*100<player.critChance;
-    if(crit) dmg=Math.floor(dmg*player.critMultiplier);
-    player.combo=Math.min(50,player.combo+1); player.comboMultiplier=1.0+player.combo*(0.01+player.comboBonus/100);
-    dmg=Math.max(1,Math.floor(dmg*player.comboMultiplier)); player.treeHP-=dmg; player.wood+=dmg;
-    animAxe(); resetCombo();
-    const r=treeContainer.getBoundingClientRect();
-    floatText((crit?'💥+':'+')+fmt(dmg)+'🌲',crit?'#ff6b6b':'#e2a03f',r.width/2,r.height*0.5);
-    if(player.treeHP<=0){
-        player.crystals+=player.crystalBonus;
-        if(player.crystalToWoodRate>0&&player.crystals>0){const conv=Math.floor(player.crystals*player.crystalToWoodRate);player.wood+=conv;floatText('🔄+'+fmt(conv)+'🌲','#4caf84',r.width/2,r.height*0.5+20);}
-        player.totalTrees++; player.treeLevel=Math.min(Math.floor(player.totalTrees/2)+1,9999);
-        animFall(()=>{player.maxTreeHP=calcHP(player.treeLevel);player.treeHP=player.maxTreeHP;updateUI();});
-        floatText('🎉+'+player.crystalBonus+'💎','#a78bfa',r.width/2,r.height*0.5-25);
-    } else animShake();
-    updateUI(); save(); sendLB();
+    if(player.treeHP <= 0) {
+        // Если дерево срублено, создаём новое
+        player.maxTreeHP = calcHP(player.treeLevel);
+        player.treeHP = player.maxTreeHP;
+        updateUI();
+        return;
+    }
+    
+    let dmg = player.axePower;
+    const crit = Math.random() * 100 < player.critChance;
+    if(crit) dmg = Math.floor(dmg * player.critMultiplier);
+    player.combo = Math.min(50, player.combo + 1);
+    player.comboMultiplier = 1.0 + player.combo * (0.01 + player.comboBonus / 100);
+    dmg = Math.max(1, Math.floor(dmg * player.comboMultiplier));
+    player.treeHP -= dmg;
+    player.wood += dmg;
+    
+    animAxe();
+    resetCombo();
+    
+    const r = treeContainer.getBoundingClientRect();
+    floatText((crit ? '💥+' : '+') + fmt(dmg) + '🌲', crit ? '#ff6b6b' : '#e2a03f', r.width/2, r.height*0.5);
+    
+    if(player.treeHP <= 0) {
+        player.crystals += player.crystalBonus;
+        if(player.crystalToWoodRate > 0 && player.crystals > 0) {
+            const conv = Math.floor(player.crystals * player.crystalToWoodRate);
+            player.wood += conv;
+            floatText('🔄+' + fmt(conv) + '🌲', '#4caf84', r.width/2, r.height*0.5 + 20);
+        }
+        player.totalTrees++;
+        player.treeLevel = Math.min(Math.floor(player.totalTrees / 2) + 1, 9999);
+        
+        animFall(() => {
+            player.maxTreeHP = calcHP(player.treeLevel);
+            player.treeHP = player.maxTreeHP;
+            updateUI();
+        });
+        floatText('🎉+' + player.crystalBonus + '💎', '#a78bfa', r.width/2, r.height*0.5 - 25);
+    } else {
+        animShake();
+    }
+    
+    updateUI();
+    save();
+    sendLB();
 }
 
 function popup(title, content, onClose) {
