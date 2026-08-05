@@ -292,15 +292,9 @@ function showSkins(){
 }
 
 function addSkinForm(){
-    var name = prompt('Название скина:', '');
-    if (!name || name.trim() === '') {
-        alert('Отмена');
-        return;
-    }
-    
     var newSkin = {
         id: 'custom_' + Date.now(),
-        name: name.trim(),
+        name: 'Скин ' + new Date().toLocaleTimeString(),
         emoji: '🎄',
         colors: ['#4caf50', '#66bb6a', '#81c784'],
         price: 500,
@@ -319,7 +313,7 @@ function addSkinForm(){
     }
     localStorage.setItem('c_ts', JSON.stringify(saved));
     
-    alert('✅ Скин "' + name + '" добавлен! Обновите окно скинов.');
+    alert('✅ Скин добавлен!');
     showSkins();
 }
 async function showLB(){
