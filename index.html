@@ -2374,39 +2374,13 @@
                     updateAdminSelects();
                 }
                 
-                                    if (photo) {
+
+
+                                if (photo) {
                     var reader = new FileReader();
                     reader.onload = function(ev) {
-                        var img = new Image();
-                        img.crossOrigin = 'anonymous';
-                        img.onload = function() {
-                            var canvas = document.createElement('canvas');
-                            var maxWidth = 200;
-                            var scale = maxWidth / img.width;
-                            canvas.width = maxWidth;
-                            canvas.height = img.height * scale;
-                            var ctx = canvas.getContext('2d', { alpha: true });
-                            
-                            // Очищаем canvas
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
-                            
-                            // Рисуем изображение с сохранением альфа-канала
-                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            
-                            // Получаем данные как PNG
-                            var pngData = canvas.toDataURL('image/png');
-                            
-                            // Проверяем что данные не пустые
-                            if (pngData && pngData.length > 100) {
-                                saveSkin(pngData);
-                            } else {
-                                alert('Ошибка конвертации изображения');
-                            }
-                        };
-                        img.onerror = function() {
-                            alert('Ошибка загрузки изображения');
-                        };
-                        img.src = ev.target.result;
+                        // Сохраняем оригинальное изображение как есть, без canvas
+                        saveSkin(ev.target.result);
                     };
                     reader.readAsDataURL(photo);
                 } else {
