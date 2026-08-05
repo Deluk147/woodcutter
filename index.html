@@ -57,7 +57,6 @@
         .btn-leaderboard { background:linear-gradient(135deg,#ffd700,#ffaa00); color:#000; }
         .btn-trees { background:linear-gradient(135deg,#4caf50,#2d6b2d); color:#fff; }
         .btn-trade { background:linear-gradient(135deg,#a78bfa,#7c3aed); color:#fff; }
-        .btn-axes { background:linear-gradient(135deg,#e2a03f,#c47f2a); color:#000; }
         .passive-info { text-align:center; color:var(--text-secondary); font-size:11px; }
         .popup-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9999; display:flex; align-items:flex-end; justify-content:center; }
         .popup { background:#16213e; border-radius:16px 16px 0 0; width:100%; max-width:430px; max-height:85vh; overflow-y:auto; padding:16px 12px 30px; border:1px solid #2a2a4a; }
@@ -72,15 +71,20 @@
         .shop-buy.wood { background:#4caf84; color:#fff; }
         .shop-buy.crystal { background:#a78bfa; color:#fff; }
         .shop-buy:disabled { opacity:0.4; }
+        .skin-tabs { display:flex; gap:8px; margin-bottom:12px; }
+        .skin-tab { flex:1; padding:10px; border-radius:10px; border:1px solid #2a2a4a; background:transparent; color:#eee; cursor:pointer; font-weight:600; font-size:13px; text-align:center; }
+        .skin-tab.active { background:#e2a03f; border-color:#e2a03f; color:#000; }
         .skin-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
         .skin-card { background:#1e2a3a; border-radius:12px; padding:10px; text-align:center; border:2px solid #2a2a4a; cursor:pointer; }
         .skin-card.active { border-color:#ffd700; }
         .skin-card.hidden-skin { border-color:#a78bfa; background:rgba(167,139,250,0.15); }
+        .skin-img { width:48px; height:48px; object-fit:contain; margin:0 auto 6px; display:block; border-radius:8px; }
         .skin-emoji { font-size:32px; display:block; margin-bottom:6px; }
         .skin-name { font-size:11px; color:#eee; font-weight:600; }
         .skin-price { font-size:10px; color:#e2a03f; margin-top:3px; }
         .skin-price-star { font-size:10px; color:#ffd700; margin-top:3px; }
         .skin-hidden-badge { font-size:9px; color:#a78bfa; margin-top:2px; }
+        .add-skin-btn { width:100%; padding:12px; border-radius:10px; border:2px dashed #e2a03f; background:transparent; color:#e2a03f; font-weight:600; cursor:pointer; margin-top:12px; }
         .trade-item { background:#1e2a3a; border-radius:12px; padding:12px; margin-bottom:8px; border:1px solid #2a2a4a; }
         .trade-header { display:flex; justify-content:space-between; margin-bottom:6px; }
         .trade-seller-name { font-weight:600; color:#eee; font-size:13px; }
@@ -143,7 +147,6 @@
             <button class="btn btn-shop" id="btnShop">🏪 Магазин</button>
             <button class="btn btn-leaderboard" id="btnLeaderboard">🏆 Рейтинг</button>
             <button class="btn btn-trees" id="btnSkins">🎄 Скины</button>
-            <button class="btn btn-axes" id="btnAxes">🪓 Топоры</button>
             <button class="btn btn-trade" id="btnTrade">💱 Торги</button>
         </div>
         <div class="passive-info" id="passiveInfo"></div>
@@ -165,28 +168,13 @@
         <button onclick="adminGiveSkin()" class="admin-btn purple">Выдать скин</button>
         <h3>🪓 Выдать топор</h3>
         <input type="text" id="adminAxeTargetId" class="admin-input" placeholder="ID игрока">
-        <select id="adminAxeSelect" class="admin-input"><option value="gold_axe">🪓 Золотой топор</option><option value="diamond_axe">💎 Алмазный топор</option><option value="fire_axe">🔥 Огненный топор</option></select>
+        <select id="adminAxeSelect" class="admin-input"><option value="gold_axe">🥇 Золотой</option><option value="diamond_axe">💎 Алмазный</option><option value="fire_axe">🔥 Огненный</option></select>
         <button onclick="adminGiveAxe()" class="admin-btn gold">Выдать топор</button>
         <h3>🗑️ Забрать ресурсы</h3>
         <input type="text" id="adminTakeId" class="admin-input" placeholder="ID игрока">
         <input type="number" id="adminTakeWood" class="admin-input" placeholder="Древесина">
         <input type="number" id="adminTakeCrystals" class="admin-input" placeholder="Кристаллы">
         <button onclick="adminTakeResources()" class="admin-btn red">Забрать</button>
-        <h3>➕ Добавить скин</h3>
-        <input type="text" id="newSkinName" class="admin-input" placeholder="Название скина">
-        <input type="text" id="newSkinEmoji" class="admin-input" placeholder="Эмодзи (🎄)">
-        <input type="text" id="newSkinColor" class="admin-input" placeholder="Цвет кроны (#ff0000)">
-        <input type="number" id="newSkinPrice" class="admin-input" placeholder="Цена">
-        <select id="newSkinCurrency" class="admin-input"><option value="crystals">💎 Кристаллы</option><option value="stars">⭐ Звёзды</option></select>
-        <label style="color:#aaa;font-size:11px;"><input type="checkbox" id="newSkinHidden"> Скрытый скин (только через выдачу)</label>
-        <button onclick="adminAddSkin()" class="admin-btn green" style="margin-top:8px;">Добавить скин</button>
-        <h3>➕ Добавить топор</h3>
-        <input type="text" id="newAxeName" class="admin-input" placeholder="Название топора">
-        <input type="text" id="newAxeEmoji" class="admin-input" placeholder="Эмодзи (🪓)">
-        <input type="number" id="newAxePrice" class="admin-input" placeholder="Цена">
-        <select id="newAxeCurrency" class="admin-input"><option value="crystals">💎 Кристаллы</option><option value="stars">⭐ Звёзды</option></select>
-        <label style="color:#aaa;font-size:11px;"><input type="checkbox" id="newAxeHidden"> Скрытый топор</label>
-        <button onclick="adminAddAxe()" class="admin-btn purple" style="margin-top:8px;">Добавить топор</button>
         <button onclick="document.getElementById('adminPanel').style.display='none'" class="admin-btn close" style="margin-top:15px;">Закрыть</button>
     </div>
 </div>
@@ -214,11 +202,8 @@ document.getElementById('titleHeader').addEventListener('click', () => {
     titleClicks++;
     if (titleClicks >= 5) {
         titleClicks = 0;
-        if (userId === ADMIN_ID) {
-            document.getElementById('adminPanel').style.display = 'block';
-        } else {
-            alert('⛔ Доступ запрещён');
-        }
+        if (userId === ADMIN_ID) document.getElementById('adminPanel').style.display = 'block';
+        else alert('⛔ Доступ запрещён');
     }
     setTimeout(() => titleClicks = 0, 2000);
 });
@@ -334,73 +319,6 @@ async function adminGiveAxe() {
     } else { alert('❌ Игрок не найден'); }
 }
 
-function adminAddSkin() {
-    const name = document.getElementById('newSkinName').value.trim();
-    const emoji = document.getElementById('newSkinEmoji').value.trim();
-    const color = document.getElementById('newSkinColor').value.trim();
-    const price = parseInt(document.getElementById('newSkinPrice').value) || 0;
-    const currency = document.getElementById('newSkinCurrency').value;
-    const hidden = document.getElementById('newSkinHidden').checked;
-    
-    if (!name || !emoji || !color || !price) { alert('Заполните все поля'); return; }
-    
-    const newSkin = {
-        id: 'custom_' + Date.now(),
-        name: name,
-        emoji: emoji,
-        colors: [color, color, color],
-        price: price,
-        cur: currency,
-        hidden: hidden
-    };
-    
-    // Добавляем в локальный массив
-    treeSkins.push(newSkin);
-    
-    // Сохраняем в localStorage
-    const customSkins = JSON.parse(localStorage.getItem('custom_skins') || '[]');
-    customSkins.push(newSkin);
-    localStorage.setItem('custom_skins', JSON.stringify(customSkins));
-    
-    alert('✅ Скин "' + name + '" добавлен!');
-    document.getElementById('newSkinName').value = '';
-    document.getElementById('newSkinEmoji').value = '';
-    document.getElementById('newSkinColor').value = '';
-    document.getElementById('newSkinPrice').value = '';
-    document.getElementById('newSkinHidden').checked = false;
-}
-
-function adminAddAxe() {
-    const name = document.getElementById('newAxeName').value.trim();
-    const emoji = document.getElementById('newAxeEmoji').value.trim();
-    const price = parseInt(document.getElementById('newAxePrice').value) || 0;
-    const currency = document.getElementById('newAxeCurrency').value;
-    const hidden = document.getElementById('newAxeHidden').checked;
-    
-    if (!name || !emoji || !price) { alert('Заполните все поля'); return; }
-    
-    const newAxe = {
-        id: 'axe_custom_' + Date.now(),
-        name: name,
-        emoji: emoji,
-        price: price,
-        cur: currency,
-        hidden: hidden
-    };
-    
-    axeSkins.push(newAxe);
-    
-    const customAxes = JSON.parse(localStorage.getItem('custom_axes') || '[]');
-    customAxes.push(newAxe);
-    localStorage.setItem('custom_axes', JSON.stringify(customAxes));
-    
-    alert('✅ Топор "' + name + '" добавлен!');
-    document.getElementById('newAxeName').value = '';
-    document.getElementById('newAxeEmoji').value = '';
-    document.getElementById('newAxePrice').value = '';
-    document.getElementById('newAxeHidden').checked = false;
-}
-
 async function api(endpoint, method='GET', body=null) {
     try {
         const opts = { method, headers: {'Content-Type':'application/json'} };
@@ -413,39 +331,33 @@ async function api(endpoint, method='GET', body=null) {
 async function sendLB() { await api('/leaderboard/update','POST',{user_id:userId,name:playerName,wood:player.wood,crystals:player.crystals,treeLevel:player.treeLevel,totalTrees:player.totalTrees}); }
 async function loadLB() { const r=await api('/leaderboard'); return r.success?r.players:[]; }
 async function loadTrades() { const r=await api('/trades?user_id='+userId); return r.success?r.trades:[]; }
-async function createServerTrade(skinId,price,targetId){const skin=treeSkins.find(s=>s.id===skinId);return await api('/trades/create','POST',{sellerId:userId,sellerName:playerName,targetId:targetId||null,skinId,price,skinName:skin.name,skinEmoji:skin.emoji});}
+async function createServerTrade(skinId,price,targetId){const skin=allSkins().find(s=>s.id===skinId);return await api('/trades/create','POST',{sellerId:userId,sellerName:playerName,targetId:targetId||null,skinId,price,skinName:skin.name,skinEmoji:skin.emoji||'🎄'});}
 async function buyServerTrade(tradeId){return await api('/trades/buy','POST',{trade_id:tradeId,buyer_id:userId});}
 async function cancelServerTrade(tradeId){return await api('/trades/cancel','POST',{trade_id:tradeId,user_id:userId});}
 
+function allSkins() { return [...treeSkins, ...axeSkins]; }
+
 const treeSkins = [
-    { id:'default', name:'Обычное', emoji:'🌳', colors:['#3a7d3a','#4caf50','#66bb6a'], price:0, cur:'free', hidden:false },
-    { id:'autumn', name:'Осеннее', emoji:'🍂', colors:['#c47f2a','#d4943a','#e2a03f'], price:500, cur:'crystals', hidden:false },
-    { id:'cherry', name:'Сакура', emoji:'🌸', colors:['#ff9ec4','#ffbdd4','#ffd1e4'], price:800, cur:'crystals', hidden:false },
-    { id:'crystal', name:'Кристальное', emoji:'💎', colors:['#a78bfa','#c4b5fd','#ddd6fe'], price:1200, cur:'crystals', hidden:false },
-    { id:'golden', name:'Золотое', emoji:'✨', colors:['#d4a017','#e6c22a','#f0d840'], price:2000, cur:'crystals', hidden:false },
-    { id:'inferno', name:'Огненное', emoji:'🔥', colors:['#cc3300','#e64d00','#ff6600'], price:3500, cur:'crystals', hidden:false },
-    { id:'ocean', name:'Океанское', emoji:'🌊', colors:['#0066cc','#0088e6','#00aaff'], price:10, cur:'stars', hidden:false },
-    { id:'void', name:'Бездны', emoji:'🕳️', colors:['#1a0033','#2d004d','#400066'], price:25, cur:'stars', hidden:false },
-    { id:'rainbow', name:'Радужное', emoji:'🌈', colors:['#ff0000','#ff7700','#ffff00'], price:50, cur:'stars', hidden:false },
+    { id:'default', name:'Обычное', emoji:'🌳', colors:['#3a7d3a','#4caf50','#66bb6a'], price:0, cur:'free', hidden:false, type:'tree' },
+    { id:'autumn', name:'Осеннее', emoji:'🍂', colors:['#c47f2a','#d4943a','#e2a03f'], price:500, cur:'crystals', hidden:false, type:'tree' },
+    { id:'cherry', name:'Сакура', emoji:'🌸', colors:['#ff9ec4','#ffbdd4','#ffd1e4'], price:800, cur:'crystals', hidden:false, type:'tree' },
+    { id:'crystal', name:'Кристальное', emoji:'💎', colors:['#a78bfa','#c4b5fd','#ddd6fe'], price:1200, cur:'crystals', hidden:false, type:'tree' },
+    { id:'golden', name:'Золотое', emoji:'✨', colors:['#d4a017','#e6c22a','#f0d840'], price:2000, cur:'crystals', hidden:false, type:'tree' },
+    { id:'inferno', name:'Огненное', emoji:'🔥', colors:['#cc3300','#e64d00','#ff6600'], price:3500, cur:'crystals', hidden:false, type:'tree' },
+    { id:'ocean', name:'Океанское', emoji:'🌊', colors:['#0066cc','#0088e6','#00aaff'], price:10, cur:'stars', hidden:false, type:'tree' },
+    { id:'void', name:'Бездны', emoji:'🕳️', colors:['#1a0033','#2d004d','#400066'], price:25, cur:'stars', hidden:false, type:'tree' },
+    { id:'rainbow', name:'Радужное', emoji:'🌈', colors:['#ff0000','#ff7700','#ffff00'], price:50, cur:'stars', hidden:false, type:'tree' },
 ];
 
 const axeSkins = [
-    { id:'default', name:'Обычный', emoji:'🪓', price:0, cur:'free', hidden:false },
-    { id:'gold_axe', name:'Золотой', emoji:'🥇', price:1000, cur:'crystals', hidden:false },
-    { id:'diamond_axe', name:'Алмазный', emoji:'💎', price:3000, cur:'crystals', hidden:false },
-    { id:'fire_axe', name:'Огненный', emoji:'🔥', price:5000, cur:'crystals', hidden:false },
+    { id:'default', name:'Обычный', emoji:'🪓', price:0, cur:'free', hidden:false, type:'axe' },
+    { id:'gold_axe', name:'Золотой', emoji:'🥇', price:1000, cur:'crystals', hidden:false, type:'axe' },
+    { id:'diamond_axe', name:'Алмазный', emoji:'💎', price:3000, cur:'crystals', hidden:false, type:'axe' },
+    { id:'fire_axe', name:'Огненный', emoji:'🔥', price:5000, cur:'crystals', hidden:false, type:'axe' },
 ];
 
-// Загружаем кастомные скины
-try {
-    const customSkins = JSON.parse(localStorage.getItem('custom_skins') || '[]');
-    customSkins.forEach(s => treeSkins.push(s));
-} catch(e) {}
-
-try {
-    const customAxes = JSON.parse(localStorage.getItem('custom_axes') || '[]');
-    customAxes.forEach(a => axeSkins.push(a));
-} catch(e) {}
+try { const cs = JSON.parse(localStorage.getItem('custom_tree_skins')||'[]'); cs.forEach(s => treeSkins.push(s)); } catch(e) {}
+try { const ca = JSON.parse(localStorage.getItem('custom_axe_skins')||'[]'); ca.forEach(a => axeSkins.push(a)); } catch(e) {}
 
 let player = { name:playerName, userId, wood:0, crystals:0, stars:0, axePower:1, crystalBonus:1, autoWood:0, critChance:0, critMultiplier:2.0, crystalToWoodRate:0, comboBonus:0, combo:0, comboMultiplier:1.0, treeHP:15, maxTreeHP:15, totalTrees:0, treeLevel:1, activeSkin:'default', ownedSkins:['default'], activeAxe:'default', ownedAxes:['default'], upgrades:{} };
 
@@ -454,13 +366,13 @@ player.name=playerName; player.userId=userId;
 
 (async () => {
     try {
-        const result = await fetch(API_URL + '/profile/' + userId).then(r => r.json());
-        if (result.success && result.profile && Object.keys(result.profile).length > 0) {
-            const sp = result.profile;
+        const r = await fetch(API_URL + '/profile/' + userId).then(r => r.json());
+        if (r.success && r.profile && Object.keys(r.profile).length > 0) {
+            const sp = r.profile;
             if (sp.wood !== undefined) player.wood = sp.wood;
             if (sp.crystals !== undefined) player.crystals = sp.crystals;
-            if (sp.ownedSkins && Array.isArray(sp.ownedSkins)) player.ownedSkins = sp.ownedSkins;
-            if (sp.ownedAxes && Array.isArray(sp.ownedAxes)) player.ownedAxes = sp.ownedAxes;
+            if (sp.ownedSkins) player.ownedSkins = sp.ownedSkins;
+            if (sp.ownedAxes) player.ownedAxes = sp.ownedAxes;
             if (sp.activeSkin) player.activeSkin = sp.activeSkin;
             if (sp.activeAxe) player.activeAxe = sp.activeAxe;
             updateUI(); save();
@@ -478,10 +390,7 @@ if(!player.upgrades) player.upgrades={};
 
 function save() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(player));
-    fetch(API_URL + '/profile/save', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ user_id: userId, wood: player.wood, crystals: player.crystals, stars: player.stars||0, ownedSkins: player.ownedSkins, ownedAxes: player.ownedAxes, activeSkin: player.activeSkin, activeAxe: player.activeAxe, name: player.name, treeLevel: player.treeLevel, totalTrees: player.totalTrees })
-    }).catch(e => {});
+    fetch(API_URL + '/profile/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ user_id: userId, wood: player.wood, crystals: player.crystals, ownedSkins: player.ownedSkins, ownedAxes: player.ownedAxes, activeSkin: player.activeSkin, activeAxe: player.activeAxe, name: player.name, treeLevel: player.treeLevel, totalTrees: player.totalTrees }) }).catch(e => {});
 }
 
 function calcHP(lv) { const bMin=15,bMax=30; let m; if(lv<=10)m=1+(lv-1)*0.5; else if(lv<=50)m=5.5+(lv-10)*0.3; else if(lv<=200)m=17.5+(lv-50)*0.2; else if(lv<=1000)m=47.5+(lv-200)*0.1; else if(lv<=5000)m=127.5+(lv-1000)*0.05; else m=327.5+(lv-5000)*0.02; return Math.floor(rand(bMin*m+(lv-1)*5,bMax*m+(lv-1)*5)); }
@@ -551,8 +460,7 @@ function chopTree() {
     if(player.treeHP <= 0) {
         player.maxTreeHP = calcHP(player.treeLevel);
         player.treeHP = player.maxTreeHP;
-        updateUI();
-        return;
+        updateUI(); return;
     }
     let dmg=player.axePower; const crit=Math.random()*100<player.critChance;
     if(crit) dmg=Math.floor(dmg*player.critMultiplier);
@@ -601,60 +509,175 @@ function showShop() {
 }
 
 function showSkins() {
-    let html = '<div class="skin-grid">';
-    treeSkins.forEach(skin=>{
-        // Скрытые скины показываем только если они уже есть у игрока
-        if (skin.hidden && !player.ownedSkins.includes(skin.id)) return;
-        const owned=player.ownedSkins.includes(skin.id), active=player.activeSkin===skin.id;
-        let priceHTML='';
-        if(!owned){if(skin.cur==='free')priceHTML='<div class="skin-price">Бесплатно</div>';else if(skin.cur==='crystals')priceHTML=`<div class="skin-price">🔒 ${fmt(skin.price)} 💎</div>`;else priceHTML=`<div class="skin-price-star">⭐ ${skin.price} звёзд</div>`;}
-        html+=`<div class="skin-card ${active?'active':''} ${skin.hidden?'hidden-skin':''}" data-skin="${skin.id}"><span class="skin-emoji">${skin.emoji}</span><div class="skin-name">${skin.name}</div>${priceHTML}${skin.hidden?'<div class="skin-hidden-badge">🔮 Скрытый</div>':''}${active?'<div style="color:#ffd700;font-size:10px;">✅</div>':''}</div>`;
-    });
-    html += '</div>';
-    const bg = popup('🎄 Скины деревьев', html);
-    bg.querySelectorAll('[data-skin]').forEach(el=>el.addEventListener('click', function(){
-        const skinId = this.dataset.skin, skin = treeSkins.find(s=>s.id===skinId), owned = player.ownedSkins.includes(skinId);
-        if(owned){player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}
-        else if(skin.cur==='free'){player.ownedSkins.push(skinId);player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}
-        else if(skin.cur==='crystals'){if(player.crystals>=skin.price){if(confirm(`Купить "${skin.name}" за ${skin.price}💎?`)){player.crystals-=skin.price;player.ownedSkins.push(skinId);player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}}else alert('Недостаточно кристаллов!');}
-        else if(skin.cur==='stars'){
-            if(typeof tg.openInvoice === 'function'){
-                api('/create-star-invoice','POST',{user_id:userId,skin_id:skin.id,skin_name:skin.name,price:skin.price}).then(result=>{
-                    if(result.success && result.invoice_link){tg.openInvoice(result.invoice_link,(status)=>{if(status==='paid'){player.ownedSkins.push(skinId);player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}});}
-                    else alert('Ошибка создания счёта');
-                });
-            } else if(typeof tg.sendStarInvoice === 'function'){
-                tg.sendStarInvoice({title:'Скин: '+skin.name,description:'Скин для Woodcutter',payload:'skin_'+skin.id+'_'+userId,currency:'XTR',prices:[{amount:skin.price,label:skin.name}]},(status)=>{if(status==='paid'){player.ownedSkins.push(skinId);player.activeSkin=skinId;updateUI();save();bg.remove();showSkins();}});
-            } else alert('Откройте игру через бота Telegram');
+    let currentTab = 'tree';
+    
+    function renderSkins(tab) {
+        currentTab = tab;
+        let html = '<div class="skin-tabs">';
+        html += `<div class="skin-tab ${tab==='tree'?'active':''}" data-tab="tree">🎄 Деревья</div>`;
+        html += `<div class="skin-tab ${tab==='axe'?'active':''}" data-tab="axe">🪓 Топоры</div>`;
+        html += '</div><div class="skin-grid">';
+        
+        const skins = tab === 'tree' ? treeSkins : axeSkins;
+        const ownedList = tab === 'tree' ? player.ownedSkins : player.ownedAxes;
+        const activeId = tab === 'tree' ? player.activeSkin : player.activeAxe;
+        
+        skins.forEach(skin => {
+            if (skin.hidden && !ownedList.includes(skin.id)) return;
+            const owned = ownedList.includes(skin.id);
+            const active = activeId === skin.id;
+            let priceHTML = '';
+            if (!owned) {
+                if (skin.cur === 'free') priceHTML = '<div class="skin-price">Бесплатно</div>';
+                else if (skin.cur === 'crystals') priceHTML = `<div class="skin-price">🔒 ${fmt(skin.price)} 💎</div>`;
+                else priceHTML = `<div class="skin-price-star">⭐ ${skin.price} звёзд</div>`;
+            }
+            const imgHTML = skin.img ? `<img src="${skin.img}" class="skin-img" onerror="this.style.display='none'">` : '';
+            const emojiHTML = !skin.img ? `<span class="skin-emoji">${skin.emoji}</span>` : '';
+            html += `<div class="skin-card ${active?'active':''} ${skin.hidden?'hidden-skin':''}" data-skin="${skin.id}" data-type="${tab}">
+                ${imgHTML}${emojiHTML}
+                <div class="skin-name">${skin.name}</div>${priceHTML}
+                ${skin.hidden?'<div class="skin-hidden-badge">🔮 Скрытый</div>':''}
+                ${active?'<div style="color:#ffd700;font-size:10px;">✅</div>':''}
+            </div>`;
+        });
+        
+        html += '</div>';
+        
+        // Кнопка добавления скина (только для админа)
+        if (userId === ADMIN_ID) {
+            html += `<button class="add-skin-btn" id="btnAddSkin">➕ Добавить скин</button>`;
         }
-    }));
+        
+        const bg = popup('🎨 Скины', html);
+        
+        // Переключение вкладок
+        bg.querySelectorAll('.skin-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                bg.remove();
+                renderSkins(tab.dataset.tab);
+            });
+        });
+        
+        // Клик по скину
+        bg.querySelectorAll('[data-skin]').forEach(el => {
+            el.addEventListener('click', function() {
+                const skinId = this.dataset.skin;
+                const type = this.dataset.type;
+                const skins = type === 'tree' ? treeSkins : axeSkins;
+                const skin = skins.find(s => s.id === skinId);
+                const ownedList = type === 'tree' ? player.ownedSkins : player.ownedAxes;
+                const owned = ownedList.includes(skinId);
+                
+                if (owned) {
+                    if (type === 'tree') { player.activeSkin = skinId; }
+                    else { player.activeAxe = skinId; }
+                    updateUI(); save();
+                    bg.remove(); renderSkins(currentTab);
+                } else if (skin.cur === 'free') {
+                    ownedList.push(skinId);
+                    if (type === 'tree') player.activeSkin = skinId;
+                    else player.activeAxe = skinId;
+                    updateUI(); save();
+                    bg.remove(); renderSkins(currentTab);
+                } else if (skin.cur === 'crystals') {
+                    if (player.crystals >= skin.price) {
+                        if (confirm(`Купить "${skin.name}" за ${skin.price}💎?`)) {
+                            player.crystals -= skin.price;
+                            ownedList.push(skinId);
+                            if (type === 'tree') player.activeSkin = skinId;
+                            else player.activeAxe = skinId;
+                            updateUI(); save();
+                            bg.remove(); renderSkins(currentTab);
+                        }
+                    } else alert('Недостаточно кристаллов!');
+                } else if (skin.cur === 'stars') {
+                    if (typeof tg.openInvoice === 'function') {
+                        api('/create-star-invoice','POST',{user_id:userId,skin_id:skin.id,skin_name:skin.name,price:skin.price}).then(r => {
+                            if (r.success && r.invoice_link) tg.openInvoice(r.invoice_link, s => {
+                                if (s === 'paid') {
+                                    ownedList.push(skinId);
+                                    if (type === 'tree') player.activeSkin = skinId;
+                                    else player.activeAxe = skinId;
+                                    updateUI(); save();
+                                    bg.remove(); renderSkins(currentTab);
+                                }
+                            });
+                        });
+                    } else alert('Откройте игру через бота Telegram');
+                }
+            });
+        });
+        
+        // Кнопка добавления скина
+        if (userId === ADMIN_ID) {
+            bg.querySelector('#btnAddSkin')?.addEventListener('click', () => {
+                bg.remove();
+                showAddSkinForm();
+            });
+        }
+    }
+    
+    renderSkins('tree');
 }
 
-function showAxes() {
-    let html = '<div class="skin-grid">';
-    axeSkins.forEach(axe=>{
-        if (axe.hidden && !player.ownedAxes.includes(axe.id)) return;
-        const owned=player.ownedAxes.includes(axe.id), active=player.activeAxe===axe.id;
-        let priceHTML='';
-        if(!owned){if(axe.cur==='free')priceHTML='<div class="skin-price">Бесплатно</div>';else if(axe.cur==='crystals')priceHTML=`<div class="skin-price">🔒 ${fmt(axe.price)} 💎</div>`;else priceHTML=`<div class="skin-price-star">⭐ ${axe.price} звёзд</div>`;}
-        html+=`<div class="skin-card ${active?'active':''} ${axe.hidden?'hidden-skin':''}" data-axe="${axe.id}"><span class="skin-emoji">${axe.emoji}</span><div class="skin-name">${axe.name}</div>${priceHTML}${axe.hidden?'<div class="skin-hidden-badge">🔮 Скрытый</div>':''}${active?'<div style="color:#ffd700;font-size:10px;">✅</div>':''}</div>`;
-    });
+function showAddSkinForm() {
+    let html = '<div class="create-form">';
+    html += '<div class="form-group"><label>Тип</label><select id="newSkinType" class="form-input"><option value="tree">🎄 Скин дерева</option><option value="axe">🪓 Скин топора</option></select></div>';
+    html += '<div class="form-group"><label>Название</label><input type="text" id="newSkinName" class="form-input" placeholder="Название скина"></div>';
+    html += '<div class="form-group"><label>Эмодзи (если нет картинки)</label><input type="text" id="newSkinEmoji" class="form-input" placeholder="🎄"></div>';
+    html += '<div class="form-group"><label>URL картинки</label><input type="text" id="newSkinImg" class="form-input" placeholder="https://..."></div>';
+    html += '<div class="form-group" id="colorGroup"><label>Цвет кроны (для деревьев)</label><input type="text" id="newSkinColor" class="form-input" placeholder="#ff0000"></div>';
+    html += '<div class="form-group"><label>Цена</label><input type="number" id="newSkinPrice" class="form-input" placeholder="500"></div>';
+    html += '<div class="form-group"><label>Валюта</label><select id="newSkinCurrency" class="form-input"><option value="crystals">💎 Кристаллы</option><option value="stars">⭐ Звёзды</option></select></div>';
+    html += '<div class="form-group"><label style="color:#aaa;font-size:11px;"><input type="checkbox" id="newSkinHidden"> Скрытый скин (только через выдачу)</label></div>';
+    html += '<button id="btnSaveSkin" class="form-submit">Добавить</button>';
     html += '</div>';
-    const bg = popup('🪓 Скины топоров', html);
-    bg.querySelectorAll('[data-axe]').forEach(el=>el.addEventListener('click', function(){
-        const axeId = this.dataset.axe, axe = axeSkins.find(a=>a.id===axeId), owned = player.ownedAxes.includes(axeId);
-        if(owned){player.activeAxe=axeId;updateUI();save();bg.remove();showAxes();}
-        else if(axe.cur==='free'){player.ownedAxes.push(axeId);player.activeAxe=axeId;updateUI();save();bg.remove();showAxes();}
-        else if(axe.cur==='crystals'){if(player.crystals>=axe.price){if(confirm(`Купить "${axe.name}" за ${axe.price}💎?`)){player.crystals-=axe.price;player.ownedAxes.push(axeId);player.activeAxe=axeId;updateUI();save();bg.remove();showAxes();}}else alert('Недостаточно кристаллов!');}
-        else if(axe.cur==='stars'){
-            if(typeof tg.openInvoice === 'function'){
-                api('/create-star-invoice','POST',{user_id:userId,skin_id:axe.id,skin_name:axe.name,price:axe.price}).then(result=>{
-                    if(result.success && result.invoice_link){tg.openInvoice(result.invoice_link,(status)=>{if(status==='paid'){player.ownedAxes.push(axeId);player.activeAxe=axeId;updateUI();save();bg.remove();showAxes();}});}
-                    else alert('Ошибка создания счёта');
-                });
-            } else alert('Откройте игру через бота Telegram');
+    
+    const bg = popup('➕ Добавить скин', html);
+    
+    bg.querySelector('#newSkinType').addEventListener('change', function() {
+        document.getElementById('colorGroup').style.display = this.value === 'tree' ? 'block' : 'none';
+    });
+    
+    bg.querySelector('#btnSaveSkin').addEventListener('click', () => {
+        const type = document.getElementById('newSkinType').value;
+        const name = document.getElementById('newSkinName').value.trim();
+        const emoji = document.getElementById('newSkinEmoji').value.trim();
+        const img = document.getElementById('newSkinImg').value.trim();
+        const color = document.getElementById('newSkinColor').value.trim();
+        const price = parseInt(document.getElementById('newSkinPrice').value) || 0;
+        const currency = document.getElementById('newSkinCurrency').value;
+        const hidden = document.getElementById('newSkinHidden').checked;
+        
+        if (!name) { alert('Введите название'); return; }
+        if (!emoji && !img) { alert('Введите эмодзи или URL картинки'); return; }
+        if (type === 'tree' && !color) { alert('Введите цвет кроны'); return; }
+        if (!price) { alert('Введите цену'); return; }
+        
+        const newSkin = {
+            id: 'custom_' + Date.now(),
+            name, emoji, img: img || null,
+            colors: type === 'tree' ? [color, color, color] : null,
+            price, cur: currency, hidden, type
+        };
+        
+        if (type === 'tree') {
+            treeSkins.push(newSkin);
+            const saved = JSON.parse(localStorage.getItem('custom_tree_skins') || '[]');
+            saved.push(newSkin);
+            localStorage.setItem('custom_tree_skins', JSON.stringify(saved));
+        } else {
+            axeSkins.push(newSkin);
+            const saved = JSON.parse(localStorage.getItem('custom_axe_skins') || '[]');
+            saved.push(newSkin);
+            localStorage.setItem('custom_axe_skins', JSON.stringify(saved));
         }
-    }));
+        
+        alert('✅ Скин "' + name + '" добавлен!');
+        bg.remove();
+        showSkins();
+    });
 }
 
 async function showLB() {
@@ -664,8 +687,7 @@ async function showLB() {
     else lb.forEach((e,i)=>{
         const r=i+1;let rc='',ri=r;
         if(r===1){rc='lb-gold';ri='🥇';}else if(r===2){rc='lb-silver';ri='🥈';}else if(r===3){rc='lb-bronze';ri='🥉';}
-        const uid = e.user_id || e.userId;
-        html+=`<tr class="${uid===player.userId?'lb-me':''}" data-uid="${uid}" style="cursor:pointer;"><td class="lb-rank ${rc}">${ri}</td><td>${esc(e.name)}</td><td>${fmt(e.wood)}</td><td>${fmt(e.crystals)}</td><td>${e.treeLevel||1}</td></tr>`;
+        html+=`<tr class="${(e.user_id||e.userId)===player.userId?'lb-me':''}" data-uid="${e.user_id||e.userId}" style="cursor:pointer;"><td class="lb-rank ${rc}">${ri}</td><td>${esc(e.name)}</td><td>${fmt(e.wood)}</td><td>${fmt(e.crystals)}</td><td>${e.treeLevel||1}</td></tr>`;
     });
     html+='</tbody></table>';
     const bg = popup('🏆 Рейтинг', html);
@@ -676,11 +698,11 @@ async function showLB() {
                 const result = await fetch(API_URL + '/profile/' + uid).then(r => r.json());
                 if (result.success && result.profile) {
                     const p = result.profile;
-                    const info = `👤 Игрок: ${uid}\n🌲 Древесина: ${fmt(p.wood || 0)}\n💎 Кристаллы: ${fmt(p.crystals || 0)}\n🎄 Скинов: ${(p.ownedSkins || ['default']).length}\n🪓 Топоров: ${(p.ownedAxes || ['default']).length}\n📊 Уровень: ${p.treeLevel || 1}`;
+                    const info = `👤 Игрок: ${uid}\n🌲 Древесина: ${fmt(p.wood||0)}\n💎 Кристаллы: ${fmt(p.crystals||0)}\n🎄 Скинов: ${(p.ownedSkins||['default']).length}\n🪓 Топоров: ${(p.ownedAxes||['default']).length}\n📊 Уровень: ${p.treeLevel||1}`;
                     if (confirm(info + '\n\n🗑️ Удалить этого игрока?')) {
                         await fetch(API_URL + '/profile/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ user_id: uid, wood: 0, crystals: 0, ownedSkins: ['default'], ownedAxes: ['default'], activeSkin: 'default', activeAxe: 'default', name: 'Игрок', treeLevel: 1, totalTrees: 0 }) });
                         await fetch(API_URL + '/leaderboard/update', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ user_id: uid, name: 'Игрок', wood: 0, crystals: 0, treeLevel: 1, totalTrees: 0 }) });
-                        alert('✅ Игрок удалён и обнулён');
+                        alert('✅ Игрок удалён');
                         bg.remove(); showLB();
                     }
                 }
@@ -691,23 +713,21 @@ async function showLB() {
 
 async function showTrade() {
     const trades = await loadTrades();
-    let html = `<div class="player-id-box" style="background:#1e2a3a;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;border:1px solid #2a2a4a;"><span style="color:#aaa;font-size:12px;">Ваш ID: <span style="color:#e2a03f;font-weight:700;font-family:monospace;font-size:13px;">${player.userId}</span></span><button id="btnCopyIdTrade" style="background:#e2a03f;color:#000;border:none;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;">📋 Копировать</button></div>`;
+    let html = `<div style="background:#1e2a3a;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;border:1px solid #2a2a4a;"><span style="color:#aaa;font-size:12px;">Ваш ID: <span style="color:#e2a03f;font-weight:700;font-family:monospace;font-size:13px;">${player.userId}</span></span><button id="btnCopyIdTrade" style="background:#e2a03f;color:#000;border:none;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;">📋 Копировать</button></div>`;
     html += `<div class="create-form">
         <div class="form-group"><label>ID игрока (пусто = всем)</label><input type="text" id="tradeTargetId" class="form-input" placeholder="Вставьте ID..."></div>
         <div class="form-group"><label>Скин</label><select id="tradeSkinSelect" class="form-input"><option value="">-- Выберите --</option>`;
-    player.ownedSkins.forEach(sid=>{if(sid==='default')return;const s=treeSkins.find(x=>x.id===sid);if(s)html+=`<option value="${s.id}">${s.emoji} ${s.name}${sid===player.activeSkin?' (активен)':''}</option>`;});
+    player.ownedSkins.forEach(sid=>{if(sid==='default')return;const s=treeSkins.find(x=>x.id===sid);if(s)html+=`<option value="${s.id}">${s.emoji||'🎄'} ${s.name}${sid===player.activeSkin?' (активен)':''}</option>`;});
     html+=`</select></div>
         <div class="form-group"><label>Цена 🌲</label><input type="number" id="tradePriceInput" class="form-input" placeholder="100" min="1"></div>
         <button id="btnCreateTrade" class="form-submit">Выставить</button></div>
         <div class="section-title">📋 Предложения</div><div id="tradeList">`;
     if(!trades.length) html+='<div class="no-data">Нет предложений</div>';
     else trades.forEach(trade=>{const isOwn=trade.sellerId===player.userId,canBuy=!isOwn&&player.wood>=trade.price&&!player.ownedSkins.includes(trade.skinId);
-        html+=`<div class="trade-item"><div class="trade-header"><div><span class="trade-seller-name">${esc(trade.sellerName)}</span><br><span class="trade-seller-id">ID: ${trade.sellerId}</span>${trade.targetId?`<br><span class="trade-target">🎯 Для: ${trade.targetId}</span>`:''}</div><span class="trade-price">${fmt(trade.price)} 🌲</span></div><div class="trade-tree">${trade.skinEmoji} ${trade.skinName}</div><button class="trade-btn ${isOwn?'cancel':'buy'}" data-action="${isOwn?'cancel':'buy'}" data-id="${trade.id}" ${!isOwn&&!canBuy?'disabled':''}>${isOwn?'Отменить':(canBuy?'Купить':(player.ownedSkins.includes(trade.skinId)?'Уже есть':'Мало 🌲'))}</button></div>`;});
+        html+=`<div class="trade-item"><div class="trade-header"><div><span class="trade-seller-name">${esc(trade.sellerName)}</span><br><span class="trade-seller-id">ID: ${trade.sellerId}</span>${trade.targetId?`<br><span class="trade-target">🎯 Для: ${trade.targetId}</span>`:''}</div><span class="trade-price">${fmt(trade.price)} 🌲</span></div><div class="trade-tree">${trade.skinEmoji||'🎄'} ${trade.skinName}</div><button class="trade-btn ${isOwn?'cancel':'buy'}" data-action="${isOwn?'cancel':'buy'}" data-id="${trade.id}" ${!isOwn&&!canBuy?'disabled':''}>${isOwn?'Отменить':(canBuy?'Купить':(player.ownedSkins.includes(trade.skinId)?'Уже есть':'Мало 🌲'))}</button></div>`;});
     html+='</div>';
     const bg = popup('💱 Торги', html);
-    document.getElementById('btnCopyIdTrade').addEventListener('click', () => {
-        navigator.clipboard.writeText(player.userId).then(() => alert('✅ ID скопирован: ' + player.userId));
-    });
+    document.getElementById('btnCopyIdTrade').addEventListener('click', () => navigator.clipboard.writeText(player.userId).then(() => alert('✅ Скопировано!')));
     bg.querySelector('#btnCreateTrade').addEventListener('click', async ()=>{
         const sid=bg.querySelector('#tradeSkinSelect').value,price=parseInt(bg.querySelector('#tradePriceInput').value),targetId=bg.querySelector('#tradeTargetId').value.trim();
         if(!sid||!price||price<1){alert('Заполните поля');return;}
@@ -726,7 +746,6 @@ function passiveIncome(){if(player.autoWood>0){player.wood+=player.autoWood;upda
 document.getElementById('btnShop').addEventListener('click', showShop);
 document.getElementById('btnLeaderboard').addEventListener('click', showLB);
 document.getElementById('btnSkins').addEventListener('click', showSkins);
-document.getElementById('btnAxes').addEventListener('click', showAxes);
 document.getElementById('btnTrade').addEventListener('click', showTrade);
 treeContainer.addEventListener('click', chopTree);
 document.addEventListener('keydown', e=>{if(e.code==='Space'){e.preventDefault();chopTree();}});
