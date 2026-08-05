@@ -2374,7 +2374,7 @@
                     updateAdminSelects();
                 }
                 
-                if (photo) {
+                              if (photo) {
                     var reader = new FileReader();
                     reader.onload = function(ev) {
                         var img = new Image();
@@ -2386,14 +2386,15 @@
                             canvas.height = img.height * scale;
                             var ctx = canvas.getContext('2d');
                             
-                            // Очищаем canvas с прозрачностью перед рисованием
-                            ctx.clearRect(0, 0, canvas.width, canvas.height);
+                            // Включаем прозрачность
+                            ctx.globalCompositeOperation = 'source-over';
                             
                             // Рисуем изображение
                             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                             
-                            // Сохраняем как PNG с сохранением прозрачности
-                            saveSkin(canvas.toDataURL('image/png'));
+                            // Сохраняем как PNG
+                            var imageData = canvas.toDataURL('image/png');
+                            saveSkin(imageData);
                         };
                         img.src = ev.target.result;
                     };
