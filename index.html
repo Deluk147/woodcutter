@@ -194,13 +194,65 @@ function upd(){
     document.getElementById('nd').textContent=P.name;
     document.getElementById('cd').innerHTML=P.combo>1?`<span class="combo-fire">🔥 Комбо x${P.combo}</span>`:'Нажимай на дерево! 🪓';
     document.getElementById('pi').textContent=P.autoWood>0?`⏳ +${P.autoWood} 🌲/сек`:'';
-    const skin=treeSkins.find(s=>s.id===P.activeSkin)||treeSkins[0];
-    const colors=hpPct>60?skin.colors:(hpPct>30?['#e67e22','#f39c12','#f1c40f']:['#c0392b','#e74c3c','#ff6b6b']);
-    document.getElementById('c1').setAttribute('fill',colors[0]);
-    document.getElementById('c2').setAttribute('fill',colors[1]);
-    document.getElementById('c3').setAttribute('fill',colors[2]);
-    const axe=axeSkins.find(a=>a.id===P.activeAxe)||axeSkins[0];
-    document.getElementById('ax').textContent=axe.emoji;
+    
+    // Отрисовка скина дерева
+    var skin = treeSkins.find(function(s){ return s.id === P.activeSkin; }) || treeSkins[0];
+    var colors;
+    if (hpPct > 60) {
+        colors = skin.colors;
+    } else if (hpPct > 30) {
+        colors = ['#e67e22', '#f39c12', '#f1c40f'];
+    } else {
+        colors = ['#c0392b', '#e74c3c', '#ff6b6b'];
+    }
+    
+    // Если у скина есть картинка - показываем её вместо SVG кроны
+    var crown1 = document.getElementById('c1');
+    var crown2 = document.getElementById('c2');
+    var crown3 = document.getElementById('c3');
+    
+    if (skin.img) {
+        // Скрываем стандартную крону и показываем картинку
+        crown1.setAttribute('fill', 'transparent');
+        crown2.setAttribute('fill', 'transparent');
+        crown3.setAttribute('fill', 'transparent');
+        
+        // Добавляем изображение поверх дерева
+        var treeContainer = document.getElementById('tc');
+        var existingImg = document.getElementById('skinOverlay');
+        if (!existingImg) {
+            var img = document.createElement('img');
+            img.id = 'skinOverlay';
+            img.style.cssText = 'position:absolute;top:10%;left:15%;width:70%;height:70%;object-fit:contain;pointer-events:none;z-index:5;';
+            treeContainer.appendChild(img);
+        }
+        document.getElementById('skinOverlay').src = skin.img;
+        document.getElementById('skinOverlay').style.display = 'block';
+    } else {
+        // Убираем картинку и показываем цвета
+        var overlay = document.getElementById('skinOverlay');
+        if (overlay) overlay.style.display = 'none';
+        crown1.setAttribute('fill', colors[0]);
+        crown2.setAttribute('fill', colors[1]);
+        crown3.setAttribute('fill', colors[2]);
+    }
+    
+    // Отрисовка топора
+    var axe = axeSkins.find(function(a){ return a.id === P.activeAxe; }) || axeSkins[0];
+    var axeEl = document.getElementById('ax');
+    if (axe.img) {
+        axeEl.textContent = '';
+        axeEl.style.backgroundImage = 'url(' + axe.img + ')';
+        axeEl.style.backgroundSize = 'contain';
+        axeEl.style.backgroundRepeat = 'no-repeat';
+        axeEl.style.width = '50px';
+        axeEl.style.height = '50px';
+    } else {
+        axeEl.style.backgroundImage = '';
+        axeEl.style.width = '';
+        axeEl.style.height = '';
+        axeEl.textContent = axe.emoji || '🪓';
+    }
 }
 
 function popup(title,content){
