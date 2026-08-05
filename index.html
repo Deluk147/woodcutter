@@ -147,12 +147,11 @@
 </div>
 </div>
 
-<!-- Админ-панель -->
 <div class="admin-panel" id="adminPanel">
     <div class="admin-inner">
         <h2>👑 Админ-панель</h2>
         <h3>💰 Выдать ресурсы</h3>
-        <input type="text" id="adminTargetId" class="admin-input" placeholder="ID игрока (например WC046190)">
+        <input type="text" id="adminTargetId" class="admin-input" placeholder="ID игрока">
         <input type="number" id="adminWood" class="admin-input" placeholder="Древесина">
         <input type="number" id="adminCrystals" class="admin-input" placeholder="Кристаллы">
         <button onclick="adminGiveResources()" class="admin-btn green">Выдать</button>
@@ -201,12 +200,13 @@ document.getElementById('titleHeader').addEventListener('click', () => {
     setTimeout(() => titleClicks = 0, 2000);
 });
 
+// АДМИН-ФУНКЦИИ (прямые fetch)
 async function adminGiveResources() {
     const targetId = document.getElementById('adminTargetId').value.trim();
     const wood = parseInt(document.getElementById('adminWood').value) || 0;
     const crystals = parseInt(document.getElementById('adminCrystals').value) || 0;
     if (!targetId) { alert('Введите ID игрока'); return; }
-    const result = await api('/profile/' + targetId);
+    const result = await fetch(API_URL + '/profile/' + targetId).then(r => r.json());
     if (result.success) {
         const profile = result.profile || {};
         profile.user_id = targetId;
@@ -217,11 +217,12 @@ async function adminGiveResources() {
         profile.name = profile.name || 'Игрок';
         profile.treeLevel = profile.treeLevel || 1;
         profile.totalTrees = profile.totalTrees || 0;
-        await api('/profile/save', 'POST', profile);
-        await api('/leaderboard/update', 'POST', { user_id: targetId, name: profile.name, wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel, totalTrees: profile.totalTrees });
-        alert(`✅ Выдано: +${wood}🌲 +${crystals}💎 игроку ${targetId}`);
+        await fetch(API_URL + '/profile/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(profile) });
+        await fetch(API_URL + '/leaderboard/update', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ user_id: targetId, name: profile.name, wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel, totalTrees: profile.totalTrees }) });
+        alert('✅ Выдано: +' + wood + '🌲 +' + crystals + '💎 игроку ' + targetId);
         document.getElementById('adminWood').value = '';
         document.getElementById('adminCrystals').value = '';
+        if (targetId === userId) { player.wood = profile.wood; player.crystals = profile.crystals; updateUI(); save(); }
     } else { alert('❌ Игрок не найден'); }
 }
 
@@ -230,7 +231,7 @@ async function adminTakeResources() {
     const wood = parseInt(document.getElementById('adminTakeWood').value) || 0;
     const crystals = parseInt(document.getElementById('adminTakeCrystals').value) || 0;
     if (!targetId) { alert('Введите ID игрока'); return; }
-    const result = await api('/profile/' + targetId);
+    const result = await fetch(API_URL + '/profile/' + targetId).then(r => r.json());
     if (result.success) {
         const profile = result.profile || {};
         profile.user_id = targetId;
@@ -241,11 +242,12 @@ async function adminTakeResources() {
         profile.name = profile.name || 'Игрок';
         profile.treeLevel = profile.treeLevel || 1;
         profile.totalTrees = profile.totalTrees || 0;
-        await api('/profile/save', 'POST', profile);
-        await api('/leaderboard/update', 'POST', { user_id: targetId, name: profile.name, wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel, totalTrees: profile.totalTrees });
-        alert(`✅ Забрано: -${wood}🌲 -${crystals}💎 у игрока ${targetId}`);
+        await fetch(API_URL + '/profile/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(profile) });
+        await fetch(API_URL + '/leaderboard/update', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ user_id: targetId, name: profile.name, wood: profile.wood, crystals: profile.crystals, treeLevel: profile.treeLevel, totalTrees: profile.totalTrees }) });
+        alert('✅ Забрано: -' + wood + '🌲 -' + crystals + '💎 у игрока ' + targetId);
         document.getElementById('adminTakeWood').value = '';
         document.getElementById('adminTakeCrystals').value = '';
+        if (targetId === userId) { player.wood = profile.wood; player.crystals = profile.crystals; updateUI(); save(); }
     } else { alert('❌ Игрок не найден'); }
 }
 
@@ -253,7 +255,7 @@ async function adminGiveSkin() {
     const targetId = document.getElementById('adminSkinTargetId').value.trim();
     const skinId = document.getElementById('adminSkinSelect').value;
     if (!targetId) { alert('Введите ID игрока'); return; }
-    const result = await api('/profile/' + targetId);
+    const result = await fetch(API_URL + '/profile/' + targetId).then(r => r.json());
     if (result.success) {
         const profile = result.profile || {};
         const skins = profile.ownedSkins || ['default'];
@@ -267,9 +269,10 @@ async function adminGiveSkin() {
             profile.name = profile.name || 'Игрок';
             profile.treeLevel = profile.treeLevel || 1;
             profile.totalTrees = profile.totalTrees || 0;
-            await api('/profile/save', 'POST', profile);
-            alert(`✅ Скин выдан игроку ${targetId}`);
+            await fetch(API_URL + '/profile/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(profile) });
+            alert('✅ Скин выдан игроку ' + targetId);
             document.getElementById('adminSkinTargetId').value = '';
+            if (targetId === userId) { player.ownedSkins = skins; player.activeSkin = skinId; updateUI(); save(); }
         } else { alert('У игрока уже есть этот скин'); }
     } else { alert('❌ Игрок не найден'); }
 }
@@ -468,13 +471,13 @@ async function showLB() {
         bg.querySelectorAll('tr[data-uid]').forEach(tr => {
             tr.addEventListener('click', async function() {
                 const uid = this.dataset.uid;
-                const result = await api('/profile/' + uid);
+                const result = await fetch(API_URL + '/profile/' + uid).then(r => r.json());
                 if (result.success && result.profile) {
                     const p = result.profile;
                     const info = `👤 Игрок: ${uid}\n🌲 Древесина: ${fmt(p.wood || 0)}\n💎 Кристаллы: ${fmt(p.crystals || 0)}\n🎄 Скинов: ${(p.ownedSkins || ['default']).length}\n📊 Уровень: ${p.treeLevel || 1}\n🎯 Срублено: ${p.totalTrees || 0}`;
                     if (confirm(info + '\n\n🗑️ Удалить этого игрока?')) {
-                        await api('/profile/save', 'POST', { user_id: uid, wood: 0, crystals: 0, ownedSkins: ['default'], activeSkin: 'default', name: 'Игрок', treeLevel: 1, totalTrees: 0 });
-                        await api('/leaderboard/update', 'POST', { user_id: uid, name: 'Игрок', wood: 0, crystals: 0, treeLevel: 1, totalTrees: 0 });
+                        await fetch(API_URL + '/profile/save', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ user_id: uid, wood: 0, crystals: 0, ownedSkins: ['default'], activeSkin: 'default', name: 'Игрок', treeLevel: 1, totalTrees: 0 }) });
+                        await fetch(API_URL + '/leaderboard/update', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ user_id: uid, name: 'Игрок', wood: 0, crystals: 0, treeLevel: 1, totalTrees: 0 }) });
                         alert('✅ Игрок удалён и обнулён');
                         bg.remove(); showLB();
                     }
