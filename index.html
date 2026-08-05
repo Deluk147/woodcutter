@@ -1253,32 +1253,24 @@
         var svg = treeContainer.querySelector('svg');
         var overlay = document.getElementById('skinOverlay');
         
-    if (!overlay) {
+     if (!overlay) {
         overlay = document.createElement('img');
         overlay.id = 'skinOverlay';
-        overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:5;background:transparent;';
+        overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:5;';
         treeContainer.appendChild(overlay);
     }
         
-    if (skin.img) {
-        svg.style.display = 'block';  // ← Оставляем SVG видимым
+      if (skin.img) {
+        svg.style.display = 'none';
         overlay.src = skin.img;
         overlay.style.display = 'block';
-        overlay.style.background = 'transparent';
-        overlay.style.mixBlendMode = 'normal';
+    } else {
+        svg.style.display = 'block';
+        overlay.style.display = 'none';
+        document.getElementById('c1').setAttribute('fill', colors[0]);
+        document.getElementById('c2').setAttribute('fill', colors[1]);
+        document.getElementById('c3').setAttribute('fill', colors[2]);
     }
-         else {
-            svg.style.display = 'block';
-            overlay.style.display = 'none';
-            
-            var c1 = document.getElementById('c1');
-            var c2 = document.getElementById('c2');
-            var c3 = document.getElementById('c3');
-            
-            if (c1) c1.setAttribute('fill', colors[0]);
-            if (c2) c2.setAttribute('fill', colors[1]);
-            if (c3) c3.setAttribute('fill', colors[2]);
-        }
         
         var axe = axeSkins.find(function(a) { return a.id === playerData.activeAxe; }) || axeSkins[0];
         var axeEl = document.getElementById('ax');
