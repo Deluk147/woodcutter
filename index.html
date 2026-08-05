@@ -291,55 +291,45 @@ function showSkins(){
     render('tree');
 }
 
+
+        
+
+
+
+
 function addSkinForm(){
-    let html = '<div class="create-form">';
-    html += '<div class="form-group"><label>Название скина</label><input type="text" id="skinNameInput" class="form-input" placeholder="Введите название"></div>';
-    html += '<div class="form-group"><label>Эмодзи</label><input type="text" id="skinEmojiInput" class="form-input" placeholder="🎄" value="🎄"></div>';
-    html += '<div class="form-group"><label>Цена (кристаллы)</label><input type="number" id="skinPriceInput" class="form-input" placeholder="500" value="500"></div>';
-    html += '<button id="saveSkinBtn" class="form-submit">Добавить скин</button>';
-    html += '</div>';
-    
-    var bg = popup('➕ Добавить скин', html);
-    
-    document.getElementById('saveSkinBtn').onclick = function(){
-        var nameInput = document.getElementById('skinNameInput');
-        var emojiInput = document.getElementById('skinEmojiInput');
-        var priceInput = document.getElementById('skinPriceInput');
-        
-        var name = nameInput.value.trim();
-        var emoji = emojiInput.value.trim();
-        var price = parseInt(priceInput.value) || 500;
-        
-        if (!name) {
-            nameInput.style.border = '2px solid #e74c3c';
-            nameInput.placeholder = 'ОБЯЗАТЕЛЬНО!';
-            return;
-        }
-        
-        var newSkin = {
-            id: 'custom_' + Date.now(),
-            name: name,
-            emoji: emoji || '🎄',
-            colors: ['#4caf50', '#66bb6a', '#81c784'],
-            price: price,
-            cur: 'crystals',
-            hidden: false,
-            type: 'tree'
-        };
-        
-        treeSkins.push(newSkin);
-        
-        var saved = [];
-        for (var i = 0; i < treeSkins.length; i++) {
-            if (treeSkins[i].id.indexOf('custom_') === 0) saved.push(treeSkins[i]);
-        }
-        localStorage.setItem('c_ts', JSON.stringify(saved));
-        
-        alert('✅ Скин "' + name + '" добавлен!');
-        bg.remove();
-        showSkins();
+    var newSkin = {
+        id: 'custom_' + Date.now(),
+        name: 'Скин ' + new Date().toLocaleTimeString(),
+        emoji: '🎄',
+        colors: ['#4caf50', '#66bb6a', '#81c784'],
+        price: 500,
+        cur: 'crystals',
+        hidden: false,
+        type: 'tree'
     };
+    
+    treeSkins.push(newSkin);
+    
+    var saved = [];
+    for (var i = 0; i < treeSkins.length; i++) {
+        if (treeSkins[i].id.indexOf('custom_') === 0) saved.push(treeSkins[i]);
+    }
+    localStorage.setItem('c_ts', JSON.stringify(saved));
+    
+    alert('✅ Скин добавлен!');
+    showSkins();
 }
+
+
+
+
+
+
+
+
+
+    
 async function showLB(){
     const lb=await lLB();
     let html='<table class="lb-table"><thead><tr><th>#</th><th>Игрок</th><th>🌲</th><th>💎</th><th>🎄</th></tr></thead><tbody>';
