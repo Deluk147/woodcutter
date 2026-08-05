@@ -298,27 +298,80 @@ function showSkins(){
 
 
 function addSkinForm(){
-    var newSkin = {
-        id: 'custom_' + Date.now(),
-        name: 'Скин ' + new Date().toLocaleTimeString(),
-        emoji: '🎄',
-        colors: ['#4caf50', '#66bb6a', '#81c784'],
-        price: 500,
-        cur: 'crystals',
-        hidden: false,
-        type: 'tree'
-    };
+    var html = '';
+    html += '<div class="create-form">';
+    html += '<div class="form-group"><label>Тип скина</label><select id="skinType" class="form-input"><option value="tree">🎄 Скин дерева</option><option value="axe">🪓 Скин топора</option></select></div>';
+    html += '<div class="form-group"><label>Название</label><input type="text" id="skinName" class="form-input" placeholder="Введите название"></div>';
+    html += '<div class="form-group"><label>Эмодзи</label><input type="text" id="skinEmoji" class="form-input" placeholder="🎄" value="🎄"></div>';
+    html += '<div class="form-group"><label>Цена (кристаллы)</label><input type="number" id="skinPrice" class="form-input" placeholder="500" value="500"></div>';
+    html += '<div class="form-group"><label style="color:#aaa;font-size:11px;"><input type="checkbox" id="skinHidden"> Скрытый скин</label></div>';
+    html += '<button class="form-submit" id="saveSkinBtn">Добавить скин</button>';
+    html += '</div>';
     
-    treeSkins.push(newSkin);
+    var popupEl = popup('➕ Добавить скин', html);
     
-    var saved = [];
-    for (var i = 0; i < treeSkins.length; i++) {
-        if (treeSkins[i].id.indexOf('custom_') === 0) saved.push(treeSkins[i]);
-    }
-    localStorage.setItem('c_ts', JSON.stringify(saved));
-    
-    alert('✅ Скин добавлен!');
-    showSkins();
+    // Ждём пока popup отрендерится в DOM
+    setTimeout(function(){
+        var saveBtn = document.getElementById('saveSkinBtn');
+        if (!saveBtn) {
+            alert('Ошибка: кнопка не найдена');
+            return;
+        }
+        
+        saveBtn.onclick = function(){
+            var typeEl = document.getElementById('skinType');
+            var nameEl = document.getElementById('skinName');
+            var emojiEl = document.getElementById('skinEmoji');
+            var priceEl = document.getElementById('skinPrice');
+            var hiddenEl = document.getElementById('skinHidden');
+            
+            if (!nameEl || !emojiEl || !priceEl) {
+                alert('Ошибка: поля не найдены');
+                return;
+            }
+            
+            var type = typeEl ? typeEl.value : 'tree';
+            var name = nameEl.value.trim();
+            var emoji = emojiEl.value.trim();
+            var price = parseInt(priceEl.value) || 500;
+            var hidden = hiddenEl ? hiddenEl.checked : false;
+            
+            if (!name) { alert('Введите название!'); return; }
+            if (!emoji) { alert('Введите эмодзи!'); return; }
+            if (price < 1) { alert('Цена должна быть > 0!'); return; }
+            
+            var newSkin = {
+                id: 'custom_' + Date.now(),
+                name: name,
+                emoji: emoji,
+                colors: ['#4caf50', '#66bb6a', '#81c784'],
+                price: price,
+                cur: 'crystals',
+                hidden: hidden,
+                type: type
+            };
+            
+            if (type === 'tree') {
+                treeSkins.push(newSkin);
+                var saved = [];
+                for (var i = 0; i < treeSkins.length; i++) {
+                    if (treeSkins[i].id.indexOf('custom_') === 0) saved.push(treeSkins[i]);
+                }
+                localStorage.setItem('c_ts', JSON.stringify(saved));
+            } else {
+                axeSkins.push(newSkin);
+                var saved = [];
+                for (var i = 0; i < axeSkins.length; i++) {
+                    if (axeSkins[i].id.indexOf('custom_') === 0) saved.push(axeSkins[i]);
+                }
+                localStorage.setItem('c_as', JSON.stringify(saved));
+            }
+            
+            alert('✅ Скин "' + name + '" добавлен!');
+            popupEl.remove();
+            showSkins();
+        };
+    }, 100);
 }
 
 
