@@ -64,7 +64,7 @@
         .shop-desc { font-size:11px; color:#aaa; }
         .shop-lvl { font-size:10px; color:#e2a03f; }
         .shop-buy { padding:8px 14px; border-radius:10px; border:none; font-weight:600; font-size:12px; cursor:pointer; }
-        .shop-buy.wood { background:#4caf84; color:#fff; } .shop-buy.crystal { background:#a78bfa; color:#fff; }
+        .shop-buy.wood { background:#4caf84; color:#fff; } .shop-buy.crystal { background:#a78bfa; color:#fff; } .shop-buy.star { background:#ffd700; color:#000; }
         .shop-buy:disabled { opacity:0.4; }
         .skin-tabs { display:flex; gap:8px; margin-bottom:12px; }
         .skin-tab { flex:1; padding:10px; border-radius:10px; border:1px solid #2a2a4a; background:transparent; color:#eee; cursor:pointer; font-weight:600; font-size:13px; text-align:center; }
@@ -143,21 +143,21 @@
         <h2>👑 Админ-панель</h2>
         <h3>💰 Выдать ресурсы</h3>
         <input type="text" id="atid" class="admin-input" placeholder="ID игрока">
-        <input type="number" id="aw" class="admin-input" placeholder="Древесина">
-        <input type="number" id="ac" class="admin-input" placeholder="Кристаллы">
-        <button onclick="admGive()" class="admin-btn green">Выдать</button>
+        <input type="number" id="aw" class="admin-input" placeholder="🌲 Древесина">
+        <input type="number" id="ac" class="admin-input" placeholder="💎 Кристаллы">
+        <button onclick="admGive()" class="admin-btn green">Выдать ресурсы</button>
         <h3>🎄 Выдать скин дерева</h3>
         <input type="text" id="asid" class="admin-input" placeholder="ID игрока">
-        <select id="ass" class="admin-input"><option value="autumn">🍂 Осеннее</option><option value="cherry">🌸 Сакура</option><option value="crystal">💎 Кристальное</option><option value="golden">✨ Золотое</option><option value="inferno">🔥 Огненное</option><option value="ocean">🌊 Океанское</option><option value="void">🕳️ Бездны</option><option value="rainbow">🌈 Радужное</option></select>
-        <button onclick="admSkin()" class="admin-btn purple">Выдать скин</button>
+        <select id="ass" class="admin-input"></select>
+        <button onclick="admGiveSkin()" class="admin-btn purple">Выдать скин</button>
         <h3>🪓 Выдать топор</h3>
         <input type="text" id="aaxid" class="admin-input" placeholder="ID игрока">
-        <select id="aaxs" class="admin-input"><option value="gold_axe">🥇 Золотой</option><option value="diamond_axe">💎 Алмазный</option><option value="fire_axe">🔥 Огненный</option></select>
-        <button onclick="admAxe()" class="admin-btn gold">Выдать топор</button>
+        <select id="aaxs" class="admin-input"></select>
+        <button onclick="admGiveAxe()" class="admin-btn gold">Выдать топор</button>
         <h3>🗑️ Забрать ресурсы</h3>
         <input type="text" id="atkid" class="admin-input" placeholder="ID игрока">
-        <input type="number" id="atkw" class="admin-input" placeholder="Древесина">
-        <input type="number" id="atkc" class="admin-input" placeholder="Кристаллы">
+        <input type="number" id="atkw" class="admin-input" placeholder="🌲 Древесина">
+        <input type="number" id="atkc" class="admin-input" placeholder="💎 Кристаллы">
         <button onclick="admTake()" class="admin-btn red">Забрать</button>
         <button onclick="document.getElementById('ap').style.display='none'" class="admin-btn" style="background:#16213e;color:#eee;border:1px solid #2a2a4a;margin-top:15px;">Закрыть</button>
     </div>
@@ -180,11 +180,17 @@ async function api(e,m='GET',b=null){try{const o={method:m,headers:{'Content-Typ
 async function sLB(){await api('/leaderboard/update','POST',{user_id:uid,name:nm,wood:P.wood,crystals:P.crystals,treeLevel:P.treeLevel,totalTrees:P.totalTrees})}
 async function lLB(){const r=await api('/leaderboard');return r.success?r.players:[]}
 async function lTrades(){const r=await api('/trades?user_id='+uid);return r.success?r.trades:[]}
-async function cTrade(sid,pr,tid){const s=treeSkins.find(x=>x.id===sid)||axeSkins.find(x=>x.id===sid);return await api('/trades/create','POST',{sellerId:uid,sellerName:nm,targetId:tid||null,skinId:sid,price:pr,skinName:s?s.name:'Скин',skinEmoji:s?(s.emoji||'🎄'):'🎄'})}
+async function cTrade(sid,pr,tid,cur){const s=treeSkins.find(x=>x.id===sid)||axeSkins.find(x=>x.id===sid);return await api('/trades/create','POST',{sellerId:uid,sellerName:nm,targetId:tid||null,skinId:sid,price:pr,currency:cur||'wood',skinName:s?s.name:'Скин',skinEmoji:s?(s.emoji||'🎄'):'🎄'})}
 async function bTrade(tid){return await api('/trades/buy','POST',{trade_id:tid,buyer_id:uid})}
 async function xTrade(tid){return await api('/trades/cancel','POST',{trade_id:tid,user_id:uid})}
 
-// Админ функции
+function updateAdminSelects(){
+    var ss=document.getElementById('ass');ss.innerHTML='';
+    treeSkins.forEach(function(s){if(s.id!=='default')ss.innerHTML+='<option value="'+s.id+'">'+(s.emoji||'🎄')+' '+s.name+'</option>'});
+    var as=document.getElementById('aaxs');as.innerHTML='';
+    axeSkins.forEach(function(a){if(a.id!=='default')as.innerHTML+='<option value="'+a.id+'">'+(a.emoji||'🪓')+' '+a.name+'</option>'});
+}
+
 async function admGive(){
     var tid=document.getElementById('atid').value.trim(),w=parseInt(document.getElementById('aw').value)||0,c=parseInt(document.getElementById('ac').value)||0;
     if(!tid){alert('Введите ID');return}
@@ -207,7 +213,7 @@ async function admTake(){
         if(tid===uid){P.wood=p.wood;P.crystals=p.crystals;upd();save();}
     }else alert('❌ Не найден');
 }
-async function admSkin(){
+async function admGiveSkin(){
     var tid=document.getElementById('asid').value.trim(),sid=document.getElementById('ass').value;
     if(!tid){alert('Введите ID');return}
     var r=await fetch(A+'/profile/'+tid).then(r=>r.json());
@@ -219,7 +225,7 @@ async function admSkin(){
         }else alert('Уже есть');
     }else alert('❌ Не найден');
 }
-async function admAxe(){
+async function admGiveAxe(){
     var tid=document.getElementById('aaxid').value.trim(),aid=document.getElementById('aaxs').value;
     if(!tid){alert('Введите ID');return}
     var r=await fetch(A+'/profile/'+tid).then(r=>r.json());
@@ -275,6 +281,7 @@ function upd(){
     var axe=axeSkins.find(function(a){return a.id===P.activeAxe})||axeSkins[0];
     var axeEl=document.getElementById('ax');
     if(axe.img){axeEl.textContent='';axeEl.style.backgroundImage='url('+axe.img+')';axeEl.style.backgroundSize='contain';axeEl.style.backgroundRepeat='no-repeat';axeEl.style.width='50px';axeEl.style.height='50px'}else{axeEl.style.backgroundImage='';axeEl.style.width='';axeEl.style.height='';axeEl.textContent=axe.emoji||'🪓'}
+    updateAdminSelects();
 }
 
 const COMBO_TIMEOUT=5000;var comboTimer=null;
@@ -361,6 +368,13 @@ function showSkins(){
             if(owned.indexOf(sid)!==-1){if(type==='tree')P.activeSkin=sid;else P.activeAxe=sid;upd();save();bg.remove();render(ct)}
             else if(skin.cur==='free'){owned.push(sid);if(type==='tree')P.activeSkin=sid;else P.activeAxe=sid;upd();save();bg.remove();render(ct)}
             else if(skin.cur==='crystals'){if(P.crystals>=skin.price){if(confirm('Купить за '+skin.price+'💎?')){P.crystals-=skin.price;owned.push(sid);if(type==='tree')P.activeSkin=sid;else P.activeAxe=sid;upd();save();bg.remove();render(ct)}}else alert('Недостаточно кристаллов!')}
+            else if(skin.cur==='stars'){
+                if(typeof tg.openInvoice==='function'){
+                    api('/create-star-invoice','POST',{user_id:uid,skin_id:skin.id,skin_name:skin.name,price:skin.price}).then(function(r){if(r.success&&r.invoice_link)tg.openInvoice(r.invoice_link,function(s){if(s==='paid'){owned.push(sid);if(type==='tree')P.activeSkin=sid;else P.activeAxe=sid;upd();save();bg.remove();render(ct)}})});
+                }else if(typeof tg.sendStarInvoice==='function'){
+                    tg.sendStarInvoice({title:'Скин: '+skin.name,description:'Скин для Woodcutter',payload:'skin_'+skin.id+'_'+uid,currency:'XTR',prices:[{amount:skin.price,label:skin.name}]},function(s){if(s==='paid'){owned.push(sid);if(type==='tree')P.activeSkin=sid;else P.activeAxe=sid;upd();save();bg.remove();render(ct)}});
+                }else alert('Откройте игру через бота Telegram');
+            }
         })});
         bg.querySelectorAll('.skin-delete-btn').forEach(function(btn){btn.addEventListener('click',function(e){e.stopPropagation();var sid=this.dataset.del,type=this.dataset.dt;if(confirm('Удалить?')){if(type==='tree'){treeSkins.splice(treeSkins.findIndex(function(s){return s.id===sid}),1);localStorage.setItem('c_ts',JSON.stringify(treeSkins.filter(function(s){return s.id.indexOf('custom_')===0})))}else{axeSkins.splice(axeSkins.findIndex(function(s){return s.id===sid}),1);localStorage.setItem('c_as',JSON.stringify(axeSkins.filter(function(s){return s.id.indexOf('custom_')===0})))}bg.remove();render(ct)}})});
         var ab=bg.querySelector('#addBtn');if(ab)ab.addEventListener('click',function(){bg.remove();addSkinForm()});
@@ -390,7 +404,7 @@ function addSkinForm(){
         if(!name){alert('Введите название!');return}if(!emoji&&!photoFile){alert('Введите эмодзи или загрузите фото!');return}if(price<1){alert('Цена > 0!');return}
         function saveSkin(imgData){var ns={id:'custom_'+Date.now(),name:name,emoji:emoji||'🎄',img:imgData||null,colors:['#4caf50','#66bb6a','#81c784'],price:price,cur:'crystals',hidden:hidden,type:type};
             if(type==='tree'){treeSkins.push(ns);localStorage.setItem('c_ts',JSON.stringify(treeSkins.filter(function(s){return s.id.indexOf('custom_')===0})))}else{axeSkins.push(ns);localStorage.setItem('c_as',JSON.stringify(axeSkins.filter(function(s){return s.id.indexOf('custom_')===0})))}
-            alert('✅ Скин "'+name+'" добавлен!');bg.remove();showSkins()}
+            alert('✅ Скин "'+name+'" добавлен!');bg.remove();showSkins();updateAdminSelects()}
         if(photoFile){var reader=new FileReader();reader.onload=function(ev){var img=new Image();img.onload=function(){var canvas=document.createElement('canvas');var maxW=200,scale=maxW/img.width;canvas.width=maxW;canvas.height=img.height*scale;var ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,canvas.width,canvas.height);saveSkin(canvas.toDataURL('image/jpeg',0.6))};img.src=ev.target.result};reader.readAsDataURL(photoFile)}else saveSkin(null);
     });
 }
@@ -410,15 +424,16 @@ async function showTrade(){
     var html='<div style="background:#1e2a3a;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;border:1px solid #2a2a4a;"><span style="color:#aaa;font-size:12px;">Ваш ID: <span style="color:#e2a03f;font-weight:700;font-family:monospace;font-size:13px;">'+P.userId+'</span></span><button id="btnCopyIdTrade" style="background:#e2a03f;color:#000;border:none;padding:6px 10px;border-radius:8px;font-size:11px;cursor:pointer;">📋 Копировать</button></div>';
     html+='<div class="create-form"><div class="form-group"><label>ID игрока (пусто = всем)</label><input type="text" id="tTi" class="form-input" placeholder="Вставьте ID..."></div><div class="form-group"><label>Скин</label><select id="tTs" class="form-input"><option value="">-- Выберите --</option>';
     P.ownedSkins.forEach(function(sid){if(sid==='default')return;var s=treeSkins.find(function(x){return x.id===sid});if(s)html+='<option value="'+s.id+'">'+(s.emoji||'🎄')+' '+s.name+(sid===P.activeSkin?' (активен)':'')+'</option>'});
-    html+='</select></div><div class="form-group"><label>Цена 🌲</label><input type="number" id="tTp" class="form-input" placeholder="100" min="1"></div><button id="btnCT" class="form-submit">Выставить</button></div><div class="section-title">📋 Предложения</div><div id="tL">';
+    html+='</select></div><div class="form-group"><label>Валюта</label><select id="tTc" class="form-input"><option value="wood">🌲 Древесина</option><option value="crystals">💎 Кристаллы</option><option value="stars">⭐ Звёзды</option></select></div><div class="form-group"><label>Цена</label><input type="number" id="tTp" class="form-input" placeholder="100" min="1"></div><button id="btnCT" class="form-submit">Выставить</button></div><div class="section-title">📋 Предложения</div><div id="tL">';
     if(!trades.length)html+='<div style="text-align:center;padding:20px;color:#aaa;">Нет предложений</div>';
-    else trades.forEach(function(trade){var isOwn=trade.sellerId===P.userId,canBuy=!isOwn&&P.wood>=trade.price&&P.ownedSkins.indexOf(trade.skinId)===-1;
-        html+='<div class="trade-item"><div class="trade-header"><div><span class="trade-seller-name">'+esc(trade.sellerName)+'</span><br><span class="trade-seller-id">ID: '+trade.sellerId+'</span>'+(trade.targetId?'<br><span style="font-size:10px;color:#a78bfa;">🎯 Для: '+trade.targetId+'</span>':'')+'</div><span class="trade-price">'+fmt(trade.price)+' 🌲</span></div><div class="trade-tree">'+(trade.skinEmoji||'🎄')+' '+trade.skinName+'</div><button class="trade-btn '+(isOwn?'cancel':'buy')+'" data-action="'+(isOwn?'cancel':'buy')+'" data-id="'+trade.id+'" '+(isOwn||canBuy?'':'disabled')+'>'+(isOwn?'Отменить':(canBuy?'Купить':(P.ownedSkins.indexOf(trade.skinId)!==-1?'Уже есть':'Мало 🌲')))+'</button></div>'});
+    else trades.forEach(function(trade){var isOwn=trade.sellerId===P.userId,canBuy=!isOwn&&(trade.currency==='wood'?P.wood>=trade.price:trade.currency==='crystals'?P.crystals>=trade.price:true)&&P.ownedSkins.indexOf(trade.skinId)===-1;
+        var curIcon=trade.currency==='wood'?'🌲':trade.currency==='crystals'?'💎':'⭐';
+        html+='<div class="trade-item"><div class="trade-header"><div><span class="trade-seller-name">'+esc(trade.sellerName)+'</span><br><span class="trade-seller-id">ID: '+trade.sellerId+'</span>'+(trade.targetId?'<br><span style="font-size:10px;color:#a78bfa;">🎯 Для: '+trade.targetId+'</span>':'')+'</div><span class="trade-price">'+fmt(trade.price)+' '+curIcon+'</span></div><div class="trade-tree">'+(trade.skinEmoji||'🎄')+' '+trade.skinName+'</div><button class="trade-btn '+(isOwn?'cancel':'buy')+'" data-action="'+(isOwn?'cancel':'buy')+'" data-id="'+trade.id+'" '+(isOwn||canBuy?'':'disabled')+'>'+(isOwn?'Отменить':(canBuy?'Купить':(P.ownedSkins.indexOf(trade.skinId)!==-1?'Уже есть':'Мало '+curIcon)))+'</button></div>'});
     html+='</div>';
     var bg=popup('💱 Торги',html);
     document.getElementById('btnCopyIdTrade').addEventListener('click',function(){navigator.clipboard.writeText(P.userId).then(function(){alert('✅ Скопировано!')})});
-    bg.querySelector('#btnCT').addEventListener('click',async function(){var sid=bg.querySelector('#tTs').value,price=parseInt(bg.querySelector('#tTp').value),targetId=bg.querySelector('#tTi').value.trim();if(!sid||!price||price<1){alert('Заполните поля');return}var r=await cTrade(sid,price,targetId);if(r.success){P.ownedSkins=P.ownedSkins.filter(function(s){return s!==sid});if(P.activeSkin===sid)P.activeSkin='default';save();upd();bg.remove();showTrade()}});
-    bg.querySelectorAll('#tL button[data-action]').forEach(function(btn){btn.addEventListener('click',async function(){if(this.dataset.action==='buy'){var r=await bTrade(this.dataset.id);if(r.success){P.wood-=r.price;P.ownedSkins.push(r.skinId);save();upd();sLB()}}else{await xTrade(this.dataset.id)}bg.remove();showTrade()})});
+    bg.querySelector('#btnCT').addEventListener('click',async function(){var sid=bg.querySelector('#tTs').value,price=parseInt(bg.querySelector('#tTp').value),targetId=bg.querySelector('#tTi').value.trim(),cur=bg.querySelector('#tTc').value;if(!sid||!price||price<1){alert('Заполните поля');return}var r=await cTrade(sid,price,targetId,cur);if(r.success){P.ownedSkins=P.ownedSkins.filter(function(s){return s!==sid});if(P.activeSkin===sid)P.activeSkin='default';save();upd();bg.remove();showTrade()}});
+    bg.querySelectorAll('#tL button[data-action]').forEach(function(btn){btn.addEventListener('click',async function(){if(this.dataset.action==='buy'){var r=await bTrade(this.dataset.id);if(r.success){if(r.currency==='wood')P.wood-=r.price;else if(r.currency==='crystals')P.crystals-=r.price;P.ownedSkins.push(r.skinId);save();upd();sLB()}}else{await xTrade(this.dataset.id)}bg.remove();showTrade()})});
 }
 
 function passive(){if(P.autoWood>0){P.wood+=P.autoWood;upd()}}
@@ -430,7 +445,7 @@ document.getElementById('btr').addEventListener('click',showTrade);
 document.getElementById('tc').addEventListener('click',chop);
 document.addEventListener('keydown',function(e){if(e.code==='Space'){e.preventDefault();chop()}});
 
-upd();sLB();
+upd();sLB();updateAdminSelects();
 setInterval(passive,1000);setInterval(save,10000);setInterval(sLB,30000);
 </script>
 </body>
