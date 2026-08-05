@@ -206,38 +206,38 @@ function upd(){
         colors = ['#c0392b', '#e74c3c', '#ff6b6b'];
     }
     
-    // Если у скина есть картинка - показываем её вместо SVG кроны
+    var treeContainer = document.getElementById('tc');
+    var svg = treeContainer.querySelector('svg');
     var crown1 = document.getElementById('c1');
     var crown2 = document.getElementById('c2');
     var crown3 = document.getElementById('c3');
+    var trunk = document.getElementById('tr');
+    
+    // Управление overlay
+    var overlay = document.getElementById('skinOverlay');
+    if (!overlay) {
+        overlay = document.createElement('img');
+        overlay.id = 'skinOverlay';
+        overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:5;';
+        treeContainer.appendChild(overlay);
+    }
     
     if (skin.img) {
-        // Скрываем стандартную крону и показываем картинку
-        crown1.setAttribute('fill', 'transparent');
-        crown2.setAttribute('fill', 'transparent');
-        crown3.setAttribute('fill', 'transparent');
-        
-        // Добавляем изображение поверх дерева
-        var treeContainer = document.getElementById('tc');
-        var existingImg = document.getElementById('skinOverlay');
-        if (!existingImg) {
-            var img = document.createElement('img');
-            img.id = 'skinOverlay';
-            img.style.cssText = 'position:absolute;top:10%;left:15%;width:70%;height:70%;object-fit:contain;pointer-events:none;z-index:5;';
-            treeContainer.appendChild(img);
-        }
-        document.getElementById('skinOverlay').src = skin.img;
-        document.getElementById('skinOverlay').style.display = 'block';
+        // Скрываем ВСЁ дерево (ствол и крону)
+        svg.style.display = 'none';
+        // Показываем картинку на весь контейнер
+        overlay.src = skin.img;
+        overlay.style.display = 'block';
     } else {
-        // Убираем картинку и показываем цвета
-        var overlay = document.getElementById('skinOverlay');
-        if (overlay) overlay.style.display = 'none';
+        // Показываем стандартное дерево
+        svg.style.display = 'block';
+        overlay.style.display = 'none';
         crown1.setAttribute('fill', colors[0]);
         crown2.setAttribute('fill', colors[1]);
         crown3.setAttribute('fill', colors[2]);
     }
     
-    // Отрисовка топора
+    // Топор
     var axe = axeSkins.find(function(a){ return a.id === P.activeAxe; }) || axeSkins[0];
     var axeEl = document.getElementById('ax');
     if (axe.img) {
