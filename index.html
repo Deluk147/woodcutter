@@ -309,6 +309,34 @@ let player = { name:playerName, userId, wood:0, crystals:0, stars:0, axePower:1,
 
 try { const s=localStorage.getItem(STORAGE_KEY); if(s) Object.assign(player, JSON.parse(s)); } catch(e) {}
 player.name=playerName; player.userId=userId;
+    // Загружаем актуальный баланс с сервера
+(async () => {
+    try {
+        const result = await fetch(API_URL + '/profile/' + userId).then(r => r.json());
+        if (result.success && result.profile) {
+            const sp = result.profile;
+            // Обновляем баланс если на сервере больше
+            if (sp.wood > player.wood) {
+                console.log('💰 Баланс обновлён с сервера:', player.wood, '→', sp.wood);
+                player.wood = sp.wood;
+            }
+            if (sp.crystals > player.crystals) {
+                console.log('💎 Кристаллы обновлены с сервера:', player.crystals, '→', sp.crystals);
+                player.crystals = sp.crystals;
+            }
+            // Объединяем скины
+            if (sp.ownedSkins && Array.isArray(sp.ownedSkins)) {
+                const merged = [...new Set([...player.ownedSkins, ...sp.ownedSkins])];
+                if (merged.length > player.ownedSkins.length) {
+                    console.log('🎄 Новые скины с сервера!');
+                    player.ownedSkins = merged;
+                }
+            }
+            updateUI();
+            save();
+        }
+    } catch(e) { console.log('Сервер не ответил при загрузке'); }
+})();
 if(!player.maxTreeHP||player.maxTreeHP<10) { player.maxTreeHP=15; player.treeHP=15; }
 if(!player.ownedSkins||!player.ownedSkins.length) player.ownedSkins=['default'];
 if(!player.activeSkin) player.activeSkin='default';
