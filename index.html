@@ -163,7 +163,7 @@
         }
         
         .tree-scene { 
-            background: var(--panel);
+            background: var(--panel); 
             border-radius: 16px; 
             padding: 12px; 
             display: flex; 
@@ -508,7 +508,7 @@
         }
         
         .skin-card { 
-            background: #1e2a3a;
+            background: #1e2a3a; 
             border-radius: 12px; 
             padding: 10px; 
             text-align: center; 
@@ -531,12 +531,13 @@
             margin-bottom: 6px; 
         }
         
-         .img { 
-            background: transparent; 
-        }
-        
-        #skinOverlay { 
-            background: transparent !important; 
+        .skin-img { 
+            width: 48px; 
+            height: 48px; 
+            object-fit: contain; 
+            display: block; 
+            margin: 0 auto 6px; 
+            border-radius: 8px; 
         }
         
         .skin-name { 
@@ -956,6 +957,8 @@
     </div>
 
     <script>
+
+            // ==================== КОНФИГУРАЦИЯ ====================
     var API_URL = 'https://delay.pythonanywhere.com/api';
     var tg = window.Telegram.WebApp;
     tg.expand();
@@ -967,19 +970,26 @@
     var STORAGE_KEY = 'wc_' + userId;
     var ADMIN_ID = 'WC046190';
 
-    console.log('🌲 Woodcutter v11.0 - Final Version');
+    console.log('🌲 Woodcutter v12.0 - Full Version');
     console.log('👤 User ID:', userId);
     console.log('👑 Admin:', userId === ADMIN_ID);
+    console.log('📱 Telegram Methods:', {
+        sendStarInvoice: typeof tg.sendStarInvoice === 'function',
+        openInvoice: typeof tg.openInvoice === 'function'
+    });
 
+    // Показываем кнопку админа только для админа
     if (userId === ADMIN_ID) {
         document.getElementById('adminBtn').style.display = 'flex';
     }
 
+    // Аватар пользователя из Telegram
     if (user && user.photo_url) {
         document.getElementById('av').style.backgroundImage = 'url(' + user.photo_url + ')';
         document.getElementById('av').textContent = '';
     }
 
+    // Кнопка открытия админ-панели
     document.getElementById('adminBtn').addEventListener('click', function() {
         if (userId === ADMIN_ID) {
             document.getElementById('ap').style.display = 'block';
@@ -989,6 +999,7 @@
         }
     });
 
+    // ==================== ДАННЫЕ ИГРОКА ====================
     var playerData = {
         name: userName,
         userId: userId,
@@ -1015,6 +1026,7 @@
         upgrades: {}
     };
 
+    // Загрузка сохраненных данных из localStorage
     try {
         var saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -1026,9 +1038,10 @@
             }
         }
     } catch (e) {
-        console.error('Ошибка загрузки:', e);
+        console.error('Ошибка загрузки данных:', e);
     }
 
+    // Восстановление значений по умолчанию
     playerData.name = userName;
     playerData.userId = userId;
     
@@ -1057,6 +1070,7 @@
         playerData.upgrades = {};
     }
 
+    // Инициализация всех апгрейдов
     var upgradeIds = [
         'axe', 'strength', 
         'crystal1', 'crystal2', 
@@ -1073,101 +1087,511 @@
         }
     }
 
+    // ==================== СКИНЫ ДЕРЕВЬЕВ ====================
     var treeSkins = [
-        {id:'default',name:'Обычное',emoji:'🌳',colors:['#3a7d3a','#4caf50','#66bb6a'],price:0,cur:'free',limited:false,stock:0,sold:0},
-        {id:'autumn',name:'Осеннее',emoji:'🍂',colors:['#c47f2a','#d4943a','#e2a03f'],price:500,cur:'crystals',limited:false,stock:0,sold:0},
-        {id:'cherry',name:'Сакура',emoji:'🌸',colors:['#ff9ec4','#ffbdd4','#ffd1e4'],price:800,cur:'crystals',limited:false,stock:0,sold:0},
-        {id:'crystal',name:'Кристальное',emoji:'💎',colors:['#a78bfa','#c4b5fd','#ddd6fe'],price:1200,cur:'crystals',limited:false,stock:0,sold:0},
-        {id:'golden',name:'Золотое',emoji:'✨',colors:['#d4a017','#e6c22a','#f0d840'],price:2000,cur:'crystals',limited:false,stock:0,sold:0},
-        {id:'inferno',name:'Огненное',emoji:'🔥',colors:['#cc3300','#e64d00','#ff6600'],price:3500,cur:'crystals',limited:false,stock:0,sold:0},
-        {id:'ocean',name:'Океанское',emoji:'🌊',colors:['#0066cc','#0088e6','#00aaff'],price:10,cur:'stars',limited:false,stock:0,sold:0},
-        {id:'void',name:'Бездны',emoji:'🕳️',colors:['#1a0033','#2d004d','#400066'],price:25,cur:'stars',limited:false,stock:0,sold:0},
-        {id:'rainbow',name:'Радужное',emoji:'🌈',colors:['#ff0000','#ff7700','#ffff00'],price:50,cur:'stars',limited:false,stock:0,sold:0}
+        {
+            id: 'default',
+            name: 'Обычное',
+            emoji: '🌳',
+            colors: ['#3a7d3a', '#4caf50', '#66bb6a'],
+            price: 0,
+            cur: 'free',
+            limited: false,
+            stock: 0,
+            sold: 0
+        },
+        {
+            id: 'autumn',
+            name: 'Осеннее',
+            emoji: '🍂',
+            colors: ['#c47f2a', '#d4943a', '#e2a03f'],
+            price: 500,
+            cur: 'crystals',
+            limited: false,
+            stock: 0,
+            sold: 0
+        },
+        {
+            id: 'cherry',
+            name: 'Сакура',
+            emoji: '🌸',
+            colors: ['#ff9ec4', '#ffbdd4', '#ffd1e4'],
+            price: 800,
+            cur: 'crystals',
+            limited: false,
+            stock: 0,
+            sold: 0
+        },
+        {
+            id: 'crystal',
+            name: 'Кристальное',
+            emoji: '💎',
+            colors: ['#a78bfa', '#c4b5fd', '#ddd6fe'],
+            price: 1200,
+            cur: 'crystals',
+            limited: false,
+            stock: 0,
+            sold: 0
+        },
+        {
+            id: 'golden',
+            name: 'Золотое',
+            emoji: '✨',
+            colors: ['#d4a017', '#e6c22a', '#f0d840'],
+            price: 2000,
+            cur: 'crystals',
+            limited: false,
+            stock: 0,
+            sold: 0
+        },
+        {
+            id: 'inferno',
+            name: 'Огненное',
+            emoji: '🔥',
+            colors: ['#cc3300', '#e64d00', '#ff6600'],
+            price: 3500,
+            cur: 'crystals',
+            limited: false,
+            stock: 0,
+            sold: 0
+        },
+        {
+            id: 'ocean',
+            name: 'Океанское',
+            emoji: '🌊',
+            colors: ['#0066cc', '#0088e6', '#00aaff'],
+            price: 10,
+            cur: 'stars',
+            limited: false,
+            stock: 0,
+            sold: 0
+        },
+        {
+            id: 'void',
+            name: 'Бездны',
+            emoji: '🕳️',
+            colors: ['#1a0033', '#2d004d', '#400066'],
+            price: 25,
+            cur: 'stars',
+            limited: false,
+            stock: 0,
+            sold: 0
+        },
+        {
+            id: 'rainbow',
+            name: 'Радужное',
+            emoji: '🌈',
+            colors: ['#ff0000', '#ff7700', '#ffff00'],
+            price: 50,
+            cur: 'stars',
+            limited: false,
+            stock: 0,
+            sold: 0
+        }
     ];
 
+    // ==================== СКИНЫ ТОПОРОВ ====================
     var axeSkins = [
-        {id:'default',name:'Обычный',emoji:'🪓',price:0,cur:'free',limited:false,stock:0,sold:0},
-        {id:'gold_axe',name:'Золотой',emoji:'🥇',price:1000,cur:'crystals',limited:false,stock:0,sold:0},
-        {id:'diamond_axe',name:'Алмазный',emoji:'💎',price:3000,cur:'crystals',limited:false,stock:0,sold:0},
-        {id:'fire_axe',name:'Огненный',emoji:'🔥',price:5000,cur:'crystals',limited:false,stock:0,sold:0}
+        {
+            id: 'default',
+            name: 'Обычный',
+            emoji: '🪓',
+            price: 0,
+            cur: 'free',
+            limited: false,
+            stock: 0,
+            sold: 0
+        },
+        {
+            id: 'gold_axe',
+            name: 'Золотой',
+            emoji: '🥇',
+            price: 1000,
+            cur: 'crystals',
+            limited: false,
+            stock: 0,
+            sold: 0
+        },
+        {
+            id: 'diamond_axe',
+            name: 'Алмазный',
+            emoji: '💎',
+            price: 3000,
+            cur: 'crystals',
+            limited: false,
+            stock: 0,
+            sold: 0
+        },
+        {
+            id: 'fire_axe',
+            name: 'Огненный',
+            emoji: '🔥',
+            price: 5000,
+            cur: 'crystals',
+            limited: false,
+            stock: 0,
+            sold: 0
+        }
     ];
 
+    // Загрузка кастомных скинов деревьев
     try {
         var customTrees = JSON.parse(localStorage.getItem('c_ts') || '[]');
         customTrees.forEach(function(skin) {
-            if (!skin.limited) skin.limited = false;
-            if (!skin.stock) skin.stock = 0;
-            if (!skin.sold) skin.sold = 0;
+            if (!skin.limited) {
+                skin.limited = false;
+            }
+            if (!skin.stock) {
+                skin.stock = 0;
+            }
+            if (!skin.sold) {
+                skin.sold = 0;
+            }
             treeSkins.push(skin);
         });
-    } catch (e) {}
+    } catch (e) {
+        console.error('Ошибка загрузки кастомных деревьев:', e);
+    }
 
+    // Загрузка кастомных скинов топоров
     try {
         var customAxes = JSON.parse(localStorage.getItem('c_as') || '[]');
         customAxes.forEach(function(skin) {
-            if (!skin.limited) skin.limited = false;
-            if (!skin.stock) skin.stock = 0;
-            if (!skin.sold) skin.sold = 0;
+            if (!skin.limited) {
+                skin.limited = false;
+            }
+            if (!skin.stock) {
+                skin.stock = 0;
+            }
+            if (!skin.sold) {
+                skin.sold = 0;
+            }
             axeSkins.push(skin);
         });
-    } catch (e) {}
+    } catch (e) {
+        console.error('Ошибка загрузки кастомных топоров:', e);
+    }
 
+    // Данные о продажах лимитированных скинов
     var limitedSkinsData = {};
     try {
         limitedSkinsData = JSON.parse(localStorage.getItem('limited_skins_data') || '{}');
-    } catch (e) {}
+    } catch (e) {
+        console.error('Ошибка загрузки данных лимитированных скинов:', e);
+    }
 
+    // ==================== МАГАЗИН УЛУЧШЕНИЙ ====================
     var shopItems = [
-        {id:'axe',name:'🪓 Топор получше',desc:'+1 к силе удара',base:10,mult:1.5,cur:'wood',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.axePower++;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'strength',name:'💪 Силашка',desc:'+2 к силе удара',base:25,mult:1.6,cur:'wood',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.axePower+=2;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'crit1',name:'🎯 Заточка',desc:'+5% шанс крита',base:30,mult:1.7,cur:'wood',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.critChance=Math.min(80,playerData.critChance+5);playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'crit2',name:'✨ Благословение',desc:'+10% шанс крита',base:80,mult:1.8,cur:'wood',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.critChance=Math.min(80,playerData.critChance+10);playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'auto1',name:'🌱 Саженец',desc:'+1 🌲/сек',base:50,mult:1.4,cur:'wood',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.autoWood++;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'auto2',name:'🌿 Росток',desc:'+2 🌲/сек',base:150,mult:1.5,cur:'wood',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.autoWood+=2;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'auto3',name:'🌳 Дерево',desc:'+5 🌲/сек',base:400,mult:1.6,cur:'wood',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.autoWood+=5;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'auto4',name:'🏭 Лесопилка',desc:'+10 🌲/сек',base:1000,mult:1.7,cur:'wood',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.autoWood+=10;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'crystal1',name:'💎 Кристальный глаз',desc:'+1 💎 за сруб',base:5,mult:2,cur:'crystals',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.crystalBonus++;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'crystal2',name:'💎 Кристальная аура',desc:'+2 💎 за сруб',base:15,mult:2.2,cur:'crystals',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.crystalBonus+=2;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'crystalToWood1',name:'🔄 Конвертер',desc:'+1 🌲 за каждый 💎',base:10,mult:1.8,cur:'crystals',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.crystalToWoodRate++;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'crystalToWood2',name:'🔄 Мощный конвертер',desc:'+3 🌲 за каждый 💎',base:30,mult:2,cur:'crystals',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.crystalToWoodRate+=3;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'crystalAuto1',name:'💎 Кристальный дровосек',desc:'+2 🌲/сек',base:15,mult:1.6,cur:'crystals',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.autoWood+=2;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'crystalAuto2',name:'💎 Кристальная пила',desc:'+5 🌲/сек',base:40,mult:1.7,cur:'crystals',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.autoWood+=5;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'critDamage1',name:'💥 Кристальный удар',desc:'+0.5x к крит. урону',base:20,mult:2.5,cur:'crystals',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.critMultiplier+=0.5;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}},
-        {id:'comboBoost1',name:'🔥 Кристальное комбо',desc:'+0.5% за удар комбо',base:25,mult:2,cur:'crystals',cost:function(){return Math.floor(this.base*Math.pow(this.mult,playerData.upgrades[this.id]||0));},effect:function(){playerData.comboBonus+=0.5;playerData.upgrades[this.id]=(playerData.upgrades[this.id]||0)+1;}}
+        {
+            id: 'axe',
+            name: '🪓 Топор получше',
+            desc: '+1 к силе удара',
+            base: 10,
+            mult: 1.5,
+            cur: 'wood',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.axePower++;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'strength',
+            name: '💪 Силашка',
+            desc: '+2 к силе удара',
+            base: 25,
+            mult: 1.6,
+            cur: 'wood',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.axePower += 2;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'crit1',
+            name: '🎯 Заточка',
+            desc: '+5% шанс крита',
+            base: 30,
+            mult: 1.7,
+            cur: 'wood',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.critChance = Math.min(80, playerData.critChance + 5);
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'crit2',
+            name: '✨ Благословение',
+            desc: '+10% шанс крита',
+            base: 80,
+            mult: 1.8,
+            cur: 'wood',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.critChance = Math.min(80, playerData.critChance + 10);
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'auto1',
+            name: '🌱 Саженец',
+            desc: '+1 🌲/сек',
+            base: 50,
+            mult: 1.4,
+            cur: 'wood',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.autoWood++;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'auto2',
+            name: '🌿 Росток',
+            desc: '+2 🌲/сек',
+            base: 150,
+            mult: 1.5,
+            cur: 'wood',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.autoWood += 2;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'auto3',
+            name: '🌳 Дерево',
+            desc: '+5 🌲/сек',
+            base: 400,
+            mult: 1.6,
+            cur: 'wood',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.autoWood += 5;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'auto4',
+            name: '🏭 Лесопилка',
+            desc: '+10 🌲/сек',
+            base: 1000,
+            mult: 1.7,
+            cur: 'wood',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.autoWood += 10;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'crystal1',
+            name: '💎 Кристальный глаз',
+            desc: '+1 💎 за сруб',
+            base: 5,
+            mult: 2,
+            cur: 'crystals',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.crystalBonus++;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'crystal2',
+            name: '💎 Кристальная аура',
+            desc: '+2 💎 за сруб',
+            base: 15,
+            mult: 2.2,
+            cur: 'crystals',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.crystalBonus += 2;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'crystalToWood1',
+            name: '🔄 Конвертер',
+            desc: '+1 🌲 за каждый 💎',
+            base: 10,
+            mult: 1.8,
+            cur: 'crystals',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.crystalToWoodRate++;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'crystalToWood2',
+            name: '🔄 Мощный конвертер',
+            desc: '+3 🌲 за каждый 💎',
+            base: 30,
+            mult: 2,
+            cur: 'crystals',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.crystalToWoodRate += 3;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'crystalAuto1',
+            name: '💎 Кристальный дровосек',
+            desc: '+2 🌲/сек',
+            base: 15,
+            mult: 1.6,
+            cur: 'crystals',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.autoWood += 2;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'crystalAuto2',
+            name: '💎 Кристальная пила',
+            desc: '+5 🌲/сек',
+            base: 40,
+            mult: 1.7,
+            cur: 'crystals',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.autoWood += 5;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'critDamage1',
+            name: '💥 Кристальный удар',
+            desc: '+0.5x к крит. урону',
+            base: 20,
+            mult: 2.5,
+            cur: 'crystals',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.critMultiplier += 0.5;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        },
+        {
+            id: 'comboBoost1',
+            name: '🔥 Кристальное комбо',
+            desc: '+0.5% за удар комбо',
+            base: 25,
+            mult: 2,
+            cur: 'crystals',
+            cost: function() {
+                return Math.floor(this.base * Math.pow(this.mult, playerData.upgrades[this.id] || 0));
+            },
+            effect: function() {
+                playerData.comboBonus += 0.5;
+                playerData.upgrades[this.id] = (playerData.upgrades[this.id] || 0) + 1;
+            }
+        }
     ];
 
+    // ==================== ЗАГРУЗКА ПРОФИЛЯ С СЕРВЕРА ====================
     (function() {
         fetch(API_URL + '/profile/' + userId)
-            .then(function(response) { return response.json(); })
+            .then(function(response) {
+                return response.json();
+            })
             .then(function(data) {
                 if (data.success && data.profile) {
                     var profile = data.profile;
-                    if (profile.wood !== undefined) playerData.wood = profile.wood;
-                    if (profile.crystals !== undefined) playerData.crystals = profile.crystals;
-                    if (profile.stars !== undefined) playerData.stars = profile.stars;
-                    if (profile.ownedSkins) playerData.ownedSkins = profile.ownedSkins;
-                    if (profile.ownedAxes) playerData.ownedAxes = profile.ownedAxes;
-                    if (profile.activeSkin) playerData.activeSkin = profile.activeSkin;
-                    if (profile.activeAxe) playerData.activeAxe = profile.activeAxe;
+                    
+                    if (profile.wood !== undefined) {
+                        playerData.wood = profile.wood;
+                    }
+                    
+                    if (profile.crystals !== undefined) {
+                        playerData.crystals = profile.crystals;
+                    }
+                    
+                    if (profile.stars !== undefined) {
+                        playerData.stars = profile.stars;
+                    }
+                    
+                    if (profile.ownedSkins) {
+                        playerData.ownedSkins = profile.ownedSkins;
+                    }
+                    
+                    if (profile.ownedAxes) {
+                        playerData.ownedAxes = profile.ownedAxes;
+                    }
+                    
+                    if (profile.activeSkin) {
+                        playerData.activeSkin = profile.activeSkin;
+                    }
+                    
+                    if (profile.activeAxe) {
+                        playerData.activeAxe = profile.activeAxe;
+                    }
+                    
                     updateUI();
                     saveData();
+                    
+                    console.log('✅ Профиль загружен с сервера');
                 }
             })
-            .catch(function(error) {});
+            .catch(function(error) {
+                console.log('⚠️ Сервер недоступен, играем локально');
+            });
     })();
 
+    // ==================== ФУНКЦИИ СОХРАНЕНИЯ ====================
     function saveData() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(playerData));
-        } catch (e) {}
+        } catch (e) {
+            console.error('Ошибка сохранения в localStorage:', e);
+        }
         
         try {
             localStorage.setItem('limited_skins_data', JSON.stringify(limitedSkinsData));
-        } catch (e) {}
+        } catch (e) {
+            console.error('Ошибка сохранения данных лимитированных скинов:', e);
+        }
         
         fetch(API_URL + '/profile/save', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
                 user_id: userId,
                 wood: playerData.wood,
@@ -1181,22 +1605,29 @@
                 treeLevel: playerData.treeLevel,
                 totalTrees: playerData.totalTrees
             })
-        }).catch(function(error) {});
+        }).catch(function(error) {
+            console.log('⚠️ Ошибка синхронизации с сервером');
+        });
     }
 
     function saveLimitedSkinsData() {
         try {
             localStorage.setItem('limited_skins_data', JSON.stringify(limitedSkinsData));
-        } catch (e) {}
+        } catch (e) {
+            console.error('Ошибка сохранения данных лимитированных скинов:', e);
+        }
     }
 
+    // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
     function formatNumber(number) {
         if (number >= 1000000) {
             return (number / 1000000).toFixed(1) + 'M';
         }
+        
         if (number >= 1000) {
             return (number / 1000).toFixed(1) + 'K';
         }
+        
         return Math.floor(number).toString();
     }
 
@@ -1206,6 +1637,7 @@
         return div.innerHTML;
     }
 
+    // ==================== ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ====================
     function updateUI() {
         document.getElementById('wv').textContent = formatNumber(playerData.wood);
         document.getElementById('cv').textContent = formatNumber(playerData.crystals);
@@ -1221,7 +1653,7 @@
         } else {
             hpBar.className = 'hp-bar low';
         }
-    }
+        
         document.getElementById('ht').textContent = formatNumber(Math.max(0, playerData.treeHP)) + ' / ' + formatNumber(playerData.maxTreeHP) + ' HP';
         document.getElementById('lb').textContent = '🌲 Ур. ' + playerData.treeLevel;
         document.getElementById('nd').textContent = playerData.name;
@@ -1238,7 +1670,10 @@
             document.getElementById('pi').textContent = '';
         }
         
-        var skin = treeSkins.find(function(s) { return s.id === playerData.activeSkin; }) || treeSkins[0];
+        // Обновление скина дерева
+        var skin = treeSkins.find(function(s) {
+            return s.id === playerData.activeSkin;
+        }) || treeSkins[0];
         
         var colors;
         if (hpPercent > 60) {
@@ -1253,26 +1688,41 @@
         var svg = treeContainer.querySelector('svg');
         var overlay = document.getElementById('skinOverlay');
         
-     if (!overlay) {
-        overlay = document.createElement('img');
-        overlay.id = 'skinOverlay';
-        overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:5;';
-        treeContainer.appendChild(overlay);
-    }
+        if (!overlay) {
+            overlay = document.createElement('img');
+            overlay.id = 'skinOverlay';
+            overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:5;';
+            treeContainer.appendChild(overlay);
+        }
         
-      if (skin.img) {
-        svg.style.display = 'none';
-        overlay.src = skin.img;
-        overlay.style.display = 'block';
-    } else {
-        svg.style.display = 'block';
-        overlay.style.display = 'none';
-        document.getElementById('c1').setAttribute('fill', colors[0]);
-        document.getElementById('c2').setAttribute('fill', colors[1]);
-        document.getElementById('c3').setAttribute('fill', colors[2]);
-    }
+        if (skin.img) {
+            svg.style.display = 'none';
+            overlay.src = skin.img;
+            overlay.style.display = 'block';
+        } else {
+            svg.style.display = 'block';
+            overlay.style.display = 'none';
+            
+            var c1 = document.getElementById('c1');
+            var c2 = document.getElementById('c2');
+            var c3 = document.getElementById('c3');
+            
+            if (c1) {
+                c1.setAttribute('fill', colors[0]);
+            }
+            if (c2) {
+                c2.setAttribute('fill', colors[1]);
+            }
+            if (c3) {
+                c3.setAttribute('fill', colors[2]);
+            }
+        }
         
-        var axe = axeSkins.find(function(a) { return a.id === playerData.activeAxe; }) || axeSkins[0];
+        // Обновление топора
+        var axe = axeSkins.find(function(a) {
+            return a.id === playerData.activeAxe;
+        }) || axeSkins[0];
+        
         var axeEl = document.getElementById('ax');
         
         if (axe.img) {
@@ -1290,13 +1740,16 @@
         }
         
         updateAdminSelects();
-    
+    }
 
+    // ==================== КОМБО-СИСТЕМА ====================
     var COMBO_TIMEOUT = 5000;
     var comboTimer = null;
 
     function resetCombo() {
-        if (comboTimer) clearTimeout(comboTimer);
+        if (comboTimer) {
+            clearTimeout(comboTimer);
+        }
         
         var bar = document.getElementById('ctb');
         var fill = document.getElementById('ctf');
@@ -1324,6 +1777,7 @@
         }
     }
 
+    // ==================== АНИМАЦИИ ====================
     function animAxe() {
         var axeElement = document.getElementById('ax');
         axeElement.classList.remove('swing');
@@ -1344,7 +1798,9 @@
         treeElement.classList.add('tree-fall');
         setTimeout(function() {
             treeElement.classList.remove('tree-fall');
-            if (callback) callback();
+            if (callback) {
+                callback();
+            }
         }, 600);
     }
 
@@ -1356,9 +1812,12 @@
         element.style.left = x + 'px';
         element.style.top = y + 'px';
         document.getElementById('floatTextContainer').appendChild(element);
-        setTimeout(function() { element.remove(); }, 1000);
+        setTimeout(function() {
+            element.remove();
+        }, 1000);
     }
 
+    // ==================== РУБКА ДЕРЕВА ====================
     function calculateTreeHP(level) {
         var baseMin = 15;
         var baseMax = 30;
@@ -1442,10 +1901,11 @@
         saveData();
     }
 
+    // ==================== ПОПАПЫ ====================
     function showPopup(title, content) {
         var background = document.createElement('div');
         background.className = 'popup-bg';
-        background.innerHTML = '<div class="popup"><h3>' + title + '</h3>' + content + '</div>';
+        background.innerHTML = '<div class="popup"><h3>' + title + '</h3>' + content + '<button class="popup-close">Закрыть</button></div>';
         
         var closeButton = background.querySelector('.popup-close');
         if (closeButton) {
@@ -1464,6 +1924,7 @@
         return background;
     }
 
+    // ==================== АДМИН ФУНКЦИИ ====================
     function updateAdminSelects() {
         var skinSelect = document.getElementById('ass');
         if (skinSelect) {
@@ -1503,10 +1964,13 @@
         }
         
         fetch(API_URL + '/profile/' + targetId)
-            .then(function(response) { return response.json(); })
+            .then(function(response) {
+                return response.json();
+            })
             .then(function(data) {
                 if (data.success) {
                     var profile = data.profile || {};
+                    
                     profile.user_id = targetId;
                     profile.wood = (profile.wood || 0) + woodAmount;
                     profile.crystals = (profile.crystals || 0) + crystalAmount;
@@ -1520,13 +1984,17 @@
                     
                     fetch(API_URL + '/profile/save', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify(profile)
                     });
                     
                     fetch(API_URL + '/leaderboard/update', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify({
                             user_id: targetId,
                             name: profile.name,
@@ -1538,6 +2006,7 @@
                     });
                     
                     alert('✅ Выдано: +' + woodAmount + '🌲 +' + crystalAmount + '💎');
+                    
                     document.getElementById('aw').value = '';
                     document.getElementById('ac').value = '';
                     
@@ -1567,10 +2036,13 @@
         }
         
         fetch(API_URL + '/profile/' + targetId)
-            .then(function(response) { return response.json(); })
+            .then(function(response) {
+                return response.json();
+            })
             .then(function(data) {
                 if (data.success) {
                     var profile = data.profile || {};
+                    
                     profile.user_id = targetId;
                     profile.wood = Math.max(0, (profile.wood || 0) - woodAmount);
                     profile.crystals = Math.max(0, (profile.crystals || 0) - crystalAmount);
@@ -1584,13 +2056,17 @@
                     
                     fetch(API_URL + '/profile/save', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify(profile)
                     });
                     
                     fetch(API_URL + '/leaderboard/update', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify({
                             user_id: targetId,
                             name: profile.name,
@@ -1602,6 +2078,7 @@
                     });
                     
                     alert('✅ Изъято: -' + woodAmount + '🌲 -' + crystalAmount + '💎');
+                    
                     document.getElementById('atkw').value = '';
                     document.getElementById('atkc').value = '';
                     
@@ -1630,7 +2107,9 @@
         }
         
         fetch(API_URL + '/profile/' + targetId)
-            .then(function(response) { return response.json(); })
+            .then(function(response) {
+                return response.json();
+            })
             .then(function(data) {
                 if (data.success) {
                     var profile = data.profile || {};
@@ -1638,6 +2117,7 @@
                     
                     if (skins.indexOf(skinId) === -1) {
                         skins.push(skinId);
+                        
                         profile.user_id = targetId;
                         profile.wood = profile.wood || 0;
                         profile.crystals = profile.crystals || 0;
@@ -1651,11 +2131,16 @@
                         
                         fetch(API_URL + '/profile/save', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
                             body: JSON.stringify(profile)
                         });
                         
-                        var skinName = treeSkins.find(function(s) { return s.id === skinId; });
+                        var skinName = treeSkins.find(function(s) {
+                            return s.id === skinId;
+                        });
+                        
                         alert('✅ Скин "' + (skinName ? skinName.name : skinId) + '" выдан игроку ' + targetId);
                         document.getElementById('asid').value = '';
                         
@@ -1687,7 +2172,9 @@
         }
         
         fetch(API_URL + '/profile/' + targetId)
-            .then(function(response) { return response.json(); })
+            .then(function(response) {
+                return response.json();
+            })
             .then(function(data) {
                 if (data.success) {
                     var profile = data.profile || {};
@@ -1695,6 +2182,7 @@
                     
                     if (axes.indexOf(axeId) === -1) {
                         axes.push(axeId);
+                        
                         profile.user_id = targetId;
                         profile.wood = profile.wood || 0;
                         profile.crystals = profile.crystals || 0;
@@ -1708,11 +2196,16 @@
                         
                         fetch(API_URL + '/profile/save', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
                             body: JSON.stringify(profile)
                         });
                         
-                        var axeName = axeSkins.find(function(a) { return a.id === axeId; });
+                        var axeName = axeSkins.find(function(a) {
+                            return a.id === axeId;
+                        });
+                        
                         alert('✅ Топор "' + (axeName ? axeName.name : axeId) + '" выдан игроку ' + targetId);
                         document.getElementById('aaxid').value = '';
                         
@@ -1734,7 +2227,7 @@
             });
     }
 
-    // Функция полного сброса аккаунта игрока (для админа)
+    // Функция полного сброса аккаунта
     function admWipeAccount(targetId) {
         if (!confirm('⚠️ ВНИМАНИЕ! Вы уверены, что хотите ПОЛНОСТЬЮ стереть аккаунт игрока ' + targetId + '?\n\nБудут удалены: все ресурсы, скины, топоры, улучшения, прогресс.\n\nЭто действие НЕОБРАТИМО!')) {
             return;
@@ -1760,15 +2253,21 @@
         
         fetch(API_URL + '/profile/save', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify(wipedProfile)
         })
-        .then(function(response) { return response.json(); })
+        .then(function(response) {
+            return response.json();
+        })
         .then(function(data) {
             if (data.success) {
                 fetch(API_URL + '/leaderboard/update', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({
                         user_id: targetId,
                         name: 'Игрок',
@@ -1779,7 +2278,6 @@
                     })
                 });
                 
-                // Если стираем свой аккаунт - сбрасываем локальные данные
                 if (targetId === userId) {
                     playerData.wood = 0;
                     playerData.crystals = 0;
@@ -1821,26 +2319,23 @@
 
     // Функция для перехода в админ-панель с заполненным ID
     function openAdminWithId(targetId) {
-        // Закрываем все попапы
         var allPopups = document.querySelectorAll('.popup-bg');
         allPopups.forEach(function(popup) {
             popup.remove();
         });
         
-        // Открываем админ-панель
         document.getElementById('ap').style.display = 'block';
         updateAdminSelects();
         
-        // Заполняем все поля ID
         document.getElementById('atid').value = targetId;
         document.getElementById('asid').value = targetId;
         document.getElementById('aaxid').value = targetId;
         document.getElementById('atkid').value = targetId;
         
-        // Прокручиваем к началу админ-панели
         document.getElementById('ap').scrollTop = 0;
     }
 
+        // ==================== МАГАЗИН ====================
     function showShop() {
         var html = '';
         var currentCategory = '';
@@ -1896,12 +2391,19 @@
                     return shopItem.id === itemId;
                 });
                 
-                if (!item) return;
+                if (!item) {
+                    return;
+                }
                 
                 var cost = item.cost();
                 
-                if (item.cur === 'wood' && playerData.wood < cost) return;
-                if (item.cur === 'crystals' && playerData.crystals < cost) return;
+                if (item.cur === 'wood' && playerData.wood < cost) {
+                    return;
+                }
+                
+                if (item.cur === 'crystals' && playerData.crystals < cost) {
+                    return;
+                }
                 
                 if (item.cur === 'wood') {
                     playerData.wood -= cost;
@@ -1918,6 +2420,7 @@
         });
     }
 
+    // ==================== СКИНЫ ====================
     function showSkins() {
         var currentTab = 'tree';
         
@@ -1949,7 +2452,10 @@
                         limitedSkinsData[skinKey] = { sold: skin.sold || 0 };
                     }
                     var remaining = skin.stock - (limitedSkinsData[skinKey].sold || 0);
-                    if (remaining <= 0) return;
+                    
+                    if (remaining <= 0) {
+                        return;
+                    }
                 }
                 
                 if (!isOwned) {
@@ -1968,6 +2474,7 @@
                         limitedSkinsData[skinKey2] = { sold: skin.sold || 0 };
                     }
                     var remaining2 = skin.stock - (limitedSkinsData[skinKey2].sold || 0);
+                    
                     if (remaining2 > 0) {
                         priceHtml += '<div class="skin-stock">🔥 Осталось: ' + remaining2 + ' из ' + skin.stock + '</div>';
                     }
@@ -1991,10 +2498,18 @@
                 
                 html += imageHtml;
                 html += '<div class="skin-name">' + skin.name;
-                if (isLimited) html += '<span class="limited-badge">LIMITED</span>';
+                
+                if (isLimited) {
+                    html += '<span class="limited-badge">LIMITED</span>';
+                }
+                
                 html += '</div>';
                 html += priceHtml;
-                if (isActive) html += '<div style="color:#ffd700;font-size:10px;">✅</div>';
+                
+                if (isActive) {
+                    html += '<div style="color:#ffd700;font-size:10px;">✅</div>';
+                }
+                
                 html += '</div>';
             });
             
@@ -2013,11 +2528,15 @@
             
             var closeButton = popup.querySelector('.popup-close');
             if (closeButton) {
-                closeButton.addEventListener('click', function() { popup.remove(); });
+                closeButton.addEventListener('click', function() {
+                    popup.remove();
+                });
             }
             
             popup.addEventListener('click', function(event) {
-                if (event.target === popup) popup.remove();
+                if (event.target === popup) {
+                    popup.remove();
+                }
             });
             
             var tabs = popup.querySelectorAll('.skin-tab');
@@ -2031,19 +2550,28 @@
             var skinCards = popup.querySelectorAll('[data-sid]');
             skinCards.forEach(function(card) {
                 card.addEventListener('click', function(event) {
-                    if (event.target.classList.contains('skin-delete-btn')) return;
+                    if (event.target.classList.contains('skin-delete-btn')) {
+                        return;
+                    }
                     
                     var skinId = this.dataset.sid;
                     var skinType = this.dataset.type;
                     var isLimitedSkin = this.dataset.limited === '1';
+                    
                     var skinsList = skinType === 'tree' ? treeSkins : axeSkins;
-                    var skin = skinsList.find(function(s) { return s.id === skinId; });
+                    var skin = skinsList.find(function(s) {
+                        return s.id === skinId;
+                    });
+                    
                     var ownedList = skinType === 'tree' ? playerData.ownedSkins : playerData.ownedAxes;
                     
                     if (isLimitedSkin && skin && skin.stock > 0 && ownedList.indexOf(skinId) === -1) {
                         var skinKey = skinId;
-                        if (!limitedSkinsData[skinKey]) limitedSkinsData[skinKey] = { sold: skin.sold || 0 };
+                        if (!limitedSkinsData[skinKey]) {
+                            limitedSkinsData[skinKey] = { sold: skin.sold || 0 };
+                        }
                         var remaining = skin.stock - (limitedSkinsData[skinKey].sold || 0);
+                        
                         if (remaining <= 0) {
                             alert('❌ Этот лимитированный скин полностью распродан!');
                             return;
@@ -2051,8 +2579,12 @@
                     }
                     
                     if (ownedList.indexOf(skinId) !== -1) {
-                        if (skinType === 'tree') playerData.activeSkin = skinId;
-                        else playerData.activeAxe = skinId;
+                        if (skinType === 'tree') {
+                            playerData.activeSkin = skinId;
+                        } else {
+                            playerData.activeAxe = skinId;
+                        }
+                        
                         updateUI();
                         saveData();
                         popup.remove();
@@ -2062,8 +2594,13 @@
                     
                     if (skin.cur === 'free') {
                         ownedList.push(skinId);
-                        if (skinType === 'tree') playerData.activeSkin = skinId;
-                        else playerData.activeAxe = skinId;
+                        
+                        if (skinType === 'tree') {
+                            playerData.activeSkin = skinId;
+                        } else {
+                            playerData.activeAxe = skinId;
+                        }
+                        
                         updateUI();
                         saveData();
                         popup.remove();
@@ -2079,7 +2616,9 @@
                                 
                                 if (isLimitedSkin && skin.stock > 0) {
                                     var skinKey2 = skinId;
-                                    if (!limitedSkinsData[skinKey2]) limitedSkinsData[skinKey2] = { sold: 0 };
+                                    if (!limitedSkinsData[skinKey2]) {
+                                        limitedSkinsData[skinKey2] = { sold: 0 };
+                                    }
                                     limitedSkinsData[skinKey2].sold = (limitedSkinsData[skinKey2].sold || 0) + 1;
                                     skin.sold = limitedSkinsData[skinKey2].sold;
                                     saveLimitedSkinsData();
@@ -2090,8 +2629,12 @@
                                     }
                                 }
                                 
-                                if (skinType === 'tree') playerData.activeSkin = skinId;
-                                else playerData.activeAxe = skinId;
+                                if (skinType === 'tree') {
+                                    playerData.activeSkin = skinId;
+                                } else {
+                                    playerData.activeAxe = skinId;
+                                }
+                                
                                 updateUI();
                                 saveData();
                                 popup.remove();
@@ -2104,7 +2647,9 @@
                     }
                     
                     if (skin.cur === 'stars') {
-                        if (!confirm('Купить скин "' + skin.name + '" за ' + skin.price + ' ⭐ Telegram Stars?')) return;
+                        if (!confirm('Купить скин "' + skin.name + '" за ' + skin.price + ' ⭐ Telegram Stars?')) {
+                            return;
+                        }
                         
                         if (typeof tg.sendStarInvoice === 'function') {
                             tg.sendStarInvoice({
@@ -2112,22 +2657,33 @@
                                 description: 'Скин для игры Woodcutter' + (isLimitedSkin ? ' [LIMITED]' : ''),
                                 payload: 'skin_' + skin.id + '_' + userId + '_' + Date.now(),
                                 currency: 'XTR',
-                                prices: [{ amount: skin.price, label: skin.name }]
+                                prices: [{
+                                    amount: skin.price,
+                                    label: skin.name
+                                }]
                             }, function(status) {
+                                console.log('⭐ Статус оплаты:', status);
+                                
                                 if (status === 'paid') {
                                     if (ownedList.indexOf(skin.id) === -1) {
                                         ownedList.push(skin.id);
                                         
                                         if (isLimitedSkin && skin.stock > 0) {
                                             var skinKey3 = skin.id;
-                                            if (!limitedSkinsData[skinKey3]) limitedSkinsData[skinKey3] = { sold: 0 };
+                                            if (!limitedSkinsData[skinKey3]) {
+                                                limitedSkinsData[skinKey3] = { sold: 0 };
+                                            }
                                             limitedSkinsData[skinKey3].sold = (limitedSkinsData[skinKey3].sold || 0) + 1;
                                             skin.sold = limitedSkinsData[skinKey3].sold;
                                             saveLimitedSkinsData();
                                         }
                                         
-                                        if (skinType === 'tree') playerData.activeSkin = skin.id;
-                                        else playerData.activeAxe = skin.id;
+                                        if (skinType === 'tree') {
+                                            playerData.activeSkin = skin.id;
+                                        } else {
+                                            playerData.activeAxe = skin.id;
+                                        }
+                                        
                                         playerData.stars = (playerData.stars || 0) + skin.price;
                                         updateUI();
                                         saveData();
@@ -2144,7 +2700,9 @@
                         } else if (typeof tg.openInvoice === 'function') {
                             fetch(API_URL + '/create-star-invoice', {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
                                 body: JSON.stringify({
                                     user_id: userId,
                                     skin_id: skin.id,
@@ -2153,7 +2711,9 @@
                                     type: 'shop'
                                 })
                             })
-                            .then(function(response) { return response.json(); })
+                            .then(function(response) {
+                                return response.json();
+                            })
                             .then(function(result) {
                                 if (result.success && result.invoice_link) {
                                     tg.openInvoice(result.invoice_link, function(status) {
@@ -2163,14 +2723,20 @@
                                                 
                                                 if (isLimitedSkin && skin.stock > 0) {
                                                     var skinKey4 = skin.id;
-                                                    if (!limitedSkinsData[skinKey4]) limitedSkinsData[skinKey4] = { sold: 0 };
+                                                    if (!limitedSkinsData[skinKey4]) {
+                                                        limitedSkinsData[skinKey4] = { sold: 0 };
+                                                    }
                                                     limitedSkinsData[skinKey4].sold = (limitedSkinsData[skinKey4].sold || 0) + 1;
                                                     skin.sold = limitedSkinsData[skinKey4].sold;
                                                     saveLimitedSkinsData();
                                                 }
                                                 
-                                                if (skinType === 'tree') playerData.activeSkin = skin.id;
-                                                else playerData.activeAxe = skin.id;
+                                                if (skinType === 'tree') {
+                                                    playerData.activeSkin = skin.id;
+                                                } else {
+                                                    playerData.activeAxe = skin.id;
+                                                }
+                                                
                                                 playerData.stars = (playerData.stars || 0) + skin.price;
                                                 updateUI();
                                                 saveData();
@@ -2200,18 +2766,35 @@
             deleteButtons.forEach(function(deleteBtn) {
                 deleteBtn.addEventListener('click', function(event) {
                     event.stopPropagation();
+                    
                     var skinId = this.dataset.del;
                     var skinType = this.dataset.dt;
                     
                     if (confirm('Удалить этот скин навсегда?')) {
                         if (skinType === 'tree') {
-                            var index = treeSkins.findIndex(function(s) { return s.id === skinId; });
-                            if (index !== -1) treeSkins.splice(index, 1);
-                            localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s) { return s.id.indexOf('custom_') === 0; })));
+                            var index = treeSkins.findIndex(function(s) {
+                                return s.id === skinId;
+                            });
+                            
+                            if (index !== -1) {
+                                treeSkins.splice(index, 1);
+                            }
+                            
+                            localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s) {
+                                return s.id.indexOf('custom_') === 0;
+                            })));
                         } else {
-                            var index = axeSkins.findIndex(function(s) { return s.id === skinId; });
-                            if (index !== -1) axeSkins.splice(index, 1);
-                            localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(s) { return s.id.indexOf('custom_') === 0; })));
+                            var index = axeSkins.findIndex(function(s) {
+                                return s.id === skinId;
+                            });
+                            
+                            if (index !== -1) {
+                                axeSkins.splice(index, 1);
+                            }
+                            
+                            localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(s) {
+                                return s.id.indexOf('custom_') === 0;
+                            })));
                         }
                         
                         if (limitedSkinsData[skinId]) {
@@ -2237,6 +2820,7 @@
         render('tree');
     }
 
+    // ==================== ФОРМА ДОБАВЛЕНИЯ СКИНА ====================
     function addSkinForm() {
         var html = '<div class="create-form">';
         
@@ -2283,11 +2867,15 @@
         
         var closeButton = popup.querySelector('.popup-close');
         if (closeButton) {
-            closeButton.addEventListener('click', function() { popup.remove(); });
+            closeButton.addEventListener('click', function() {
+                popup.remove();
+            });
         }
         
         popup.addEventListener('click', function(event) {
-            if (event.target === popup) popup.remove();
+            if (event.target === popup) {
+                popup.remove();
+            }
         });
         
         var photoInput = popup.querySelector('#skinPhoto');
@@ -2356,10 +2944,14 @@
                     
                     if (type === 'tree') {
                         treeSkins.push(newSkin);
-                        localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s) { return s.id.indexOf('custom_') === 0; })));
+                        localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s) {
+                            return s.id.indexOf('custom_') === 0;
+                        })));
                     } else {
                         axeSkins.push(newSkin);
-                        localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(s) { return s.id.indexOf('custom_') === 0; })));
+                        localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(s) {
+                            return s.id.indexOf('custom_') === 0;
+                        })));
                     }
                     
                     alert('✅ Скин "' + name + '" успешно добавлен!' + (limited ? ' (Лимит: ' + stock + ' шт.)' : ''));
@@ -2368,36 +2960,25 @@
                     updateAdminSelects();
                 }
                 
-    
                 if (photo) {
                     var reader = new FileReader();
-            
-                                        reader.onload = function(ev) {
-                        // Проверяем, что изображение действительно PNG
-                        var dataUrl = ev.target.result;
-                        var isPng = dataUrl.startsWith('data:image/png');
-                        console.log('Is PNG:', isPng);
-                        console.log('Data URL starts with:', dataUrl.substring(0, 50));
-                        
-                        if (!isPng) {
-                            alert('⚠️ Изображение не в формате PNG! Конвертируйте в PNG с прозрачным фоном.');
-                        }
-                        
-                        saveSkin(dataUrl);
+                    reader.onload = function(ev) {
+                        saveSkin(ev.target.result);
                     };
                     reader.readAsDataURL(photo);
                 } else {
                     saveSkin(null);
                 }
-
-
             });
         }
     }
 
+    // ==================== ТОРГИ ====================
     function showTrade() {
         fetch(API_URL + '/trades?user_id=' + userId)
-            .then(function(response) { return response.json(); })
+            .then(function(response) {
+                return response.json();
+            })
             .then(function(data) {
                 var trades = data.success ? data.trades : [];
                 
@@ -2416,12 +2997,25 @@
                 html += '<select id="tradeSkinId" class="form-input"><option value="">-- Выберите скин --</option>';
                 
                 playerData.ownedSkins.forEach(function(skinId) {
-                    if (skinId === 'default') return;
-                    var skin = treeSkins.find(function(s) { return s.id === skinId; });
+                    if (skinId === 'default') {
+                        return;
+                    }
+                    
+                    var skin = treeSkins.find(function(s) {
+                        return s.id === skinId;
+                    });
+                    
                     if (skin) {
                         var label = (skin.emoji || '🎄') + ' ' + skin.name;
-                        if (skin.limited) label += ' 🔥';
-                        if (skinId === playerData.activeSkin) label += ' (активен)';
+                        
+                        if (skin.limited) {
+                            label += ' 🔥';
+                        }
+                        
+                        if (skinId === playerData.activeSkin) {
+                            label += ' (активен)';
+                        }
+                        
                         html += '<option value="' + skin.id + '">' + label + '</option>';
                     }
                 });
@@ -2453,29 +3047,48 @@
                         var currency = trade.currency || 'wood';
                         var currencyIcon;
                         
-                        if (currency === 'wood') currencyIcon = '🌲';
-                        else if (currency === 'crystals') currencyIcon = '💎';
-                        else currencyIcon = '⭐';
+                        if (currency === 'wood') {
+                            currencyIcon = '🌲';
+                        } else if (currency === 'crystals') {
+                            currencyIcon = '💎';
+                        } else {
+                            currencyIcon = '⭐';
+                        }
                         
                         var canBuy = !isOwn && !hasSkin;
-                        if (currency === 'wood') canBuy = canBuy && playerData.wood >= trade.price;
-                        else if (currency === 'crystals') canBuy = canBuy && playerData.crystals >= trade.price;
                         
-                        var tradeSkin = treeSkins.find(function(s) { return s.id === trade.skinId; });
+                        if (currency === 'wood') {
+                            canBuy = canBuy && playerData.wood >= trade.price;
+                        } else if (currency === 'crystals') {
+                            canBuy = canBuy && playerData.crystals >= trade.price;
+                        }
+                        
+                        var tradeSkin = treeSkins.find(function(s) {
+                            return s.id === trade.skinId;
+                        });
+                        
                         var isLimitedSkin = tradeSkin && tradeSkin.limited;
                         
                         html += '<div class="trade-item">';
                         html += '<div class="trade-header"><div>';
                         html += '<span class="trade-seller-name">' + escapeHtml(trade.sellerName) + '</span><br>';
                         html += '<span class="trade-seller-id">ID: ' + trade.sellerId + '</span>';
-                        if (trade.targetId) html += '<br><span style="font-size:10px;color:#a78bfa;">🎯 Для: ' + trade.targetId + '</span>';
+                        
+                        if (trade.targetId) {
+                            html += '<br><span style="font-size:10px;color:#a78bfa;">🎯 Для: ' + trade.targetId + '</span>';
+                        }
+                        
                         html += '</div>';
                         html += '<span class="trade-price">' + formatNumber(trade.price) + ' ' + currencyIcon + '</span>';
                         html += '</div>';
                         
                         html += '<div class="trade-tree">';
                         html += (trade.skinEmoji || '🎄') + ' ' + trade.skinName;
-                        if (isLimitedSkin) html += ' <span class="limited-badge">LIMITED</span>';
+                        
+                        if (isLimitedSkin) {
+                            html += ' <span class="limited-badge">LIMITED</span>';
+                        }
+                        
                         html += '</div>';
                         
                         if (isOwn) {
@@ -2516,15 +3129,30 @@
                         var targetId = popup.querySelector('#tradeTargetId').value.trim();
                         var currency = popup.querySelector('#tradeCurrency').value;
                         
-                        if (!skinId) { alert('❌ Выберите скин для продажи'); return; }
-                        if (!price || price < 1) { alert('❌ Укажите цену (минимум 1)'); return; }
-                        if (currency === 'stars' && price < 1) { alert('❌ Минимальная цена в звездах: 1 ⭐'); return; }
+                        if (!skinId) {
+                            alert('❌ Выберите скин для продажи');
+                            return;
+                        }
                         
-                        var skin = treeSkins.find(function(s) { return s.id === skinId; });
+                        if (!price || price < 1) {
+                            alert('❌ Укажите цену (минимум 1)');
+                            return;
+                        }
+                        
+                        if (currency === 'stars' && price < 1) {
+                            alert('❌ Минимальная цена в звездах: 1 ⭐');
+                            return;
+                        }
+                        
+                        var skin = treeSkins.find(function(s) {
+                            return s.id === skinId;
+                        });
                         
                         fetch(API_URL + '/trades/create', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
                             body: JSON.stringify({
                                 sellerId: userId,
                                 sellerName: userName,
@@ -2536,17 +3164,30 @@
                                 skinEmoji: skin ? (skin.emoji || '🎄') : '🎄'
                             })
                         })
-                        .then(function(response) { return response.json(); })
+                        .then(function(response) {
+                            return response.json();
+                        })
                         .then(function(result) {
                             if (result.success) {
-                                playerData.ownedSkins = playerData.ownedSkins.filter(function(s) { return s !== skinId; });
-                                if (playerData.activeSkin === skinId) playerData.activeSkin = 'default';
+                                playerData.ownedSkins = playerData.ownedSkins.filter(function(s) {
+                                    return s !== skinId;
+                                });
+                                
+                                if (playerData.activeSkin === skinId) {
+                                    playerData.activeSkin = 'default';
+                                }
+                                
                                 saveData();
                                 updateUI();
                                 popup.remove();
                                 showTrade();
                                 
-                                var currencyNames = { wood: '🌲', crystals: '💎', stars: '⭐' };
+                                var currencyNames = {
+                                    wood: '🌲',
+                                    crystals: '💎',
+                                    stars: '⭐'
+                                };
+                                
                                 alert('✅ Скин выставлен на продажу за ' + price + ' ' + (currencyNames[currency] || currency) + '!');
                             } else {
                                 alert('❌ Ошибка создания предложения');
@@ -2562,14 +3203,23 @@
                         var tradeId = this.dataset.id;
                         
                         if (action === 'cancel') {
-                            if (!confirm('Отменить предложение? Скин вернется к вам.')) return;
+                            if (!confirm('Отменить предложение? Скин вернется к вам.')) {
+                                return;
+                            }
                             
                             fetch(API_URL + '/trades/cancel', {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ trade_id: tradeId, user_id: userId })
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    trade_id: tradeId,
+                                    user_id: userId
+                                })
                             })
-                            .then(function(response) { return response.json(); })
+                            .then(function(response) {
+                                return response.json();
+                            })
                             .then(function(result) {
                                 if (result.success) {
                                     if (result.skinId) {
@@ -2577,6 +3227,7 @@
                                         saveData();
                                         updateUI();
                                     }
+                                    
                                     popup.remove();
                                     showTrade();
                                     alert('✅ Предложение отменено, скин возвращен');
@@ -2587,10 +3238,20 @@
                         } else if (action === 'buy') {
                             var currency = this.dataset.currency;
                             var price = parseInt(this.dataset.price);
-                            var currencyIcon = currency === 'wood' ? '🌲' : currency === 'crystals' ? '💎' : '⭐';
+                            var currencyIcon;
+                            
+                            if (currency === 'wood') {
+                                currencyIcon = '🌲';
+                            } else if (currency === 'crystals') {
+                                currencyIcon = '💎';
+                            } else {
+                                currencyIcon = '⭐';
+                            }
                             
                             if (currency === 'stars') {
-                                if (!confirm('Купить этот скин за ' + price + ' ⭐?')) return;
+                                if (!confirm('Купить этот скин за ' + price + ' ⭐?')) {
+                                    return;
+                                }
                                 
                                 if (typeof tg.sendStarInvoice === 'function') {
                                     tg.sendStarInvoice({
@@ -2598,8 +3259,13 @@
                                         description: 'Скин в игре Woodcutter',
                                         payload: 'trade_' + tradeId + '_' + userId + '_' + Date.now(),
                                         currency: 'XTR',
-                                        prices: [{ amount: price, label: 'Скин с торгов' }]
+                                        prices: [{
+                                            amount: price,
+                                            label: 'Скин с торгов'
+                                        }]
                                     }, function(status) {
+                                        console.log('⭐ Статус оплаты трейда:', status);
+                                        
                                         if (status === 'paid') {
                                             completeTradePurchase(tradeId, 'stars', popup);
                                         } else if (status === 'cancelled') {
@@ -2611,7 +3277,9 @@
                                 } else if (typeof tg.openInvoice === 'function') {
                                     fetch(API_URL + '/create-star-invoice', {
                                         method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
                                         body: JSON.stringify({
                                             user_id: userId,
                                             trade_id: tradeId,
@@ -2620,7 +3288,9 @@
                                             type: 'trade_buy'
                                         })
                                     })
-                                    .then(function(response) { return response.json(); })
+                                    .then(function(response) {
+                                        return response.json();
+                                    })
                                     .then(function(result) {
                                         if (result.success && result.invoice_link) {
                                             tg.openInvoice(result.invoice_link, function(status) {
@@ -2638,12 +3308,15 @@
                                     alert('❌ Покупки за звезды доступны только через бота Telegram.\n\nОткройте игру через @WoodcutterBot');
                                 }
                             } else {
-                                if (!confirm('Купить за ' + price + ' ' + currencyIcon + '?')) return;
+                                if (!confirm('Купить за ' + price + ' ' + currencyIcon + '?')) {
+                                    return;
+                                }
                                 
                                 if (currency === 'wood' && playerData.wood < price) {
                                     alert('❌ Недостаточно древесины');
                                     return;
                                 }
+                                
                                 if (currency === 'crystals' && playerData.crystals < price) {
                                     alert('❌ Недостаточно кристаллов');
                                     return;
@@ -2658,14 +3331,18 @@
                 function completeTradePurchase(tradeId, paymentType, popup) {
                     fetch(API_URL + '/trades/buy', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
                         body: JSON.stringify({
                             trade_id: tradeId,
                             buyer_id: userId,
                             payment_type: paymentType
                         })
                     })
-                    .then(function(response) { return response.json(); })
+                    .then(function(response) {
+                        return response.json();
+                    })
                     .then(function(result) {
                         if (result.success) {
                             playerData.ownedSkins.push(result.skinId);
@@ -2687,9 +3364,12 @@
             });
     }
 
+    // ==================== РЕЙТИНГ ====================
     function showLeaderboard() {
         fetch(API_URL + '/leaderboard')
-            .then(function(response) { return response.json(); })
+            .then(function(response) {
+                return response.json();
+            })
             .then(function(data) {
                 var players = data.success ? data.players : [];
                 
@@ -2750,9 +3430,12 @@
             });
     }
 
+    // ==================== ИНФОРМАЦИЯ ОБ ИГРОКЕ ====================
     function showPlayerInfo(targetUserId, parentPopup) {
         fetch(API_URL + '/profile/' + targetUserId)
-            .then(function(response) { return response.json(); })
+            .then(function(response) {
+                return response.json();
+            })
             .then(function(data) {
                 if (data.success && data.profile) {
                     var profile = data.profile;
@@ -2772,7 +3455,6 @@
                     
                     infoHtml += '</div>';
                     
-                    // Кнопки для админа
                     if (userId === ADMIN_ID && targetUserId !== userId) {
                         infoHtml += '<button class="admin-btn blue" id="btnAdminOpen" style="margin-bottom:8px;">🔧 Выдать ресурсы</button>';
                         infoHtml += '<button class="admin-btn red" id="btnAdminWipe" style="margin-bottom:8px;">🗑️ Стереть аккаунт</button>';
@@ -2784,7 +3466,6 @@
                     
                     var infoPopup = showPopup('👤 ' + escapeHtml(profile.name || 'Игрок'), infoHtml);
                     
-                    // Обработчик кнопки "Выдать ресурсы"
                     var btnOpen = infoPopup.querySelector('#btnAdminOpen');
                     if (btnOpen) {
                         btnOpen.addEventListener('click', function() {
@@ -2793,7 +3474,6 @@
                         });
                     }
                     
-                    // Обработчик кнопки "Стереть аккаунт"
                     var btnWipe = infoPopup.querySelector('#btnAdminWipe');
                     if (btnWipe) {
                         btnWipe.addEventListener('click', function() {
@@ -2811,6 +3491,7 @@
             });
     }
 
+    // ==================== ПАССИВНЫЙ ДОХОД ====================
     function passiveIncome() {
         if (playerData.autoWood > 0) {
             playerData.wood += playerData.autoWood;
@@ -2818,6 +3499,7 @@
         }
     }
 
+    // ==================== ПРИВЯЗКА СОБЫТИЙ ====================
     document.getElementById('bs').addEventListener('click', showShop);
     document.getElementById('bl').addEventListener('click', showLeaderboard);
     document.getElementById('bt').addEventListener('click', showSkins);
@@ -2831,12 +3513,15 @@
         }
     });
 
+    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
     updateUI();
     updateAdminSelects();
     
     fetch(API_URL + '/leaderboard/update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
             user_id: userId,
             name: userName,
@@ -2853,7 +3538,9 @@
     setInterval(function() {
         fetch(API_URL + '/leaderboard/update', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({
                 user_id: userId,
                 name: userName,
@@ -2865,8 +3552,14 @@
         }).catch(function() {});
     }, 30000);
 
-    console.log('✅ Woodcutter v11.0 - Final Version Ready');
+    console.log('✅ Woodcutter v12.0 - Full Version Ready');
     console.log('📊 Все функции активны');
+    console.log('🎮 Магазин: 16 улучшений');
+    console.log('🎨 Скины: 9 деревьев + 4 топора');
+    console.log('🔥 Лимитированные скины');
+    console.log('💱 Торги с поддержкой звезд');
+    console.log('🏆 Рейтинг с информацией об игроках');
+    console.log('👑 Админ-панель с полным управлением');
     </script>
 </body>
 </html>
