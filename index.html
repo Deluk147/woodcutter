@@ -163,7 +163,7 @@
         }
         
         .tree-scene { 
-            background: transparent;
+            background: var(--panel);
             border-radius: 16px; 
             padding: 12px; 
             display: flex; 
@@ -508,7 +508,7 @@
         }
         
         .skin-card { 
-            background: transparent;
+            background: #1e2a3a;
             border-radius: 12px; 
             padding: 10px; 
             text-align: center; 
@@ -531,20 +531,12 @@
             margin-bottom: 6px; 
         }
         
-          .skin-img { 
-            width: 48px; 
-            height: 48px; 
-            object-fit: contain; 
-            display: block; 
-            margin: 0 auto 6px; 
-            border-radius: 8px; 
-            background: transparent !important; 
-            mix-blend-mode: normal;
+         .img { 
+            background: transparent; 
         }
         
-        #skinOverlay {
-            background: transparent !important;
-            mix-blend-mode: normal;
+        #skinOverlay { 
+            background: transparent !important; 
         }
         
         .skin-name { 
@@ -1229,7 +1221,7 @@
         } else {
             hpBar.className = 'hp-bar low';
         }
-        
+    }
         document.getElementById('ht').textContent = formatNumber(Math.max(0, playerData.treeHP)) + ' / ' + formatNumber(playerData.maxTreeHP) + ' HP';
         document.getElementById('lb').textContent = '🌲 Ур. ' + playerData.treeLevel;
         document.getElementById('nd').textContent = playerData.name;
@@ -1261,18 +1253,21 @@
         var svg = treeContainer.querySelector('svg');
         var overlay = document.getElementById('skinOverlay');
         
-        if (!overlay) {
-            overlay = document.createElement('img');
-            overlay.id = 'skinOverlay';
-            overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:5;background:transparent;';
-            treeContainer.appendChild(overlay);
-        }
+    if (!overlay) {
+        overlay = document.createElement('img');
+        overlay.id = 'skinOverlay';
+        overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;pointer-events:none;z-index:5;background:transparent;';
+        treeContainer.appendChild(overlay);
+    }
         
-        if (skin.img) {
-            svg.style.display = 'none';
-            overlay.src = skin.img;
-            overlay.style.display = 'block';
-        } else {
+    if (skin.img) {
+        svg.style.display = 'block';  // ← Оставляем SVG видимым
+        overlay.src = skin.img;
+        overlay.style.display = 'block';
+        overlay.style.background = 'transparent';
+        overlay.style.mixBlendMode = 'normal';
+    }
+         else {
             svg.style.display = 'block';
             overlay.style.display = 'none';
             
@@ -1303,7 +1298,7 @@
         }
         
         updateAdminSelects();
-    }
+    
 
     var COMBO_TIMEOUT = 5000;
     var comboTimer = null;
