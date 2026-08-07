@@ -1896,10 +1896,12 @@
     }
 
     // ==================== АДМИН ФУНКЦИИ ====================
-    function updateAdminSelects() {
+      function updateAdminSelects() {
         var skinSelect = document.getElementById('ass');
         if (skinSelect) {
+            var currentValue = skinSelect.value;
             skinSelect.innerHTML = '';
+            
             treeSkins.forEach(function(skin) {
                 if (skin.id !== 'default') {
                     var option = document.createElement('option');
@@ -1908,11 +1910,18 @@
                     skinSelect.appendChild(option);
                 }
             });
+            
+            // Восстанавливаем выбранное значение
+            if (currentValue) {
+                skinSelect.value = currentValue;
+            }
         }
         
         var axeSelect = document.getElementById('aaxs');
         if (axeSelect) {
+            var currentValue = axeSelect.value;
             axeSelect.innerHTML = '';
+            
             axeSkins.forEach(function(axe) {
                 if (axe.id !== 'default') {
                     var option = document.createElement('option');
@@ -1921,6 +1930,11 @@
                     axeSelect.appendChild(option);
                 }
             });
+            
+            // Восстанавливаем выбранное значение
+            if (currentValue) {
+                axeSelect.value = currentValue;
+            }
         }
     }
 
@@ -3096,7 +3110,7 @@
                     return;
                 }
                 
-                function saveSkin(imageData) {
+                           function saveSkin(imageData) {
                     var newSkin = {
                         id: 'custom_' + Date.now(),
                         name: name,
@@ -3108,7 +3122,8 @@
                         hidden: hidden,
                         limited: limited,
                         stock: stock,
-                        sold: 0
+                        sold: 0,
+                        skin_type: type
                     };
                     
                     if (limited) {
@@ -3128,28 +3143,9 @@
                         })));
                     }
                     
-                    // Сохраняем скин на сервер
-                    fetch(API_URL + '/custom_skins/save', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            admin_id: userId,
-                            skin_type: type,
-                            skin_data: newSkin
-                        })
-                    }).catch(function(e) {
-                        console.log('⚠️ Скин сохранен локально, сервер недоступен');
-                    });
-                    
-                    alert('✅ Скин "' + name + '" успешно добавлен!' + (limited ? ' (Лимит: ' + stock + ' шт.)' : ''));
-                    popup.remove();
-                    showSkins();
-                    updateAdminSelects();
-                }
 
-                // Загрузка кастомных скинов с сервера
+                    
+                    // Загрузка кастомных скинов с сервера
     (function() {
         fetch(API_URL + '/custom_skins')
             .then(function(response) {
@@ -3157,26 +3153,39 @@
             })
             .then(function(data) {
                 if (data.success && data.skins) {
-                    data.skins.forEach(function(serverSkin) {
-                        // Проверяем, нет ли уже такого скина
-                        var exists = treeSkins.find(function(s) {
+                    var serverSkins = data.skins;
+                    var localTreeSkins = treeSkins.filter(function(s) {
+                        return s.id.indexOf('custom_') === 0;
+                    });
+                    var localAxeSkins = axeSkins.filter(function(s) {
+                        return s.id.indexOf('custom_') === 0;
+                    });
+                    
+                    // Добавляем скины с сервера, которых нет локально
+                    for (var key in serverSkins) {
+                        var serverSkin = serverSkins[key];
+                        var skinType = serverSkin.skin_type || 'tree';
+                        
+                        // Проверяем существует ли уже такой скин
+                        var existsInTree = treeSkins.find(function(s) {
                             return s.id === serverSkin.id;
-                        }) || axeSkins.find(function(s) {
+                        });
+                        var existsInAxe = axeSkins.find(function(s) {
                             return s.id === serverSkin.id;
                         });
                         
-                        if (!exists) {
+                        if (!existsInTree && !existsInAxe) {
                             if (!serverSkin.limited) serverSkin.limited = false;
                             if (!serverSkin.stock) serverSkin.stock = 0;
                             if (!serverSkin.sold) serverSkin.sold = 0;
                             
-                            if (serverSkin.skin_type === 'tree' || !serverSkin.skin_type) {
+                            if (skinType === 'tree') {
                                 treeSkins.push(serverSkin);
                             } else {
                                 axeSkins.push(serverSkin);
                             }
                         }
-                    });
+                    }
                     
                     // Обновляем localStorage
                     localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s) {
@@ -3186,26 +3195,14 @@
                         return s.id.indexOf('custom_') === 0;
                     })));
                     
-                    console.log('✅ Кастомные скины загружены с сервера');
+                    console.log('✅ Загружено ' + Object.keys(serverSkins).length + ' скинов с сервера');
+                    updateUI();
                 }
             })
             .catch(function(e) {
                 console.log('⚠️ Сервер недоступен, используем локальные скины');
             });
     })();
-                
-                if (photo) {
-                    var reader = new FileReader();
-                    reader.onload = function(ev) {
-                        saveSkin(ev.target.result);
-                    };
-                    reader.readAsDataURL(photo);
-                } else {
-                    saveSkin(null);
-                }
-            });
-        }
-    }
 
     // ==================== ТОРГИ (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
     function showTrade() {
