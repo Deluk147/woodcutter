@@ -3164,7 +3164,7 @@
                         })));
                     }
                     
-                    fetch(API_URL + '/custom_skins/save', {
+                                    fetch(API_URL + '/custom_skins/save', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -3178,29 +3178,15 @@
                     }).then(function(data) {
                         if (data.success) {
                             console.log('✅ Скин сохранен на сервере');
+                            alert('✅ Скин сохранен на сервере! Другие игроки увидят его после перезапуска игры.');
+                        } else {
+                            console.log('❌ Ошибка сохранения на сервере:', data);
+                            alert('❌ Ошибка сохранения на сервере! Скин виден только вам.');
                         }
                     }).catch(function(e) {
-                        console.log('⚠️ Скин сохранен только локально');
+                        console.log('⚠️ Сервер недоступен:', e);
+                        alert('⚠️ Сервер недоступен! Скин сохранен только локально.');
                     });
-                    
-                    alert('✅ Скин "' + name + '" успешно добавлен!' + (limited ? ' (Лимит: ' + stock + ' шт.)' : ''));
-                    popup.remove();
-                    showSkins();
-                    updateAdminSelects();
-                }
-                
-                if (photo) {
-                    var reader = new FileReader();
-                    reader.onload = function(ev) {
-                        saveSkin(ev.target.result);
-                    };
-                    reader.readAsDataURL(photo);
-                } else {
-                    saveSkin(null);
-                }
-            });
-        }
-    }
 
     // ==================== ТОРГИ ====================
     function showTrade() {
