@@ -2305,7 +2305,7 @@
     }
 
     // ==================== МАГАЗИН (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
-    function showShop() {
+       function showShop() {
         var html = '';
         var currentCategory = '';
         
@@ -2352,12 +2352,20 @@
         
         var popup = showPopup('🏪 Магазин', html);
         
-        var scrollPosition = 0;
-        
         var buttons = popup.querySelectorAll('button[data-id]');
         buttons.forEach(function(button) {
+            // Убираем стандартное поведение
+            button.addEventListener('mousedown', function(event) {
+                event.preventDefault();
+            });
+            
+            button.addEventListener('touchstart', function(event) {
+                event.preventDefault();
+            });
+            
             button.addEventListener('click', function(event) {
                 event.preventDefault();
+                event.stopPropagation();
                 
                 var itemId = this.dataset.id;
                 var item = shopItems.find(function(shopItem) {
@@ -2388,22 +2396,41 @@
                 updateUI();
                 saveData();
                 
-                var popupElement = popup.querySelector('.popup');
-                if (popupElement) {
-                    scrollPosition = popupElement.scrollTop;
-                }
-                
-                popup.remove();
-                showShop();
-                
-                setTimeout(function() {
-                    var newPopup = document.querySelector('.popup');
-                    if (newPopup) {
-                        newPopup.scrollTop = scrollPosition;
-                    }
-                }, 50);
+                // Обновляем кнопки без пересоздания попапа
+                updateShopButtons(popup);
             });
         });
+        
+        function updateShopButtons(popup) {
+            var allButtons = popup.querySelectorAll('button[data-id]');
+            allButtons.forEach(function(button) {
+                var itemId = button.dataset.id;
+                var item = shopItems.find(function(shopItem) {
+                    return shopItem.id === itemId;
+                });
+                
+                if (!item) {
+                    return;
+                }
+                
+                var cost = item.cost();
+                var canAfford;
+                
+                if (item.cur === 'wood') {
+                    canAfford = playerData.wood >= cost;
+                } else {
+                    canAfford = playerData.crystals >= cost;
+                }
+                
+                button.textContent = formatNumber(cost) + ' ' + (item.cur === 'wood' ? '🌲' : '💎');
+                
+                if (canAfford) {
+                    button.removeAttribute('disabled');
+                } else {
+                    button.setAttribute('disabled', 'disabled');
+                }
+            });
+        }
         
         var closeButton = popup.querySelector('.popup-close');
         if (closeButton) {
@@ -3022,11 +3049,71 @@
                         })));
                     }
                     
+                    // Сохраняем скин на сервер
+                    fetch(API_URL + '/custom_skins/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            admin_id: userId,
+                            skin_type: type,
+                            skin_data: newSkin
+                        })
+                    }).catch(function(e) {
+                        console.log('⚠️ Скин сохранен локально, сервер недоступен');
+                    });
+                    
                     alert('✅ Скин "' + name + '" успешно добавлен!' + (limited ? ' (Лимит: ' + stock + ' шт.)' : ''));
                     popup.remove();
                     showSkins();
                     updateAdminSelects();
                 }
+
+                // Загрузка кастомных скинов с сервера
+    (function() {
+        fetch(API_URL + '/custom_skins')
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.success && data.skins) {
+                    data.skins.forEach(function(serverSkin) {
+                        // Проверяем, нет ли уже такого скина
+                        var exists = treeSkins.find(function(s) {
+                            return s.id === serverSkin.id;
+                        }) || axeSkins.find(function(s) {
+                            return s.id === serverSkin.id;
+                        });
+                        
+                        if (!exists) {
+                            if (!serverSkin.limited) serverSkin.limited = false;
+                            if (!serverSkin.stock) serverSkin.stock = 0;
+                            if (!serverSkin.sold) serverSkin.sold = 0;
+                            
+                            if (serverSkin.skin_type === 'tree' || !serverSkin.skin_type) {
+                                treeSkins.push(serverSkin);
+                            } else {
+                                axeSkins.push(serverSkin);
+                            }
+                        }
+                    });
+                    
+                    // Обновляем localStorage
+                    localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s) {
+                        return s.id.indexOf('custom_') === 0;
+                    })));
+                    localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(s) {
+                        return s.id.indexOf('custom_') === 0;
+                    })));
+                    
+                    console.log('✅ Кастомные скины загружены с сервера');
+                }
+            })
+            .catch(function(e) {
+                console.log('⚠️ Сервер недоступен, используем локальные скины');
+            });
+    })();
                 
                 if (photo) {
                     var reader = new FileReader();
