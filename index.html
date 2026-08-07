@@ -969,7 +969,7 @@
     var STORAGE_KEY = 'wc_' + userId;
     var ADMIN_ID = 'WC046190';
 
-    console.log('🌲 Woodcutter v13.0 - Final Fixed Version');
+    console.log('🌲 Woodcutter v14.0 - Final Version');
     console.log('👤 User ID:', userId);
     console.log('👑 Admin:', userId === ADMIN_ID);
     console.log('📱 Telegram Methods:', {
@@ -995,7 +995,7 @@
         }
     });
 
-    // ==================== ДАННЫЕ ИГРОКА ====================
+        // ==================== ДАННЫЕ ИГРОКА ====================
     var playerData = {
         name: userName,
         userId: userId,
@@ -1250,6 +1250,60 @@
     try {
         limitedSkinsData = JSON.parse(localStorage.getItem('limited_skins_data') || '{}');
     } catch (e) {}
+
+    // Загрузка кастомных скинов с сервера
+    (function() {
+        fetch(API_URL + '/custom_skins')
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('HTTP error ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.success && data.skins) {
+                    var count = 0;
+                    for (var key in data.skins) {
+                        var serverSkin = data.skins[key];
+                        var skinType = serverSkin.skin_type || 'tree';
+                        
+                        var existsInTree = treeSkins.find(function(s) {
+                            return s.id === serverSkin.id;
+                        });
+                        var existsInAxe = axeSkins.find(function(s) {
+                            return s.id === serverSkin.id;
+                        });
+                        
+                        if (!existsInTree && !existsInAxe) {
+                            if (!serverSkin.limited) serverSkin.limited = false;
+                            if (!serverSkin.stock) serverSkin.stock = 0;
+                            if (!serverSkin.sold) serverSkin.sold = 0;
+                            
+                            if (skinType === 'tree') {
+                                treeSkins.push(serverSkin);
+                            } else {
+                                axeSkins.push(serverSkin);
+                            }
+                            count++;
+                        }
+                    }
+                    
+                    if (count > 0) {
+                        localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s) {
+                            return s.id.indexOf('custom_') === 0;
+                        })));
+                        localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(s) {
+                            return s.id.indexOf('custom_') === 0;
+                        })));
+                        console.log('✅ Загружено ' + count + ' скинов с сервера');
+                        updateUI();
+                    }
+                }
+            })
+            .catch(function(e) {
+                console.log('⚠️ Сервер недоступен, используем локальные скины:', e.message);
+            });
+    })();
 
     // ==================== МАГАЗИН ====================
     var shopItems = [
@@ -1896,12 +1950,11 @@
     }
 
     // ==================== АДМИН ФУНКЦИИ ====================
-      function updateAdminSelects() {
+    function updateAdminSelects() {
         var skinSelect = document.getElementById('ass');
         if (skinSelect) {
             var currentValue = skinSelect.value;
             skinSelect.innerHTML = '';
-            
             treeSkins.forEach(function(skin) {
                 if (skin.id !== 'default') {
                     var option = document.createElement('option');
@@ -1910,8 +1963,6 @@
                     skinSelect.appendChild(option);
                 }
             });
-            
-            // Восстанавливаем выбранное значение
             if (currentValue) {
                 skinSelect.value = currentValue;
             }
@@ -1921,7 +1972,6 @@
         if (axeSelect) {
             var currentValue = axeSelect.value;
             axeSelect.innerHTML = '';
-            
             axeSkins.forEach(function(axe) {
                 if (axe.id !== 'default') {
                     var option = document.createElement('option');
@@ -1930,8 +1980,6 @@
                     axeSelect.appendChild(option);
                 }
             });
-            
-            // Восстанавливаем выбранное значение
             if (currentValue) {
                 axeSelect.value = currentValue;
             }
@@ -2318,8 +2366,7 @@
         document.getElementById('ap').scrollTop = 0;
     }
 
-    // ==================== МАГАЗИН (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
-          // ==================== МАГАЗИН (ФИНАЛЬНАЯ ВЕРСИЯ) ====================
+        // ==================== МАГАЗИН ====================
     function showShop() {
         var html = '';
         var currentCategory = '';
@@ -2367,7 +2414,6 @@
         
         var popup = showPopup('🏪 Магазин', html);
         
-        // Функция для обновления одной кнопки
         function updateButton(button) {
             var itemId = button.dataset.id;
             var item = shopItems.find(function(shopItem) {
@@ -2396,7 +2442,6 @@
             }
         }
         
-        // Функция покупки
         function buyItem(button) {
             var itemId = button.dataset.id;
             var item = shopItems.find(function(shopItem) {
@@ -2432,11 +2477,9 @@
         
         var buttons = popup.querySelectorAll('button[data-id]');
         buttons.forEach(function(button) {
-            // Переменные для зажатия
             var holdTimer = null;
             var isHolding = false;
             
-            // Покупка по клику
             button.addEventListener('click', function(event) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -2446,7 +2489,6 @@
                 }
             });
             
-            // Начало зажатия
             button.addEventListener('mousedown', function(event) {
                 event.preventDefault();
                 isHolding = true;
@@ -2489,7 +2531,6 @@
                 holdLoop();
             });
             
-            // Конец зажатия
             button.addEventListener('mouseup', function(event) {
                 event.preventDefault();
                 isHolding = false;
@@ -2535,18 +2576,12 @@
         }
     }
 
-    // ==================== СКИНЫ (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
+    // ==================== СКИНЫ ====================
     function showSkins() {
         var currentTab = 'tree';
         
         function render(tab) {
             currentTab = tab;
-            
-            var scrollPosition = 0;
-            var existingPopup = document.querySelector('.popup');
-            if (existingPopup) {
-                scrollPosition = existingPopup.scrollTop;
-            }
             
             var html = '<div class="skin-tabs">';
             html += '<div class="skin-tab ' + (tab === 'tree' ? 'active' : '') + '" data-tab="tree">🎄 Деревья</div>';
@@ -2647,13 +2682,6 @@
             popup.innerHTML = '<div class="popup"><h3>🎨 Скины</h3>' + html + '</div>';
             document.body.appendChild(popup);
             
-            setTimeout(function() {
-                var popupElement = popup.querySelector('.popup');
-                if (popupElement) {
-                    popupElement.scrollTop = scrollPosition;
-                }
-            }, 50);
-            
             var closeButton = popup.querySelector('.popup-close');
             if (closeButton) {
                 closeButton.addEventListener('click', function(event) {
@@ -2722,22 +2750,7 @@
                         
                         updateUI();
                         saveData();
-                        
-                        var currentScroll = 0;
-                        var popupElement = popup.querySelector('.popup');
-                        if (popupElement) {
-                            currentScroll = popupElement.scrollTop;
-                        }
-                        
                         popup.remove();
-                        
-                        setTimeout(function() {
-                            var newPopup = document.querySelector('.popup');
-                            if (newPopup) {
-                                newPopup.scrollTop = currentScroll;
-                            }
-                        }, 50);
-                        
                         render(currentTab);
                         return;
                     }
@@ -2753,22 +2766,7 @@
                         
                         updateUI();
                         saveData();
-                        
-                        var currentScroll = 0;
-                        var popupElement = popup.querySelector('.popup');
-                        if (popupElement) {
-                            currentScroll = popupElement.scrollTop;
-                        }
-                        
                         popup.remove();
-                        
-                        setTimeout(function() {
-                            var newPopup = document.querySelector('.popup');
-                            if (newPopup) {
-                                newPopup.scrollTop = currentScroll;
-                            }
-                        }, 50);
-                        
                         render(currentTab);
                         return;
                     }
@@ -2802,22 +2800,7 @@
                                 
                                 updateUI();
                                 saveData();
-                                
-                                var currentScroll = 0;
-                                var popupElement = popup.querySelector('.popup');
-                                if (popupElement) {
-                                    currentScroll = popupElement.scrollTop;
-                                }
-                                
                                 popup.remove();
-                                
-                                setTimeout(function() {
-                                    var newPopup = document.querySelector('.popup');
-                                    if (newPopup) {
-                                        newPopup.scrollTop = currentScroll;
-                                    }
-                                }, 50);
-                                
                                 render(currentTab);
                             }
                         } else {
@@ -3110,7 +3093,7 @@
                     return;
                 }
                 
-                           function saveSkin(imageData) {
+                function saveSkin(imageData) {
                     var newSkin = {
                         id: 'custom_' + Date.now(),
                         name: name,
@@ -3143,81 +3126,55 @@
                         })));
                     }
                     
-
-                    
-                    // Загрузка кастомных скинов с сервера
-    (function() {
-        fetch(API_URL + '/custom_skins')
-            .then(function(response) {
-                return response.json();
-            })
-            .then(function(data) {
-                if (data.success && data.skins) {
-                    var serverSkins = data.skins;
-                    var localTreeSkins = treeSkins.filter(function(s) {
-                        return s.id.indexOf('custom_') === 0;
-                    });
-                    var localAxeSkins = axeSkins.filter(function(s) {
-                        return s.id.indexOf('custom_') === 0;
-                    });
-                    
-                    // Добавляем скины с сервера, которых нет локально
-                    for (var key in serverSkins) {
-                        var serverSkin = serverSkins[key];
-                        var skinType = serverSkin.skin_type || 'tree';
-                        
-                        // Проверяем существует ли уже такой скин
-                        var existsInTree = treeSkins.find(function(s) {
-                            return s.id === serverSkin.id;
-                        });
-                        var existsInAxe = axeSkins.find(function(s) {
-                            return s.id === serverSkin.id;
-                        });
-                        
-                        if (!existsInTree && !existsInAxe) {
-                            if (!serverSkin.limited) serverSkin.limited = false;
-                            if (!serverSkin.stock) serverSkin.stock = 0;
-                            if (!serverSkin.sold) serverSkin.sold = 0;
-                            
-                            if (skinType === 'tree') {
-                                treeSkins.push(serverSkin);
-                            } else {
-                                axeSkins.push(serverSkin);
-                            }
+                    fetch(API_URL + '/custom_skins/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            admin_id: userId,
+                            skin_data: newSkin
+                        })
+                    }).then(function(response) {
+                        return response.json();
+                    }).then(function(data) {
+                        if (data.success) {
+                            console.log('✅ Скин сохранен на сервере');
                         }
-                    }
+                    }).catch(function(e) {
+                        console.log('⚠️ Скин сохранен только локально');
+                    });
                     
-                    // Обновляем localStorage
-                    localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s) {
-                        return s.id.indexOf('custom_') === 0;
-                    })));
-                    localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(s) {
-                        return s.id.indexOf('custom_') === 0;
-                    })));
-                    
-                    console.log('✅ Загружено ' + Object.keys(serverSkins).length + ' скинов с сервера');
-                    updateUI();
+                    alert('✅ Скин "' + name + '" успешно добавлен!' + (limited ? ' (Лимит: ' + stock + ' шт.)' : ''));
+                    popup.remove();
+                    showSkins();
+                    updateAdminSelects();
                 }
-            })
-            .catch(function(e) {
-                console.log('⚠️ Сервер недоступен, используем локальные скины');
+                
+                if (photo) {
+                    var reader = new FileReader();
+                    reader.onload = function(ev) {
+                        saveSkin(ev.target.result);
+                    };
+                    reader.readAsDataURL(photo);
+                } else {
+                    saveSkin(null);
+                }
             });
-    })();
+        }
+    }
 
-    // ==================== ТОРГИ (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
+    // ==================== ТОРГИ ====================
     function showTrade() {
         fetch(API_URL + '/trades?user_id=' + userId)
             .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
                 return response.json();
             })
             .then(function(data) {
                 var trades = data.success ? data.trades : [];
-                
-                var scrollPosition = 0;
-                var existingPopup = document.querySelector('.popup');
-                if (existingPopup) {
-                    scrollPosition = existingPopup.scrollTop;
-                }
                 
                 var html = '';
                 
@@ -3227,9 +3184,6 @@
                 html += '</div>';
                 
                 html += '<div class="create-form">';
-                html += '<div class="form-group"><label>ID покупателя (пусто = всем)</label>';
-                html += '<input type="text" id="tradeTargetId" class="form-input" placeholder="WC..."></div>';
-                
                 html += '<div class="form-group"><label>Скин на продажу</label>';
                 html += '<select id="tradeSkinId" class="form-input"><option value="">-- Выберите скин --</option>';
                 
@@ -3244,15 +3198,7 @@
                     
                     if (skin) {
                         var label = (skin.emoji || '🎄') + ' ' + skin.name;
-                        
-                        if (skin.limited) {
-                            label += ' 🔥';
-                        }
-                        
-                        if (skinId === playerData.activeSkin) {
-                            label += ' (активен)';
-                        }
-                        
+                        if (skin.limited) label += ' 🔥';
                         html += '<option value="' + skin.id + '">' + label + '</option>';
                     }
                 });
@@ -3273,7 +3219,6 @@
                 html += '</div>';
                 
                 html += '<div class="section-title">📋 Активные предложения</div>';
-                html += '<div id="tradesList">';
                 
                 if (!trades.length) {
                     html += '<div style="text-align:center;padding:20px;color:#aaa;">Нет активных предложений</div>';
@@ -3292,67 +3237,30 @@
                             currencyIcon = '⭐';
                         }
                         
-                        var canBuy = !isOwn && !hasSkin;
-                        
-                        if (currency === 'wood') {
-                            canBuy = canBuy && playerData.wood >= trade.price;
-                        } else if (currency === 'crystals') {
-                            canBuy = canBuy && playerData.crystals >= trade.price;
-                        }
-                        
-                        var tradeSkin = treeSkins.find(function(s) {
-                            return s.id === trade.skinId;
-                        });
-                        
-                        var isLimitedSkin = tradeSkin && tradeSkin.limited;
-                        
                         html += '<div class="trade-item">';
                         html += '<div class="trade-header"><div>';
                         html += '<span class="trade-seller-name">' + escapeHtml(trade.sellerName) + '</span><br>';
                         html += '<span class="trade-seller-id">ID: ' + trade.sellerId + '</span>';
-                        
-                        if (trade.targetId) {
-                            html += '<br><span style="font-size:10px;color:#a78bfa;">🎯 Для: ' + trade.targetId + '</span>';
-                        }
-                        
                         html += '</div>';
                         html += '<span class="trade-price">' + formatNumber(trade.price) + ' ' + currencyIcon + '</span>';
                         html += '</div>';
-                        
-                        html += '<div class="trade-tree">';
-                        html += (trade.skinEmoji || '🎄') + ' ' + trade.skinName;
-                        
-                        if (isLimitedSkin) {
-                            html += ' <span class="limited-badge">LIMITED</span>';
-                        }
-                        
-                        html += '</div>';
+                        html += '<div class="trade-tree">' + (trade.skinEmoji || '🎄') + ' ' + trade.skinName + '</div>';
                         
                         if (isOwn) {
                             html += '<button class="trade-btn cancel" data-action="cancel" data-id="' + trade.id + '">❌ Отменить</button>';
                         } else if (hasSkin) {
                             html += '<button class="trade-btn" disabled>Уже есть</button>';
-                        } else if (canBuy) {
-                            html += '<button class="trade-btn buy" data-action="buy" data-id="' + trade.id + '" data-currency="' + currency + '" data-price="' + trade.price + '">💰 Купить за ' + formatNumber(trade.price) + ' ' + currencyIcon + '</button>';
                         } else {
-                            html += '<button class="trade-btn" disabled>Недостаточно ' + currencyIcon + '</button>';
+                            html += '<button class="trade-btn buy" data-action="buy" data-id="' + trade.id + '" data-currency="' + currency + '" data-price="' + trade.price + '">💰 Купить</button>';
                         }
                         
                         html += '</div>';
                     });
                 }
                 
-                html += '</div>';
                 html += '<button class="popup-close">Закрыть</button>';
                 
                 var popup = showPopup('💱 Торговая площадка', html);
-                
-                setTimeout(function() {
-                    var popupElement = popup.querySelector('.popup');
-                    if (popupElement) {
-                        popupElement.scrollTop = scrollPosition;
-                    }
-                }, 50);
                 
                 var closeButton = popup.querySelector('.popup-close');
                 if (closeButton) {
@@ -3384,7 +3292,6 @@
                         
                         var skinId = popup.querySelector('#tradeSkinId').value;
                         var price = parseInt(popup.querySelector('#tradePrice').value);
-                        var targetId = popup.querySelector('#tradeTargetId').value.trim();
                         var currency = popup.querySelector('#tradeCurrency').value;
                         
                         if (!skinId) {
@@ -3414,7 +3321,6 @@
                             body: JSON.stringify({
                                 sellerId: userId,
                                 sellerName: userName,
-                                targetId: targetId || null,
                                 skinId: skinId,
                                 price: price,
                                 currency: currency,
@@ -3437,22 +3343,7 @@
                                 
                                 saveData();
                                 updateUI();
-                                
-                                var currentScroll = 0;
-                                var popupElement = popup.querySelector('.popup');
-                                if (popupElement) {
-                                    currentScroll = popupElement.scrollTop;
-                                }
-                                
                                 popup.remove();
-                                
-                                setTimeout(function() {
-                                    var newPopup = document.querySelector('.popup');
-                                    if (newPopup) {
-                                        newPopup.scrollTop = currentScroll;
-                                    }
-                                }, 50);
-                                
                                 showTrade();
                                 
                                 var currencyNames = {
@@ -3504,21 +3395,7 @@
                                         updateUI();
                                     }
                                     
-                                    var currentScroll = 0;
-                                    var popupElement = popup.querySelector('.popup');
-                                    if (popupElement) {
-                                        currentScroll = popupElement.scrollTop;
-                                    }
-                                    
                                     popup.remove();
-                                    
-                                    setTimeout(function() {
-                                        var newPopup = document.querySelector('.popup');
-                                        if (newPopup) {
-                                            newPopup.scrollTop = currentScroll;
-                                        }
-                                    }, 50);
-                                    
                                     showTrade();
                                     alert('✅ Предложение отменено, скин возвращен');
                                 } else {
@@ -3638,22 +3515,7 @@
                             playerData.ownedSkins.push(result.skinId);
                             saveData();
                             updateUI();
-                            
-                            var currentScroll = 0;
-                            var popupElement = popup.querySelector('.popup');
-                            if (popupElement) {
-                                currentScroll = popupElement.scrollTop;
-                            }
-                            
                             popup.remove();
-                            
-                            setTimeout(function() {
-                                var newPopup = document.querySelector('.popup');
-                                if (newPopup) {
-                                    newPopup.scrollTop = currentScroll;
-                                }
-                            }, 50);
-                            
                             showTrade();
                             
                             if (paymentType === 'stars' && result.sellerCut) {
@@ -3666,13 +3528,35 @@
                         }
                     });
                 }
+            })
+            .catch(function() {
+                var html = '<div style="text-align:center;padding:20px;color:#aaa;">';
+                html += '⚠️ Сервер временно недоступен<br><br>';
+                html += 'Торги требуют работающий сервер.<br>';
+                html += 'Проверьте PythonAnywhere.';
+                html += '</div>';
+                html += '<button class="popup-close">Закрыть</button>';
+                
+                var popup = showPopup('💱 Торги', html);
+                
+                var closeButton = popup.querySelector('.popup-close');
+                if (closeButton) {
+                    closeButton.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        popup.remove();
+                    });
+                }
             });
     }
 
-    // ==================== РЕЙТИНГ (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
+    // ==================== РЕЙТИНГ ====================
     function showLeaderboard() {
         fetch(API_URL + '/leaderboard')
             .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Server error');
+                }
                 return response.json();
             })
             .then(function(data) {
@@ -3715,7 +3599,6 @@
                 }
                 
                 html += '</tbody></table>';
-                html += '<div style="color:#aaa;font-size:10px;text-align:center;margin-top:8px;">👆 Нажмите на имя игрока для просмотра статистики</div>';
                 html += '<button class="popup-close">Закрыть</button>';
                 
                 var popup = showPopup('🏆 Рейтинг игроков', html);
@@ -3740,8 +3623,14 @@
                 });
             })
             .catch(function() {
-                var html = '<div style="text-align:center;padding:20px;color:#aaa;">Сервер недоступен</div>';
+                var html = '<div style="text-align:center;padding:20px;color:#aaa;">';
+                html += '⚠️ Сервер временно недоступен<br><br>';
+                html += 'Проверьте:<br>';
+                html += '1. Запущен ли сервер на PythonAnywhere<br>';
+                html += '2. Правильный ли API_URL в коде';
+                html += '</div>';
                 html += '<button class="popup-close">Закрыть</button>';
+                
                 var popup = showPopup('🏆 Рейтинг', html);
                 
                 var closeButton = popup.querySelector('.popup-close');
@@ -3755,7 +3644,7 @@
             });
     }
 
-    // ==================== ИНФОРМАЦИЯ ОБ ИГРОКЕ (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
+    // ==================== ИНФОРМАЦИЯ ОБ ИГРОКЕ ====================
     function showPlayerInfo(targetUserId, parentPopup) {
         fetch(API_URL + '/profile/' + targetUserId)
             .then(function(response) {
@@ -3890,14 +3779,14 @@
         }).catch(function() {});
     }, 30000);
 
-    console.log('✅ Woodcutter v13.0 - Final Fixed Version Ready');
+    console.log('✅ Woodcutter v14.0 - Final Version Ready');
     console.log('📊 Все функции активны');
-    console.log('🎮 Магазин: 16 улучшений (исправлена прокрутка)');
-    console.log('🎨 Скины: 9 деревьев + 4 топора (исправлена прокрутка)');
+    console.log('🎮 Магазин: 16 улучшений (покупка по зажатию)');
+    console.log('🎨 Скины: 9 деревьев + 4 топора (синхронизация с сервером)');
     console.log('🔥 Лимитированные скины');
-    console.log('💱 Торги с поддержкой звезд (исправлена прокрутка)');
-    console.log('🏆 Рейтинг с информацией об игроках (одна кнопка закрыть)');
-    console.log('👑 Админ-панель с полным управлением');
+    console.log('💱 Торги с поддержкой звезд');
+    console.log('🏆 Рейтинг с информацией об игроках');
+    console.log('👑 Админ-панель (исправлен выбор скина)');
     </script>
 </body>
 </html>
