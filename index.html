@@ -2305,7 +2305,8 @@
     }
 
     // ==================== МАГАЗИН (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
-       function showShop() {
+          // ==================== МАГАЗИН (ФИНАЛЬНАЯ ВЕРСИЯ) ====================
+    function showShop() {
         var html = '';
         var currentCategory = '';
         
@@ -2331,7 +2332,7 @@
                 canAfford = playerData.crystals >= cost;
             }
             
-            html += '<div class="shop-item">';
+            html += '<div class="shop-item" id="shop-item-' + item.id + '">';
             html += '<div>';
             html += '<span class="shop-name">' + item.name + '</span><br>';
             html += '<span class="shop-desc">' + item.desc + '</span>';
@@ -2352,85 +2353,163 @@
         
         var popup = showPopup('🏪 Магазин', html);
         
+        // Функция для обновления одной кнопки
+        function updateButton(button) {
+            var itemId = button.dataset.id;
+            var item = shopItems.find(function(shopItem) {
+                return shopItem.id === itemId;
+            });
+            
+            if (!item) {
+                return;
+            }
+            
+            var cost = item.cost();
+            var canAfford;
+            
+            if (item.cur === 'wood') {
+                canAfford = playerData.wood >= cost;
+            } else {
+                canAfford = playerData.crystals >= cost;
+            }
+            
+            button.textContent = formatNumber(cost) + ' ' + (item.cur === 'wood' ? '🌲' : '💎');
+            
+            if (canAfford) {
+                button.removeAttribute('disabled');
+            } else {
+                button.setAttribute('disabled', 'disabled');
+            }
+        }
+        
+        // Функция покупки
+        function buyItem(button) {
+            var itemId = button.dataset.id;
+            var item = shopItems.find(function(shopItem) {
+                return shopItem.id === itemId;
+            });
+            
+            if (!item) {
+                return false;
+            }
+            
+            var cost = item.cost();
+            
+            if (item.cur === 'wood' && playerData.wood < cost) {
+                return false;
+            }
+            
+            if (item.cur === 'crystals' && playerData.crystals < cost) {
+                return false;
+            }
+            
+            if (item.cur === 'wood') {
+                playerData.wood -= cost;
+            } else {
+                playerData.crystals -= cost;
+            }
+            
+            item.effect();
+            updateUI();
+            saveData();
+            
+            return true;
+        }
+        
         var buttons = popup.querySelectorAll('button[data-id]');
         buttons.forEach(function(button) {
-            // Убираем стандартное поведение
-            button.addEventListener('mousedown', function(event) {
-                event.preventDefault();
-            });
+            // Переменные для зажатия
+            var holdTimer = null;
+            var isHolding = false;
             
-            button.addEventListener('touchstart', function(event) {
-                event.preventDefault();
-            });
-            
+            // Покупка по клику
             button.addEventListener('click', function(event) {
                 event.preventDefault();
                 event.stopPropagation();
                 
-                var itemId = this.dataset.id;
-                var item = shopItems.find(function(shopItem) {
-                    return shopItem.id === itemId;
-                });
+                if (buyItem(this)) {
+                    updateButton(this);
+                }
+            });
+            
+            // Начало зажатия
+            button.addEventListener('mousedown', function(event) {
+                event.preventDefault();
+                isHolding = true;
                 
-                if (!item) {
-                    return;
+                var self = this;
+                
+                function holdLoop() {
+                    if (!isHolding) {
+                        return;
+                    }
+                    
+                    if (buyItem(self)) {
+                        updateButton(self);
+                    }
+                    
+                    holdTimer = setTimeout(holdLoop, 100);
                 }
                 
-                var cost = item.cost();
+                holdLoop();
+            });
+            
+            button.addEventListener('touchstart', function(event) {
+                event.preventDefault();
+                isHolding = true;
                 
-                if (item.cur === 'wood' && playerData.wood < cost) {
-                    return;
+                var self = this;
+                
+                function holdLoop() {
+                    if (!isHolding) {
+                        return;
+                    }
+                    
+                    if (buyItem(self)) {
+                        updateButton(self);
+                    }
+                    
+                    holdTimer = setTimeout(holdLoop, 100);
                 }
                 
-                if (item.cur === 'crystals' && playerData.crystals < cost) {
-                    return;
+                holdLoop();
+            });
+            
+            // Конец зажатия
+            button.addEventListener('mouseup', function(event) {
+                event.preventDefault();
+                isHolding = false;
+                if (holdTimer) {
+                    clearTimeout(holdTimer);
+                    holdTimer = null;
                 }
-                
-                if (item.cur === 'wood') {
-                    playerData.wood -= cost;
-                } else {
-                    playerData.crystals -= cost;
+            });
+            
+            button.addEventListener('touchend', function(event) {
+                event.preventDefault();
+                isHolding = false;
+                if (holdTimer) {
+                    clearTimeout(holdTimer);
+                    holdTimer = null;
                 }
-                
-                item.effect();
-                updateUI();
-                saveData();
-                
-                // Обновляем кнопки без пересоздания попапа
-                updateShopButtons(popup);
+            });
+            
+            button.addEventListener('mouseleave', function(event) {
+                isHolding = false;
+                if (holdTimer) {
+                    clearTimeout(holdTimer);
+                    holdTimer = null;
+                }
+            });
+            
+            button.addEventListener('touchcancel', function(event) {
+                isHolding = false;
+                if (holdTimer) {
+                    clearTimeout(holdTimer);
+                    holdTimer = null;
+                }
             });
         });
-        
-        function updateShopButtons(popup) {
-            var allButtons = popup.querySelectorAll('button[data-id]');
-            allButtons.forEach(function(button) {
-                var itemId = button.dataset.id;
-                var item = shopItems.find(function(shopItem) {
-                    return shopItem.id === itemId;
-                });
-                
-                if (!item) {
-                    return;
-                }
-                
-                var cost = item.cost();
-                var canAfford;
-                
-                if (item.cur === 'wood') {
-                    canAfford = playerData.wood >= cost;
-                } else {
-                    canAfford = playerData.crystals >= cost;
-                }
-                
-                button.textContent = formatNumber(cost) + ' ' + (item.cur === 'wood' ? '🌲' : '💎');
-                
-                if (canAfford) {
-                    button.removeAttribute('disabled');
-                } else {
-                    button.setAttribute('disabled', 'disabled');
-                }
-            });
-        }
         
         var closeButton = popup.querySelector('.popup-close');
         if (closeButton) {
