@@ -2577,6 +2577,44 @@
     }
 
     // ==================== СКИНЫ ====================
+
+    function showSkins() {
+        // Принудительная загрузка скинов с сервера перед показом
+        fetch(API_URL + '/custom_skins')
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.success && data.skins) {
+                    for (var key in data.skins) {
+                        var serverSkin = data.skins[key];
+                        var skinType = serverSkin.skin_type || 'tree';
+                        
+                        var exists = treeSkins.find(function(s) { return s.id === serverSkin.id; }) || 
+                                    axeSkins.find(function(s) { return s.id === serverSkin.id; });
+                        
+                        if (!exists) {
+                            if (!serverSkin.limited) serverSkin.limited = false;
+                            if (!serverSkin.stock) serverSkin.stock = 0;
+                            if (!serverSkin.sold) serverSkin.sold = 0;
+                            
+                            if (skinType === 'tree') {
+                                treeSkins.push(serverSkin);
+                            } else {
+                                axeSkins.push(serverSkin);
+                            }
+                        }
+                    }
+                    localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s) { return s.id.indexOf('custom_') === 0; })));
+                    localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(s) { return s.id.indexOf('custom_') === 0; })));
+                }
+            })
+            .catch(function(e) {})
+            .finally(function() {
+                // Здесь ваш текущий код showSkins
+                var currentTab = 'tree';
+                // ... весь остальной код
+            });
+    }
+
     function showSkins() {
         var currentTab = 'tree';
         
