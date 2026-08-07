@@ -957,8 +957,7 @@
     </div>
 
     <script>
-
-            // ==================== КОНФИГУРАЦИЯ ====================
+    // ==================== КОНФИГУРАЦИЯ ====================
     var API_URL = 'https://delay.pythonanywhere.com/api';
     var tg = window.Telegram.WebApp;
     tg.expand();
@@ -970,7 +969,7 @@
     var STORAGE_KEY = 'wc_' + userId;
     var ADMIN_ID = 'WC046190';
 
-    console.log('🌲 Woodcutter v12.0 - Full Version');
+    console.log('🌲 Woodcutter v13.0 - Final Fixed Version');
     console.log('👤 User ID:', userId);
     console.log('👑 Admin:', userId === ADMIN_ID);
     console.log('📱 Telegram Methods:', {
@@ -978,18 +977,15 @@
         openInvoice: typeof tg.openInvoice === 'function'
     });
 
-    // Показываем кнопку админа только для админа
     if (userId === ADMIN_ID) {
         document.getElementById('adminBtn').style.display = 'flex';
     }
 
-    // Аватар пользователя из Telegram
     if (user && user.photo_url) {
         document.getElementById('av').style.backgroundImage = 'url(' + user.photo_url + ')';
         document.getElementById('av').textContent = '';
     }
 
-    // Кнопка открытия админ-панели
     document.getElementById('adminBtn').addEventListener('click', function() {
         if (userId === ADMIN_ID) {
             document.getElementById('ap').style.display = 'block';
@@ -1026,7 +1022,6 @@
         upgrades: {}
     };
 
-    // Загрузка сохраненных данных из localStorage
     try {
         var saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
@@ -1038,10 +1033,9 @@
             }
         }
     } catch (e) {
-        console.error('Ошибка загрузки данных:', e);
+        console.error('Ошибка загрузки:', e);
     }
 
-    // Восстановление значений по умолчанию
     playerData.name = userName;
     playerData.userId = userId;
     
@@ -1070,7 +1064,6 @@
         playerData.upgrades = {};
     }
 
-    // Инициализация всех апгрейдов
     var upgradeIds = [
         'axe', 'strength', 
         'crystal1', 'crystal2', 
@@ -1087,7 +1080,7 @@
         }
     }
 
-    // ==================== СКИНЫ ДЕРЕВЬЕВ ====================
+    // ==================== СКИНЫ ====================
     var treeSkins = [
         {
             id: 'default',
@@ -1190,7 +1183,6 @@
         }
     ];
 
-    // ==================== СКИНЫ ТОПОРОВ ====================
     var axeSkins = [
         {
             id: 'default',
@@ -1234,53 +1226,32 @@
         }
     ];
 
-    // Загрузка кастомных скинов деревьев
     try {
         var customTrees = JSON.parse(localStorage.getItem('c_ts') || '[]');
         customTrees.forEach(function(skin) {
-            if (!skin.limited) {
-                skin.limited = false;
-            }
-            if (!skin.stock) {
-                skin.stock = 0;
-            }
-            if (!skin.sold) {
-                skin.sold = 0;
-            }
+            if (!skin.limited) skin.limited = false;
+            if (!skin.stock) skin.stock = 0;
+            if (!skin.sold) skin.sold = 0;
             treeSkins.push(skin);
         });
-    } catch (e) {
-        console.error('Ошибка загрузки кастомных деревьев:', e);
-    }
+    } catch (e) {}
 
-    // Загрузка кастомных скинов топоров
     try {
         var customAxes = JSON.parse(localStorage.getItem('c_as') || '[]');
         customAxes.forEach(function(skin) {
-            if (!skin.limited) {
-                skin.limited = false;
-            }
-            if (!skin.stock) {
-                skin.stock = 0;
-            }
-            if (!skin.sold) {
-                skin.sold = 0;
-            }
+            if (!skin.limited) skin.limited = false;
+            if (!skin.stock) skin.stock = 0;
+            if (!skin.sold) skin.sold = 0;
             axeSkins.push(skin);
         });
-    } catch (e) {
-        console.error('Ошибка загрузки кастомных топоров:', e);
-    }
+    } catch (e) {}
 
-    // Данные о продажах лимитированных скинов
     var limitedSkinsData = {};
     try {
         limitedSkinsData = JSON.parse(localStorage.getItem('limited_skins_data') || '{}');
-    } catch (e) {
-        console.error('Ошибка загрузки данных лимитированных скинов:', e);
-    }
+    } catch (e) {}
 
-    // ==================== МАГАЗИН УЛУЧШЕНИЙ ====================
+    // ==================== МАГАЗИН ====================
     var shopItems = [
         {
             id: 'axe',
@@ -1524,7 +1495,7 @@
         }
     ];
 
-    // ==================== ЗАГРУЗКА ПРОФИЛЯ С СЕРВЕРА ====================
+    // ==================== ЗАГРУЗКА ПРОФИЛЯ ====================
     (function() {
         fetch(API_URL + '/profile/' + userId)
             .then(function(response) {
@@ -1578,7 +1549,7 @@
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(playerData));
         } catch (e) {
-            console.error('Ошибка сохранения в localStorage:', e);
+            console.error('Ошибка сохранения:', e);
         }
         
         try {
@@ -1637,7 +1608,7 @@
         return div.innerHTML;
     }
 
-    // ==================== ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ====================
+    // ==================== ОБНОВЛЕНИЕ UI ====================
     function updateUI() {
         document.getElementById('wv').textContent = formatNumber(playerData.wood);
         document.getElementById('cv').textContent = formatNumber(playerData.crystals);
@@ -1670,7 +1641,6 @@
             document.getElementById('pi').textContent = '';
         }
         
-        // Обновление скина дерева
         var skin = treeSkins.find(function(s) {
             return s.id === playerData.activeSkin;
         }) || treeSkins[0];
@@ -1718,7 +1688,6 @@
             }
         }
         
-        // Обновление топора
         var axe = axeSkins.find(function(a) {
             return a.id === playerData.activeAxe;
         }) || axeSkins[0];
@@ -1905,11 +1874,13 @@
     function showPopup(title, content) {
         var background = document.createElement('div');
         background.className = 'popup-bg';
-        background.innerHTML = '<div class="popup"><h3>' + title + '</h3>' + content + '<button class="popup-close">Закрыть</button></div>';
+        background.innerHTML = '<div class="popup"><h3>' + title + '</h3>' + content + '</div>';
         
         var closeButton = background.querySelector('.popup-close');
         if (closeButton) {
-            closeButton.addEventListener('click', function() {
+            closeButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
                 background.remove();
             });
         }
@@ -2227,7 +2198,6 @@
             });
     }
 
-    // Функция полного сброса аккаунта
     function admWipeAccount(targetId) {
         if (!confirm('⚠️ ВНИМАНИЕ! Вы уверены, что хотите ПОЛНОСТЬЮ стереть аккаунт игрока ' + targetId + '?\n\nБудут удалены: все ресурсы, скины, топоры, улучшения, прогресс.\n\nЭто действие НЕОБРАТИМО!')) {
             return;
@@ -2317,7 +2287,6 @@
         });
     }
 
-    // Функция для перехода в админ-панель с заполненным ID
     function openAdminWithId(targetId) {
         var allPopups = document.querySelectorAll('.popup-bg');
         allPopups.forEach(function(popup) {
@@ -2335,7 +2304,7 @@
         document.getElementById('ap').scrollTop = 0;
     }
 
-        // ==================== МАГАЗИН ====================
+    // ==================== МАГАЗИН (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
     function showShop() {
         var html = '';
         var currentCategory = '';
@@ -2383,9 +2352,13 @@
         
         var popup = showPopup('🏪 Магазин', html);
         
+        var scrollPosition = 0;
+        
         var buttons = popup.querySelectorAll('button[data-id]');
         buttons.forEach(function(button) {
-            button.addEventListener('click', function() {
+            button.addEventListener('click', function(event) {
+                event.preventDefault();
+                
                 var itemId = this.dataset.id;
                 var item = shopItems.find(function(shopItem) {
                     return shopItem.id === itemId;
@@ -2414,18 +2387,46 @@
                 item.effect();
                 updateUI();
                 saveData();
+                
+                var popupElement = popup.querySelector('.popup');
+                if (popupElement) {
+                    scrollPosition = popupElement.scrollTop;
+                }
+                
                 popup.remove();
                 showShop();
+                
+                setTimeout(function() {
+                    var newPopup = document.querySelector('.popup');
+                    if (newPopup) {
+                        newPopup.scrollTop = scrollPosition;
+                    }
+                }, 50);
             });
         });
+        
+        var closeButton = popup.querySelector('.popup-close');
+        if (closeButton) {
+            closeButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                popup.remove();
+            });
+        }
     }
 
-    // ==================== СКИНЫ ====================
+    // ==================== СКИНЫ (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
     function showSkins() {
         var currentTab = 'tree';
         
         function render(tab) {
             currentTab = tab;
+            
+            var scrollPosition = 0;
+            var existingPopup = document.querySelector('.popup');
+            if (existingPopup) {
+                scrollPosition = existingPopup.scrollTop;
+            }
             
             var html = '<div class="skin-tabs">';
             html += '<div class="skin-tab ' + (tab === 'tree' ? 'active' : '') + '" data-tab="tree">🎄 Деревья</div>';
@@ -2526,9 +2527,18 @@
             popup.innerHTML = '<div class="popup"><h3>🎨 Скины</h3>' + html + '</div>';
             document.body.appendChild(popup);
             
+            setTimeout(function() {
+                var popupElement = popup.querySelector('.popup');
+                if (popupElement) {
+                    popupElement.scrollTop = scrollPosition;
+                }
+            }, 50);
+            
             var closeButton = popup.querySelector('.popup-close');
             if (closeButton) {
-                closeButton.addEventListener('click', function() {
+                closeButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
                     popup.remove();
                 });
             }
@@ -2541,7 +2551,9 @@
             
             var tabs = popup.querySelectorAll('.skin-tab');
             tabs.forEach(function(tabElement) {
-                tabElement.addEventListener('click', function() {
+                tabElement.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
                     popup.remove();
                     render(tabElement.dataset.tab);
                 });
@@ -2550,6 +2562,9 @@
             var skinCards = popup.querySelectorAll('[data-sid]');
             skinCards.forEach(function(card) {
                 card.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
                     if (event.target.classList.contains('skin-delete-btn')) {
                         return;
                     }
@@ -2587,7 +2602,22 @@
                         
                         updateUI();
                         saveData();
+                        
+                        var currentScroll = 0;
+                        var popupElement = popup.querySelector('.popup');
+                        if (popupElement) {
+                            currentScroll = popupElement.scrollTop;
+                        }
+                        
                         popup.remove();
+                        
+                        setTimeout(function() {
+                            var newPopup = document.querySelector('.popup');
+                            if (newPopup) {
+                                newPopup.scrollTop = currentScroll;
+                            }
+                        }, 50);
+                        
                         render(currentTab);
                         return;
                     }
@@ -2603,7 +2633,22 @@
                         
                         updateUI();
                         saveData();
+                        
+                        var currentScroll = 0;
+                        var popupElement = popup.querySelector('.popup');
+                        if (popupElement) {
+                            currentScroll = popupElement.scrollTop;
+                        }
+                        
                         popup.remove();
+                        
+                        setTimeout(function() {
+                            var newPopup = document.querySelector('.popup');
+                            if (newPopup) {
+                                newPopup.scrollTop = currentScroll;
+                            }
+                        }, 50);
+                        
                         render(currentTab);
                         return;
                     }
@@ -2637,7 +2682,22 @@
                                 
                                 updateUI();
                                 saveData();
+                                
+                                var currentScroll = 0;
+                                var popupElement = popup.querySelector('.popup');
+                                if (popupElement) {
+                                    currentScroll = popupElement.scrollTop;
+                                }
+                                
                                 popup.remove();
+                                
+                                setTimeout(function() {
+                                    var newPopup = document.querySelector('.popup');
+                                    if (newPopup) {
+                                        newPopup.scrollTop = currentScroll;
+                                    }
+                                }, 50);
+                                
                                 render(currentTab);
                             }
                         } else {
@@ -2765,6 +2825,7 @@
             var deleteButtons = popup.querySelectorAll('.skin-delete-btn');
             deleteButtons.forEach(function(deleteBtn) {
                 deleteBtn.addEventListener('click', function(event) {
+                    event.preventDefault();
                     event.stopPropagation();
                     
                     var skinId = this.dataset.del;
@@ -2810,7 +2871,9 @@
             
             var addButton = popup.querySelector('#addBtn');
             if (addButton) {
-                addButton.addEventListener('click', function() {
+                addButton.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    event.stopPropagation();
                     popup.remove();
                     addSkinForm();
                 });
@@ -2867,7 +2930,9 @@
         
         var closeButton = popup.querySelector('.popup-close');
         if (closeButton) {
-            closeButton.addEventListener('click', function() {
+            closeButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
                 popup.remove();
             });
         }
@@ -2897,7 +2962,10 @@
         
         var saveButton = popup.querySelector('#saveSkinBtn');
         if (saveButton) {
-            saveButton.addEventListener('click', function() {
+            saveButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                
                 var type = popup.querySelector('#skinType').value;
                 var name = popup.querySelector('#skinName').value.trim();
                 var emoji = popup.querySelector('#skinEmoji').value.trim();
@@ -2973,7 +3041,7 @@
         }
     }
 
-    // ==================== ТОРГИ ====================
+    // ==================== ТОРГИ (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
     function showTrade() {
         fetch(API_URL + '/trades?user_id=' + userId)
             .then(function(response) {
@@ -2981,6 +3049,12 @@
             })
             .then(function(data) {
                 var trades = data.success ? data.trades : [];
+                
+                var scrollPosition = 0;
+                var existingPopup = document.querySelector('.popup');
+                if (existingPopup) {
+                    scrollPosition = existingPopup.scrollTop;
+                }
                 
                 var html = '';
                 
@@ -3110,9 +3184,27 @@
                 
                 var popup = showPopup('💱 Торговая площадка', html);
                 
+                setTimeout(function() {
+                    var popupElement = popup.querySelector('.popup');
+                    if (popupElement) {
+                        popupElement.scrollTop = scrollPosition;
+                    }
+                }, 50);
+                
+                var closeButton = popup.querySelector('.popup-close');
+                if (closeButton) {
+                    closeButton.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        popup.remove();
+                    });
+                }
+                
                 var copyButton = popup.querySelector('#btnCopyIdTrade');
                 if (copyButton) {
-                    copyButton.addEventListener('click', function() {
+                    copyButton.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
                         navigator.clipboard.writeText(userId).then(function() {
                             alert('✅ ID скопирован: ' + userId);
                         }).catch(function() {
@@ -3123,7 +3215,10 @@
                 
                 var createButton = popup.querySelector('#createTradeBtn');
                 if (createButton) {
-                    createButton.addEventListener('click', function() {
+                    createButton.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        
                         var skinId = popup.querySelector('#tradeSkinId').value;
                         var price = parseInt(popup.querySelector('#tradePrice').value);
                         var targetId = popup.querySelector('#tradeTargetId').value.trim();
@@ -3179,7 +3274,22 @@
                                 
                                 saveData();
                                 updateUI();
+                                
+                                var currentScroll = 0;
+                                var popupElement = popup.querySelector('.popup');
+                                if (popupElement) {
+                                    currentScroll = popupElement.scrollTop;
+                                }
+                                
                                 popup.remove();
+                                
+                                setTimeout(function() {
+                                    var newPopup = document.querySelector('.popup');
+                                    if (newPopup) {
+                                        newPopup.scrollTop = currentScroll;
+                                    }
+                                }, 50);
+                                
                                 showTrade();
                                 
                                 var currencyNames = {
@@ -3198,7 +3308,10 @@
                 
                 var actionButtons = popup.querySelectorAll('[data-action]');
                 actionButtons.forEach(function(button) {
-                    button.addEventListener('click', function() {
+                    button.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        
                         var action = this.dataset.action;
                         var tradeId = this.dataset.id;
                         
@@ -3228,7 +3341,21 @@
                                         updateUI();
                                     }
                                     
+                                    var currentScroll = 0;
+                                    var popupElement = popup.querySelector('.popup');
+                                    if (popupElement) {
+                                        currentScroll = popupElement.scrollTop;
+                                    }
+                                    
                                     popup.remove();
+                                    
+                                    setTimeout(function() {
+                                        var newPopup = document.querySelector('.popup');
+                                        if (newPopup) {
+                                            newPopup.scrollTop = currentScroll;
+                                        }
+                                    }, 50);
+                                    
                                     showTrade();
                                     alert('✅ Предложение отменено, скин возвращен');
                                 } else {
@@ -3348,7 +3475,22 @@
                             playerData.ownedSkins.push(result.skinId);
                             saveData();
                             updateUI();
+                            
+                            var currentScroll = 0;
+                            var popupElement = popup.querySelector('.popup');
+                            if (popupElement) {
+                                currentScroll = popupElement.scrollTop;
+                            }
+                            
                             popup.remove();
+                            
+                            setTimeout(function() {
+                                var newPopup = document.querySelector('.popup');
+                                if (newPopup) {
+                                    newPopup.scrollTop = currentScroll;
+                                }
+                            }, 50);
+                            
                             showTrade();
                             
                             if (paymentType === 'stars' && result.sellerCut) {
@@ -3364,7 +3506,7 @@
             });
     }
 
-    // ==================== РЕЙТИНГ ====================
+    // ==================== РЕЙТИНГ (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
     function showLeaderboard() {
         fetch(API_URL + '/leaderboard')
             .then(function(response) {
@@ -3415,9 +3557,20 @@
                 
                 var popup = showPopup('🏆 Рейтинг игроков', html);
                 
+                var closeButton = popup.querySelector('.popup-close');
+                if (closeButton) {
+                    closeButton.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        popup.remove();
+                    });
+                }
+                
                 var clickableRows = popup.querySelectorAll('tr.lb-clickable');
                 clickableRows.forEach(function(row) {
-                    row.addEventListener('click', function() {
+                    row.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
                         var targetUserId = this.dataset.uid;
                         showPlayerInfo(targetUserId, popup);
                     });
@@ -3426,11 +3579,20 @@
             .catch(function() {
                 var html = '<div style="text-align:center;padding:20px;color:#aaa;">Сервер недоступен</div>';
                 html += '<button class="popup-close">Закрыть</button>';
-                showPopup('🏆 Рейтинг', html);
+                var popup = showPopup('🏆 Рейтинг', html);
+                
+                var closeButton = popup.querySelector('.popup-close');
+                if (closeButton) {
+                    closeButton.addEventListener('click', function(event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        popup.remove();
+                    });
+                }
             });
     }
 
-    // ==================== ИНФОРМАЦИЯ ОБ ИГРОКЕ ====================
+    // ==================== ИНФОРМАЦИЯ ОБ ИГРОКЕ (ИСПРАВЛЕННАЯ ВЕРСИЯ) ====================
     function showPlayerInfo(targetUserId, parentPopup) {
         fetch(API_URL + '/profile/' + targetUserId)
             .then(function(response) {
@@ -3466,9 +3628,20 @@
                     
                     var infoPopup = showPopup('👤 ' + escapeHtml(profile.name || 'Игрок'), infoHtml);
                     
+                    var closeButton = infoPopup.querySelector('.popup-close');
+                    if (closeButton) {
+                        closeButton.addEventListener('click', function(event) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            infoPopup.remove();
+                        });
+                    }
+                    
                     var btnOpen = infoPopup.querySelector('#btnAdminOpen');
                     if (btnOpen) {
-                        btnOpen.addEventListener('click', function() {
+                        btnOpen.addEventListener('click', function(event) {
+                            event.preventDefault();
+                            event.stopPropagation();
                             infoPopup.remove();
                             openAdminWithId(targetUserId);
                         });
@@ -3476,7 +3649,9 @@
                     
                     var btnWipe = infoPopup.querySelector('#btnAdminWipe');
                     if (btnWipe) {
-                        btnWipe.addEventListener('click', function() {
+                        btnWipe.addEventListener('click', function(event) {
+                            event.preventDefault();
+                            event.stopPropagation();
                             admWipeAccount(targetUserId);
                             infoPopup.remove();
                             showLeaderboard();
@@ -3552,13 +3727,13 @@
         }).catch(function() {});
     }, 30000);
 
-    console.log('✅ Woodcutter v12.0 - Full Version Ready');
+    console.log('✅ Woodcutter v13.0 - Final Fixed Version Ready');
     console.log('📊 Все функции активны');
-    console.log('🎮 Магазин: 16 улучшений');
-    console.log('🎨 Скины: 9 деревьев + 4 топора');
+    console.log('🎮 Магазин: 16 улучшений (исправлена прокрутка)');
+    console.log('🎨 Скины: 9 деревьев + 4 топора (исправлена прокрутка)');
     console.log('🔥 Лимитированные скины');
-    console.log('💱 Торги с поддержкой звезд');
-    console.log('🏆 Рейтинг с информацией об игроках');
+    console.log('💱 Торги с поддержкой звезд (исправлена прокрутка)');
+    console.log('🏆 Рейтинг с информацией об игроках (одна кнопка закрыть)');
     console.log('👑 Админ-панель с полным управлением');
     </script>
 </body>
