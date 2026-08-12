@@ -1717,36 +1717,100 @@ function showSkins() {
                 }
                 
                 if (skin.cur === 'stars') {
-                    if (!confirm('Купить скин "' + skin.name + '" за ' + skin.price + ' ⭐?')) return;
+                    if (!confirm('Купить скин "' + skin.name + '" за ' + skin.price + ' ⭐ Telegram Stars?')) {
+                        return;
+                    }
                     
                     if (typeof tg.sendStarInvoice === 'function') {
                         tg.sendStarInvoice({
                             title: 'Скин: ' + skin.name,
-                            description: 'Скин для игры Woodcutter',
-                            payload: 'skin_' + skin.id + '_' + userId,
+                            description: 'Скин для игры Woodcutter' + (isLimitedSkin ? ' [LIMITED]' : ''),
+                            payload: 'skin_' + skin.id + '_' + userId + '_' + Date.now(),
                             currency: 'XTR',
-                            prices: [{ amount: skin.price, label: skin.name }]
+                            prices: [{
+                                amount: skin.price,
+                                label: skin.name
+                            }]
                         }, function(status) {
+                            console.log('⭐ Статус оплаты:', status);
+                            
                             if (status === 'paid') {
                                 if (ownedList.indexOf(skin.id) === -1) {
                                     ownedList.push(skin.id);
-                                    if (skinType === 'tree') playerData.activeSkin = skin.id;
-                                    else playerData.activeAxe = skin.id;
+                                    
+                                    if (isLimitedSkin && skin.stock > 0) {
+                                        var skinKey3 = skin.id;
+                                        if (!limitedSkinsData[skinKey3]) {
+                                            limitedSkinsData[skinKey3] = { sold: 0 };
+                                        }
+                                        limitedSkinsData[skinKey3].sold = (limitedSkinsData[skinKey3].sold || 0) + 1;
+                                        skin.sold = limitedSkinsData[skinKey3].sold;
+                                        saveLimitedSkinsData();
+                                    }
+                                    
+                                    if (skinType === 'tree') {
+                                        playerData.activeSkin = skin.id;
+                                    } else {
+                                        playerData.activeAxe = skin.id;
+                                    }
+                                    
                                     playerData.stars = (playerData.stars || 0) + skin.price;
                                     updateUI();
                                     saveData();
                                     popup.remove();
                                     render(currentTab);
-                                    alert('✅ Скин куплен!');
+                                    alert('✅ Скин "' + skin.name + '" успешно куплен!');
                                 }
+                            } else if (status === 'cancelled') {
+                                alert('❌ Оплата отменена');
                             } else {
-                                alert('❌ Оплата не прошла');
+                                alert('❌ Ошибка оплаты. Статус: ' + status);
                             }
                         });
+                    } else if (typeof tg.openInvoice === 'function') {
+                        fetch(API_URL + '/create-star-invoice', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_id: userId,
+                                skin_id: skin.id,
+                                skin_name: skin.name,
+                                price: skin.price,
+                                type: 'shop'
+                            })
+                        })
+                        .then(function(response) { return response.json(); })
+                        .then(function(result) {
+                            if (result.success && result.invoice_link) {
+                                tg.openInvoice(result.invoice_link, function(status) {
+                                    if (status === 'paid') {
+                                        if (ownedList.indexOf(skin.id) === -1) {
+                                            ownedList.push(skin.id);
+                                            if (isLimitedSkin && skin.stock > 0) {
+                                                var skinKey4 = skin.id;
+                                                if (!limitedSkinsData[skinKey4]) limitedSkinsData[skinKey4] = { sold: 0 };
+                                                limitedSkinsData[skinKey4].sold = (limitedSkinsData[skinKey4].sold || 0) + 1;
+                                                skin.sold = limitedSkinsData[skinKey4].sold;
+                                                saveLimitedSkinsData();
+                                            }
+                                            if (skinType === 'tree') playerData.activeSkin = skin.id;
+                                            else playerData.activeAxe = skin.id;
+                                            playerData.stars = (playerData.stars || 0) + skin.price;
+                                            updateUI(); saveData();
+                                            popup.remove(); render(currentTab);
+                                            alert('✅ Скин куплен!');
+                                        }
+                                    } else alert('❌ Оплата не прошла');
+                                });
+                            } else alert('❌ Ошибка создания счета');
+                        })
+                        .catch(function() { alert('❌ Ошибка соединения с сервером'); });
                     } else {
-                        alert('❌ Нужен бот Telegram');
+                        alert('❌ Покупки за звезды доступны только через официального бота Telegram.\n\nОткройте игру через @WoodcutterBot');
                     }
                 }
+            });
+        });
         
         var deleteButtons = popup.querySelectorAll('.skin-delete-btn');
         deleteButtons.forEach(function(deleteBtn) {
@@ -2219,26 +2283,84 @@ function showTrade() {
                         }
                         
                         if (currency === 'stars') {
-                            if (!confirm('Купить за ' + price + ' ⭐?')) return;
+                            if (!confirm('Купить этот скин за ' + price + ' ⭐?')) {
+                                return;
+                            }
                             
                             if (typeof tg.sendStarInvoice === 'function') {
                                 tg.sendStarInvoice({
                                     title: 'Покупка скина',
                                     description: 'Скин в игре Woodcutter',
-                                    payload: 'trade_' + tradeId + '_' + userId,
+                                    payload: 'trade_' + tradeId + '_' + userId + '_' + Date.now(),
                                     currency: 'XTR',
-                                    prices: [{ amount: price, label: 'Скин' }]
+                                    prices: [{
+                                        amount: price,
+                                        label: 'Скин с торгов'
+                                    }]
                                 }, function(status) {
+                                    console.log('⭐ Статус оплаты трейда:', status);
+                                    
                                     if (status === 'paid') {
                                         completeTradePurchase(tradeId, 'stars', popup);
+                                    } else if (status === 'cancelled') {
+                                        alert('❌ Оплата отменена');
                                     } else {
-                                        alert('❌ Оплата не прошла');
+                                        alert('❌ Ошибка оплаты: ' + status);
+                                    }
+                                });
+                            } else if (typeof tg.openInvoice === 'function') {
+                                fetch(API_URL + '/create-star-invoice', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        user_id: userId,
+                                        trade_id: tradeId,
+                                        skin_name: 'Покупка скина',
+                                        price: price,
+                                        type: 'trade_buy'
+                                    })
+                                })
+                                .then(function(response) {
+                                    return response.json();
+                                })
+                                .then(function(result) {
+                                    if (result.success && result.invoice_link) {
+                                        tg.openInvoice(result.invoice_link, function(status) {
+                                            if (status === 'paid') {
+                                                completeTradePurchase(tradeId, 'stars', popup);
+                                            } else {
+                                                alert('❌ Оплата не прошла');
+                                            }
+                                        });
+                                    } else {
+                                        alert('❌ Ошибка создания счета. Бот не настроен.');
                                     }
                                 });
                             } else {
-                                alert('❌ Нужен бот Telegram');
+                                alert('❌ Покупки за звезды доступны только через бота Telegram.\n\nОткройте игру через @WoodcutterBot');
                             }
+                        } else {
+                            if (!confirm('Купить за ' + price + ' ' + currencyIcon + '?')) {
+                                return;
+                            }
+                            
+                            if (currency === 'wood' && playerData.wood < price) {
+                                alert('❌ Недостаточно древесины');
+                                return;
+                            }
+                            
+                            if (currency === 'crystals' && playerData.crystals < price) {
+                                alert('❌ Недостаточно кристаллов');
+                                return;
+                            }
+                            
+                            completeTradePurchase(tradeId, 'direct', popup);
                         }
+                    }
+                });
+            });
             
             function completeTradePurchase(tradeId, paymentType, popup) {
                 fetch(API_URL + '/trades/buy', {
