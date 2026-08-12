@@ -1721,7 +1721,53 @@ function showSkins() {
                         return;
                     }
                     
-if (skin.cur === 'stars') {
+                if (skin.cur === 'stars') {
+                    if (!confirm('Купить скин "' + skin.name + '" за ' + skin.price + ' ⭐?')) return;
+                    
+                    // Используем ТОЛЬКО openInvoice
+                    if (typeof tg.openInvoice === 'function') {
+                        fetch(API_URL + '/create-star-invoice', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                user_id: userId,
+                                skin_id: skin.id,
+                                skin_name: skin.name,
+                                price: skin.price,
+                                type: 'shop'
+                            })
+                        })
+                        .then(function(r) { return r.json(); })
+                        .then(function(result) {
+                            console.log('Invoice result:', result);
+                            if (result.success && result.invoice_link) {
+                                tg.openInvoice(result.invoice_link, function(status) {
+                                    console.log('Payment status:', status);
+                                    if (status === 'paid') {
+                                        ownedList.push(skin.id);
+                                        if (skinType === 'tree') playerData.activeSkin = skin.id;
+                                        else playerData.activeAxe = skin.id;
+                                        playerData.stars = (playerData.stars || 0) + skin.price;
+                                        updateUI();
+                                        saveData();
+                                        popup.remove();
+                                        render(currentTab);
+                                        alert('✅ Скин куплен!');
+                                    } else {
+                                        alert('❌ Оплата не прошла. Статус: ' + status);
+                                    }
+                                });
+                            } else {
+                                alert('❌ Сервер не создал счет. Ответ: ' + JSON.stringify(result));
+                            }
+                        })
+                        .catch(function(e) {
+                            alert('❌ Ошибка соединения с сервером: ' + e.message);
+                        });
+                    } else {
+                        alert('❌ openInvoice недоступен. Откройте игру через бота Telegram.');
+                    }
+                }
     if (!confirm('Купить за ' + skin.price + ' ⭐?')) return;
     
     // Используем openInvoice
@@ -2229,37 +2275,12 @@ function showTrade() {
                         }
                         
                         if (currency === 'stars') {
-                            if (!confirm('Купить этот скин за ' + price + ' ⭐?')) {
-                                return;
-                            }
+                            if (!confirm('Купить этот скин за ' + price + ' ⭐?')) return;
                             
-                            if (typeof tg.sendStarInvoice === 'function') {
-                                tg.sendStarInvoice({
-                                    title: 'Покупка скина',
-                                    description: 'Скин в игре Woodcutter',
-                                    payload: 'trade_' + tradeId + '_' + userId + '_' + Date.now(),
-                                    currency: 'XTR',
-                                    prices: [{
-                                        amount: price,
-                                        label: 'Скин с торгов'
-                                    }]
-                                }, function(status) {
-                                    console.log('⭐ Статус оплаты трейда:', status);
-                                    
-                                    if (status === 'paid') {
-                                        completeTradePurchase(tradeId, 'stars', popup);
-                                    } else if (status === 'cancelled') {
-                                        alert('❌ Оплата отменена');
-                                    } else {
-                                        alert('❌ Ошибка оплаты: ' + status);
-                                    }
-                                });
-                            } else if (typeof tg.openInvoice === 'function') {
+                            if (typeof tg.openInvoice === 'function') {
                                 fetch(API_URL + '/create-star-invoice', {
                                     method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json'
-                                    },
+                                    headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({
                                         user_id: userId,
                                         trade_id: tradeId,
@@ -2268,45 +2289,29 @@ function showTrade() {
                                         type: 'trade_buy'
                                     })
                                 })
-                                .then(function(response) {
-                                    return response.json();
-                                })
+                                .then(function(r) { return r.json(); })
                                 .then(function(result) {
+                                    console.log('Trade invoice:', result);
                                     if (result.success && result.invoice_link) {
                                         tg.openInvoice(result.invoice_link, function(status) {
+                                            console.log('Trade payment status:', status);
                                             if (status === 'paid') {
                                                 completeTradePurchase(tradeId, 'stars', popup);
                                             } else {
-                                                alert('❌ Оплата не прошла');
+                                                alert('❌ Оплата не прошла. Статус: ' + status);
                                             }
                                         });
                                     } else {
-                                        alert('❌ Ошибка создания счета. Бот не настроен.');
+                                        alert('❌ Сервер не создал счет');
                                     }
+                                })
+                                .catch(function(e) {
+                                    alert('❌ Ошибка соединения: ' + e.message);
                                 });
                             } else {
-                                alert('❌ Покупки за звезды доступны только через бота Telegram.\n\nОткройте игру через @WoodcutterBot');
+                                alert('❌ openInvoice недоступен');
                             }
-                        } else {
-                            if (!confirm('Купить за ' + price + ' ' + currencyIcon + '?')) {
-                                return;
-                            }
-                            
-                            if (currency === 'wood' && playerData.wood < price) {
-                                alert('❌ Недостаточно древесины');
-                                return;
-                            }
-                            
-                            if (currency === 'crystals' && playerData.crystals < price) {
-                                alert('❌ Недостаточно кристаллов');
-                                return;
-                            }
-                            
-                            completeTradePurchase(tradeId, 'direct', popup);
                         }
-                    }
-                });
-            });
             
             function completeTradePurchase(tradeId, paymentType, popup) {
                 fetch(API_URL + '/trades/buy', {
