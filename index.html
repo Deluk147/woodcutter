@@ -160,6 +160,10 @@
             <button class="btn btn-trees" id="bt">🎄 Скины</button>
             <button class="btn btn-trade" id="btr">💱 Торги</button>
         </div>
+        <div class="btn-row">
+            <button class="btn" id="bdaily" style="background:linear-gradient(135deg,#ff6b6b,#ee5a6f);color:#fff;">🎁 Ежедневный бонус</button>
+            <button class="btn" id="btasks" style="background:linear-gradient(135deg,#4ecdc4,#44a08d);color:#fff;">📋 Задания</button>
+        </div>
         <div class="passive-info" id="pi"></div>
     </div>
 </div></div>
@@ -185,7 +189,7 @@
         <input type="number" id="atkw" class="admin-input" placeholder="🌲 Древесина">
         <input type="number" id="atkc" class="admin-input" placeholder="💎 Кристаллы">
         <button onclick="admTake()" class="admin-btn red">Забрать</button>
-        <button onclick="document.getElementById('ap').style.display='none'" class="admin-btn" style="background:#16213e;color:#eee;border:1px solid #2a2a4a;margin-top:15px;">Закрыть</button>
+        <button onclick="closeAdminPanel()" class="admin-btn" style="background:#16213e;color:#eee;border:1px solid #2a2a4a;margin-top:15px;">Закрыть</button>
     </div>
 </div>
 
@@ -228,7 +232,7 @@ if (userId === ADMIN_ID) { document.getElementById('adminBtn').style.display = '
 if (user && user.photo_url) { document.getElementById('av').style.backgroundImage = 'url(' + user.photo_url + ')'; document.getElementById('av').textContent = ''; }
 document.getElementById('adminBtn').addEventListener('click', function() { if (userId === ADMIN_ID) { document.getElementById('ap').style.display = 'block'; updateAdminSelects(); } else { alert('⛔ Нет доступа'); } });
 
-var playerData = { name: userName, userId: userId, wood: 0, crystals: 0, stars: 0, axePower: 1, crystalBonus: 1, autoWood: 0, critChance: 0, critMultiplier: 2, crystalToWoodRate: 0, comboBonus: 0, combo: 0, comboMultiplier: 1, treeHP: 15, maxTreeHP: 15, totalTrees: 0, treeLevel: 1, activeSkin: 'default', ownedSkins: ['default'], activeAxe: 'default', ownedAxes: ['default'], upgrades: {} };
+var playerData = { name: userName, userId: userId, wood: 0, crystals: 0, stars: 0, axePower: 1, crystalBonus: 1, autoWood: 0, critChance: 0, critMultiplier: 2, crystalToWoodRate: 0, comboBonus: 0, combo: 0, comboMultiplier: 1, treeHP: 15, maxTreeHP: 15, totalTrees: 0, treeLevel: 1, activeSkin: 'default', ownedSkins: ['default'], activeAxe: 'default', ownedAxes: ['default'], upgrades: {}, lastOnline: Date.now(), dailyStreak: 0, lastDailyReward: 0, tasks: {} };
 
 try { var saved = localStorage.getItem(STORAGE_KEY); if (saved) { var parsed = JSON.parse(saved); for (var key in parsed) { if (parsed.hasOwnProperty(key)) playerData[key] = parsed[key]; } } } catch (e) { console.error('Ошибка загрузки:', e); }
 
@@ -239,9 +243,37 @@ if (!playerData.ownedAxes || !playerData.ownedAxes.length) playerData.ownedAxes 
 if (!playerData.activeSkin) playerData.activeSkin = 'default';
 if (!playerData.activeAxe) playerData.activeAxe = 'default';
 if (!playerData.upgrades) playerData.upgrades = {};
+if (!playerData.lastOnline) playerData.lastOnline = Date.now();
+if (!playerData.dailyStreak) playerData.dailyStreak = 0;
+if (!playerData.lastDailyReward) playerData.lastDailyReward = 0;
+if (!playerData.tasks) playerData.tasks = {};
 
 var upgradeIds = ['axe','strength','crystal1','crystal2','auto1','auto2','auto3','auto4','crit1','crit2','crystalToWood1','crystalToWood2','crystalAuto1','crystalAuto2','critDamage1','comboBoost1'];
 for (var i = 0; i < upgradeIds.length; i++) { if (!(upgradeIds[i] in playerData.upgrades)) playerData.upgrades[upgradeIds[i]] = 0; }
+
+// Офлайн заработок (30% от autoWood, максимум 24 часа)
+function calculateOfflineEarnings() {
+    if (playerData.autoWood <= 0) return 0;
+    var now = Date.now();
+    var lastOnline = playerData.lastOnline || now;
+    var offlineSeconds = Math.floor((now - lastOnline) / 1000);
+    var maxOfflineSeconds = 24 * 3600; // 24 часа
+    offlineSeconds = Math.min(offlineSeconds, maxOfflineSeconds);
+    if (offlineSeconds < 60) return 0; // Минимум 1 минута офлайн
+    var offlineEarnings = Math.floor(playerData.autoWood * offlineSeconds * 0.3);
+    return offlineEarnings;
+}
+
+var offlineEarnings = calculateOfflineEarnings();
+if (offlineEarnings > 0) {
+    playerData.wood += offlineEarnings;
+    var offlineHours = Math.floor((Date.now() - playerData.lastOnline) / 3600000);
+    var offlineMinutes = Math.floor(((Date.now() - playerData.lastOnline) % 3600000) / 60000);
+    setTimeout(function() {
+        alert('💰 Офлайн заработок!\n\nВы отсутствовали: ' + (offlineHours > 0 ? offlineHours + 'ч ' : '') + offlineMinutes + 'м\n\nПолучено: +' + formatNumber(offlineEarnings) + ' 🌲');
+    }, 500);
+}
+playerData.lastOnline = Date.now();
 
 var treeSkins = [
     {id:'default',name:'Обычное',emoji:'🌳',colors:['#3a7d3a','#4caf50','#66bb6a'],price:0,cur:'free',limited:false,stock:0,sold:0},
@@ -596,6 +628,7 @@ function applyServerState(resp) {
 
 function persistLocal() {
     playerData.savedAt = Date.now();
+    playerData.lastOnline = Date.now();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(playerData)); } catch (e) { console.error('Ошибка сохранения:', e); }
     try { localStorage.setItem('limited_skins_data', JSON.stringify(limitedSkinsData)); } catch (e) { console.error('Ошибка сохранения данных лимитированных скинов:', e); }
 }
@@ -1059,6 +1092,341 @@ function admWipeAccount(targetId) {
     if (!confirm('⚠️ Полностью стереть аккаунт игрока ' + targetId + '? Будут удалены ресурсы, скины, топоры, улучшения и прогресс.')) { return; }
     if (!confirm('ПОДТВЕРДИТЕ удаление аккаунта ' + targetId + '?')) { return; }
     admCall({ target: targetId, wipe: true }, '✅ Аккаунт ' + targetId + ' будет очищен при следующем входе игрока в сеть');
+}
+
+function closeAdminPanel() {
+    document.getElementById('ap').style.display = 'none';
+}
+
+// ==================== ЕЖЕДНЕВНЫЕ БОНУСЫ ====================
+function getDailyRewardData(day) {
+    var rewards = [
+        { day: 1, wood: 100, crystals: 10 },
+        { day: 2, wood: 150, crystals: 15 },
+        { day: 3, wood: 200, crystals: 20 },
+        { day: 4, wood: 300, crystals: 30 },
+        { day: 5, wood: 500, crystals: 50 },
+        { day: 6, wood: 750, crystals: 75 },
+        { day: 7, wood: 1000, crystals: 100 }
+    ];
+    var index = ((day - 1) % 7);
+    return rewards[index];
+}
+
+function canClaimDailyReward() {
+    var now = Date.now();
+    var lastClaim = playerData.lastDailyReward || 0;
+    var oneDayMs = 24 * 3600 * 1000;
+    return (now - lastClaim) >= oneDayMs;
+}
+
+function showDailyReward() {
+    var now = Date.now();
+    var lastClaim = playerData.lastDailyReward || 0;
+    var oneDayMs = 24 * 3600 * 1000;
+    var twoDaysMs = 48 * 3600 * 1000;
+
+    // Проверка сброса серии
+    if (lastClaim > 0 && (now - lastClaim) > twoDaysMs) {
+        playerData.dailyStreak = 0;
+    }
+
+    var canClaim = canClaimDailyReward();
+    var nextDay = playerData.dailyStreak + 1;
+    if (nextDay > 7) nextDay = 1;
+
+    var reward = getDailyRewardData(nextDay);
+
+    var html = '<div style="text-align:center;padding:16px;">';
+    html += '<div style="font-size:48px;margin-bottom:12px;">🎁</div>';
+    html += '<div style="color:#e2a03f;font-size:20px;font-weight:700;margin-bottom:8px;">Ежедневный бонус</div>';
+
+    if (canClaim) {
+        html += '<div style="color:#aaa;font-size:13px;margin-bottom:16px;">День ' + nextDay + ' из 7</div>';
+        html += '<div style="background:#1e2a3a;border-radius:12px;padding:16px;margin-bottom:16px;border:2px solid #e2a03f;">';
+        html += '<div style="font-size:16px;color:#fff;margin-bottom:8px;">Награда за день ' + nextDay + ':</div>';
+        html += '<div style="font-size:24px;font-weight:700;color:#4caf84;">+' + formatNumber(reward.wood) + ' 🌲</div>';
+        html += '<div style="font-size:24px;font-weight:700;color:#a78bfa;margin-top:4px;">+' + formatNumber(reward.crystals) + ' 💎</div>';
+        html += '</div>';
+        html += '<button id="claimDailyBtn" class="form-submit" style="margin-bottom:8px;">✨ Получить награду</button>';
+    } else {
+        var timeLeft = oneDayMs - (now - lastClaim);
+        var hoursLeft = Math.floor(timeLeft / 3600000);
+        var minutesLeft = Math.floor((timeLeft % 3600000) / 60000);
+
+        html += '<div style="color:#aaa;font-size:13px;margin-bottom:16px;">Текущая серия: ' + playerData.dailyStreak + ' ' + (playerData.dailyStreak === 1 ? 'день' : 'дней') + '</div>';
+        html += '<div style="background:#1e2a3a;border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid #2a2a4a;">';
+        html += '<div style="font-size:16px;color:#aaa;margin-bottom:8px;">Следующая награда через:</div>';
+        html += '<div style="font-size:28px;font-weight:700;color:#e2a03f;">' + hoursLeft + 'ч ' + minutesLeft + 'м</div>';
+        html += '</div>';
+        html += '<div style="background:#1e2a3a;border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid #2a2a4a;">';
+        html += '<div style="font-size:13px;color:#aaa;margin-bottom:6px;">Завтра получите:</div>';
+        html += '<div style="font-size:16px;color:#4caf84;">+' + formatNumber(reward.wood) + ' 🌲</div>';
+        html += '<div style="font-size:16px;color:#a78bfa;">+' + formatNumber(reward.crystals) + ' 💎</div>';
+        html += '</div>';
+    }
+
+    // Календарь наград на неделю
+    html += '<div style="margin-top:16px;"><div style="color:#aaa;font-size:12px;margin-bottom:8px;">Награды за неделю:</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">';
+    for (var d = 1; d <= 7; d++) {
+        var dayReward = getDailyRewardData(d);
+        var isCurrent = d === nextDay;
+        var isPast = d < nextDay && playerData.dailyStreak > 0;
+        html += '<div style="background:' + (isCurrent ? '#e2a03f' : isPast ? '#2a4a2a' : '#1e2a3a') + ';border-radius:8px;padding:6px;text-align:center;border:1px solid ' + (isCurrent ? '#e2a03f' : '#2a2a4a') + ';">';
+        html += '<div style="font-size:10px;color:' + (isCurrent ? '#000' : '#aaa') + ';margin-bottom:2px;">День ' + d + '</div>';
+        html += '<div style="font-size:9px;color:' + (isCurrent ? '#000' : '#4caf84') + ';">' + formatNumber(dayReward.wood) + '🌲</div>';
+        html += '<div style="font-size:9px;color:' + (isCurrent ? '#000' : '#a78bfa') + ';">' + dayReward.crystals + '💎</div>';
+        html += '</div>';
+    }
+    html += '</div></div>';
+
+    html += '</div>';
+    html += '<button class="popup-close">Закрыть</button>';
+
+    var popup = showPopup('🎁 Ежедневные бонусы', html);
+
+    var claimBtn = popup.querySelector('#claimDailyBtn');
+    if (claimBtn) {
+        claimBtn.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            playerData.wood += reward.wood;
+            playerData.crystals += reward.crystals;
+            playerData.lastDailyReward = Date.now();
+            playerData.dailyStreak = nextDay;
+
+            updateUI();
+            saveData();
+
+            popup.remove();
+
+            alert('🎉 Получено!\n\n+' + formatNumber(reward.wood) + ' 🌲\n+' + formatNumber(reward.crystals) + ' 💎\n\nСерия: ' + playerData.dailyStreak + ' ' + (playerData.dailyStreak === 1 ? 'день' : 'дней') + '!');
+        });
+    }
+
+    var closeButton = popup.querySelector('.popup-close');
+    if (closeButton) {
+        closeButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            popup.remove();
+        });
+    }
+}
+
+// Обновление кнопки ежедневного бонуса
+function updateDailyButton() {
+    var btn = document.getElementById('bdaily');
+    if (!btn) return;
+
+    if (canClaimDailyReward()) {
+        btn.style.background = 'linear-gradient(135deg,#ff6b6b,#ee5a6f)';
+        btn.innerHTML = '🎁 Получить награду!';
+    } else {
+        btn.style.background = 'linear-gradient(135deg,#555,#666)';
+        btn.innerHTML = '🎁 Ежедневный бонус';
+    }
+}
+
+// ==================== СИСТЕМА ЗАДАНИЙ ====================
+var allTasks = [
+    { id: 'chop_10', name: 'Первые шаги', desc: 'Срубить 10 деревьев', type: 'trees', target: 10, reward: { wood: 50, crystals: 5 }, emoji: '🌲' },
+    { id: 'chop_50', name: 'Начинающий дровосек', desc: 'Срубить 50 деревьев', type: 'trees', target: 50, reward: { wood: 200, crystals: 20 }, emoji: '🌲' },
+    { id: 'chop_100', name: 'Опытный дровосек', desc: 'Срубить 100 деревьев', type: 'trees', target: 100, reward: { wood: 500, crystals: 50 }, emoji: '🌲' },
+    { id: 'chop_500', name: 'Мастер топора', desc: 'Срубить 500 деревьев', type: 'trees', target: 500, reward: { wood: 2000, crystals: 200 }, emoji: '🪓' },
+    { id: 'chop_1000', name: 'Легенда леса', desc: 'Срубить 1000 деревьев', type: 'trees', target: 1000, reward: { wood: 5000, crystals: 500 }, emoji: '👑' },
+    { id: 'level_5', name: 'Растущий лес', desc: 'Достичь 5 уровня дерева', type: 'level', target: 5, reward: { wood: 100, crystals: 10 }, emoji: '🌱' },
+    { id: 'level_10', name: 'Большой лес', desc: 'Достичь 10 уровня дерева', type: 'level', target: 10, reward: { wood: 300, crystals: 30 }, emoji: '🌳' },
+    { id: 'level_25', name: 'Древний лес', desc: 'Достичь 25 уровня дерева', type: 'level', target: 25, reward: { wood: 1000, crystals: 100 }, emoji: '🌲' },
+    { id: 'level_50', name: 'Вековой лес', desc: 'Достичь 50 уровня дерева', type: 'level', target: 50, reward: { wood: 3000, crystals: 300 }, emoji: '🏔️' },
+    { id: 'upgrade_5', name: 'Улучшатель', desc: 'Купить 5 улучшений', type: 'upgrades', target: 5, reward: { wood: 150, crystals: 15 }, emoji: '⚡' },
+    { id: 'upgrade_10', name: 'Коллекционер', desc: 'Купить 10 улучшений', type: 'upgrades', target: 10, reward: { wood: 400, crystals: 40 }, emoji: '💫' },
+    { id: 'upgrade_20', name: 'Максималист', desc: 'Купить 20 улучшений', type: 'upgrades', target: 20, reward: { wood: 1500, crystals: 150 }, emoji: '✨' },
+    { id: 'wood_1000', name: 'Богач', desc: 'Накопить 1000 древесины', type: 'wood', target: 1000, reward: { wood: 200, crystals: 20 }, emoji: '💰' },
+    { id: 'wood_10000', name: 'Магнат', desc: 'Накопить 10000 древесины', type: 'wood', target: 10000, reward: { wood: 2000, crystals: 200 }, emoji: '💎' },
+    { id: 'crystal_100', name: 'Кристальный охотник', desc: 'Накопить 100 кристаллов', type: 'crystals', target: 100, reward: { wood: 500, crystals: 50 }, emoji: '💎' },
+    { id: 'buy_skin', name: 'Модник', desc: 'Купить любой скин', type: 'skins', target: 2, reward: { wood: 300, crystals: 30 }, emoji: '🎨' },
+    { id: 'buy_3_skins', name: 'Коллекционер стилей', desc: 'Купить 3 скина', type: 'skins', target: 4, reward: { wood: 1000, crystals: 100 }, emoji: '🎭' }
+];
+
+function getTaskProgress(task) {
+    switch (task.type) {
+        case 'trees':
+            return Math.min(playerData.totalTrees || 0, task.target);
+        case 'level':
+            return Math.min(playerData.treeLevel || 1, task.target);
+        case 'upgrades':
+            var total = 0;
+            for (var key in playerData.upgrades) {
+                total += playerData.upgrades[key];
+            }
+            return Math.min(total, task.target);
+        case 'wood':
+            return Math.min(Math.floor(playerData.wood), task.target);
+        case 'crystals':
+            return Math.min(Math.floor(playerData.crystals), task.target);
+        case 'skins':
+            return Math.min((playerData.ownedSkins || ['default']).length, task.target);
+        default:
+            return 0;
+    }
+}
+
+function isTaskCompleted(taskId) {
+    return playerData.tasks[taskId] === true;
+}
+
+function checkAndCompleteTask(taskId) {
+    if (isTaskCompleted(taskId)) return false;
+
+    var task = allTasks.find(function(t) { return t.id === taskId; });
+    if (!task) return false;
+
+    var progress = getTaskProgress(task);
+    if (progress >= task.target) {
+        playerData.tasks[taskId] = true;
+        return true;
+    }
+    return false;
+}
+
+function showTasks() {
+    var html = '<div style="padding:8px;">';
+
+    var availableTasks = [];
+    var completedTasks = [];
+
+    allTasks.forEach(function(task) {
+        if (isTaskCompleted(task.id)) {
+            completedTasks.push(task);
+        } else {
+            availableTasks.push(task);
+        }
+    });
+
+    // Активные задания
+    if (availableTasks.length > 0) {
+        html += '<div class="section-title">🎯 Активные задания</div>';
+        availableTasks.forEach(function(task) {
+            var progress = getTaskProgress(task);
+            var percent = Math.min(100, Math.floor((progress / task.target) * 100));
+            var isReady = progress >= task.target;
+
+            html += '<div class="shop-item" style="margin-bottom:12px;' + (isReady ? 'border:2px solid #4caf84;' : '') + '">';
+            html += '<div style="flex:1;">';
+            html += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">';
+            html += '<span style="font-size:20px;">' + task.emoji + '</span>';
+            html += '<span class="shop-name">' + escapeHtml(task.name) + '</span>';
+            html += '</div>';
+            html += '<div class="shop-desc">' + escapeHtml(task.desc) + '</div>';
+            html += '<div style="margin-top:6px;background:#1a1a2e;border-radius:8px;height:20px;overflow:hidden;border:1px solid #2a2a4a;">';
+            html += '<div style="height:100%;background:' + (isReady ? '#4caf84' : '#e2a03f') + ';width:' + percent + '%;transition:width 0.3s;display:flex;align-items:center;justify-content:center;">';
+            html += '<span style="font-size:10px;color:#fff;font-weight:700;position:absolute;">' + formatNumber(progress) + ' / ' + formatNumber(task.target) + '</span>';
+            html += '</div></div>';
+            html += '<div style="margin-top:4px;font-size:11px;color:#4caf84;">Награда: +' + formatNumber(task.reward.wood) + '🌲 +' + task.reward.crystals + '💎</div>';
+            html += '</div>';
+
+            if (isReady) {
+                html += '<button class="shop-buy wood" data-task-id="' + task.id + '" style="min-width:80px;">✅ Забрать</button>';
+            } else {
+                html += '<div style="text-align:center;color:#aaa;font-size:11px;min-width:80px;">' + percent + '%</div>';
+            }
+
+            html += '</div>';
+        });
+    }
+
+    // Выполненные задания
+    if (completedTasks.length > 0) {
+        html += '<div class="section-title" style="margin-top:16px;">✅ Выполнено (' + completedTasks.length + ')</div>';
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px;">';
+        completedTasks.forEach(function(task) {
+            html += '<div style="background:#1e2a3a;border-radius:10px;padding:8px;text-align:center;border:1px solid #2a4a2a;opacity:0.7;">';
+            html += '<div style="font-size:24px;margin-bottom:4px;">' + task.emoji + '</div>';
+            html += '<div style="font-size:9px;color:#4caf84;">✓ ' + escapeHtml(task.name) + '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+    }
+
+    var totalCompleted = completedTasks.length;
+    var totalTasks = allTasks.length;
+    var overallPercent = Math.floor((totalCompleted / totalTasks) * 100);
+
+    html += '<div style="margin-top:16px;padding:12px;background:#1e2a3a;border-radius:12px;border:1px solid #2a2a4a;">';
+    html += '<div style="text-align:center;color:#aaa;font-size:12px;margin-bottom:6px;">Общий прогресс</div>';
+    html += '<div style="background:#1a1a2e;border-radius:8px;height:24px;overflow:hidden;border:1px solid #2a2a4a;position:relative;">';
+    html += '<div style="height:100%;background:linear-gradient(90deg,#4caf84,#2d6b2d);width:' + overallPercent + '%;transition:width 0.3s;"></div>';
+    html += '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;color:#fff;font-weight:700;">' + totalCompleted + ' / ' + totalTasks + ' (' + overallPercent + '%)</div>';
+    html += '</div></div>';
+
+    html += '</div>';
+    html += '<button class="popup-close">Закрыть</button>';
+
+    var popup = showPopup('📋 Задания', html);
+
+    var claimButtons = popup.querySelectorAll('[data-task-id]');
+    claimButtons.forEach(function(btn) {
+        btn.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            var taskId = this.dataset.taskId;
+            var task = allTasks.find(function(t) { return t.id === taskId; });
+
+            if (task && checkAndCompleteTask(taskId)) {
+                playerData.wood += task.reward.wood;
+                playerData.crystals += task.reward.crystals;
+
+                updateUI();
+                saveData();
+
+                popup.remove();
+
+                alert('🎉 Задание выполнено!\n\n' + task.emoji + ' ' + task.name + '\n\n+' + formatNumber(task.reward.wood) + ' 🌲\n+' + task.reward.crystals + ' 💎');
+
+                // Показать задания снова
+                showTasks();
+            }
+        });
+    });
+
+    var closeButton = popup.querySelector('.popup-close');
+    if (closeButton) {
+        closeButton.addEventListener('click', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            popup.remove();
+        });
+    }
+}
+
+// Обновление индикатора новых заданий
+function updateTasksButton() {
+    var btn = document.getElementById('btasks');
+    if (!btn) return;
+
+    var hasNewRewards = false;
+    for (var i = 0; i < allTasks.length; i++) {
+        var task = allTasks[i];
+        if (!isTaskCompleted(task.id)) {
+            var progress = getTaskProgress(task);
+            if (progress >= task.target) {
+                hasNewRewards = true;
+                break;
+            }
+        }
+    }
+
+    if (hasNewRewards) {
+        btn.style.background = 'linear-gradient(135deg,#4ecdc4,#44a08d)';
+        btn.innerHTML = '📋 Забрать награды! 🎁';
+    } else {
+        btn.style.background = 'linear-gradient(135deg,#555,#666)';
+        btn.innerHTML = '📋 Задания';
+    }
 }
 
 function openAdminWithId(targetId) {
@@ -2333,6 +2701,8 @@ document.getElementById('bs').addEventListener('click', showShop);
 document.getElementById('bl').addEventListener('click', showLeaderboard);
 document.getElementById('bt').addEventListener('click', showSkins);
 document.getElementById('btr').addEventListener('click', showTrade);
+document.getElementById('bdaily').addEventListener('click', showDailyReward);
+document.getElementById('btasks').addEventListener('click', showTasks);
 document.getElementById('tc').addEventListener('click', chop);
 
 document.addEventListener('keydown', function(event) {
@@ -2346,10 +2716,15 @@ document.addEventListener('keydown', function(event) {
 // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 updateUI();
 updateAdminSelects();
-
+updateDailyButton();
+updateTasksButton();
 
 setInterval(passiveIncome, 1000);
 setInterval(saveData, 10000);
+setInterval(function() {
+    updateDailyButton();
+    updateTasksButton();
+}, 5000);
 
 
 document.addEventListener('visibilitychange', function() { if (document.hidden) { syncNow(); } });
