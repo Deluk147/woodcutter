@@ -60,7 +60,12 @@
         .popup-bg { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.75); z-index:9999; display:flex; align-items:flex-end; justify-content:center; }
         .popup { background:#16213e; border-radius:16px 16px 0 0; width:100%; max-width:430px; max-height:85vh; overflow-y:auto; padding:16px 12px 30px; border:1px solid #2a2a4a; }
         .popup h3 { color:#eee; font-size:18px; margin-bottom:12px; text-align:center; }
-        .popup-close { width:100%; padding:14px; border-radius:12px; border:1px solid #2a2a4a; background:#16213e; color:#eee; font-size:15px; font-weight:600; margin-top:8px; cursor:pointer; }
+        .popup-close { position:absolute; top:12px; right:12px; width:32px; height:32px; border-radius:50%; border:1px solid #2a2a4a; background:#1e2a3a; color:#eee; font-size:20px; font-weight:400; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:10; }
+        .popup-close:hover { background:#2a3a4a; }
+        .notification { position:fixed; top:20px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,#4caf84,#2d6b2d); color:#fff; padding:16px 24px; border-radius:12px; font-size:14px; font-weight:600; z-index:99999; box-shadow:0 4px 12px rgba(0,0,0,0.3); animation:slideDown 0.3s ease; max-width:90%; }
+        .notification.success { background:linear-gradient(135deg,#4caf84,#2d6b2d); }
+        .notification.info { background:linear-gradient(135deg,#4a90d9,#357abd); }
+        @keyframes slideDown { from{top:-100px;opacity:0} to{top:20px;opacity:1} }
         .shop-cat { color:#e2a03f; font-size:13px; font-weight:700; margin:12px 0 6px; padding-bottom:4px; border-bottom:1px solid #2a2a4a; }
         .shop-item { background:#1e2a3a; border-radius:12px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid #2a2a4a; gap:8px; }
         .shop-name { font-weight:600; color:#eee; font-size:14px; }
@@ -270,7 +275,7 @@ if (offlineEarnings > 0) {
     var offlineHours = Math.floor((Date.now() - playerData.lastOnline) / 3600000);
     var offlineMinutes = Math.floor(((Date.now() - playerData.lastOnline) % 3600000) / 60000);
     setTimeout(function() {
-        alert('💰 Офлайн заработок!\n\nВы отсутствовали: ' + (offlineHours > 0 ? offlineHours + 'ч ' : '') + offlineMinutes + 'м\n\nПолучено: +' + formatNumber(offlineEarnings) + ' 🌲');
+        showNotification('💰 Офлайн заработок: +' + formatNumber(offlineEarnings) + ' 🌲<br><small>Отсутствовали: ' + (offlineHours > 0 ? offlineHours + 'ч ' : '') + offlineMinutes + 'м</small>', 'success');
     }, 500);
 }
 playerData.lastOnline = Date.now();
@@ -975,7 +980,7 @@ function chop() {
 function showPopup(title, content) {
     var background = document.createElement('div');
     background.className = 'popup-bg';
-    background.innerHTML = '<div class="popup"><h3>' + title + '</h3>' + content + '<button class="popup-close">Закрыть</button></div>';
+    background.innerHTML = '<div class="popup"><button class="popup-close">×</button><h3>' + title + '</h3>' + content + '</div>';
     var closeButton = background.querySelector('.popup-close');
     if (closeButton) {
         closeButton.addEventListener('click', function(event) {
@@ -991,6 +996,41 @@ function showPopup(title, content) {
     });
     document.body.appendChild(background);
     return background;
+}
+
+// Система уведомлений
+var notificationQueue = [];
+var isShowingNotification = false;
+
+function showNotification(message, type) {
+    type = type || 'success';
+    notificationQueue.push({ message: message, type: type });
+    if (!isShowingNotification) {
+        processNotificationQueue();
+    }
+}
+
+function processNotificationQueue() {
+    if (notificationQueue.length === 0) {
+        isShowingNotification = false;
+        return;
+    }
+
+    isShowingNotification = true;
+    var data = notificationQueue.shift();
+
+    var notification = document.createElement('div');
+    notification.className = 'notification ' + data.type;
+    notification.innerHTML = data.message;
+    document.body.appendChild(notification);
+
+    setTimeout(function() {
+        notification.style.animation = 'slideDown 0.3s ease reverse';
+        setTimeout(function() {
+            notification.remove();
+            processNotificationQueue();
+        }, 300);
+    }, 3000);
 }
 
 function updateAdminSelects() {
@@ -1202,7 +1242,7 @@ function showDailyReward() {
 
             popup.remove();
 
-            alert('🎉 Получено!\n\n+' + formatNumber(reward.wood) + ' 🌲\n+' + formatNumber(reward.crystals) + ' 💎\n\nСерия: ' + playerData.dailyStreak + ' ' + (playerData.dailyStreak === 1 ? 'день' : 'дней') + '!');
+            showNotification('🎉 Ежедневная награда получена!<br>+' + formatNumber(reward.wood) + ' 🌲 +' + formatNumber(reward.crystals) + ' 💎<br><small>Серия: ' + playerData.dailyStreak + ' ' + (playerData.dailyStreak === 1 ? 'день' : 'дней') + '</small>', 'success');
         });
     }
 
@@ -1321,10 +1361,10 @@ function showTasks() {
             html += '<span class="shop-name">' + escapeHtml(task.name) + '</span>';
             html += '</div>';
             html += '<div class="shop-desc">' + escapeHtml(task.desc) + '</div>';
-            html += '<div style="margin-top:6px;background:#1a1a2e;border-radius:8px;height:20px;overflow:hidden;border:1px solid #2a2a4a;">';
-            html += '<div style="height:100%;background:' + (isReady ? '#4caf84' : '#e2a03f') + ';width:' + percent + '%;transition:width 0.3s;display:flex;align-items:center;justify-content:center;">';
-            html += '<span style="font-size:10px;color:#fff;font-weight:700;position:absolute;">' + formatNumber(progress) + ' / ' + formatNumber(task.target) + '</span>';
-            html += '</div></div>';
+            html += '<div style="margin-top:6px;background:#1a1a2e;border-radius:8px;height:20px;overflow:hidden;border:1px solid #2a2a4a;position:relative;">';
+            html += '<div style="height:100%;background:' + (isReady ? '#4caf84' : '#e2a03f') + ';width:' + percent + '%;transition:width 0.3s;"></div>';
+            html += '<span style="font-size:10px;color:#fff;font-weight:700;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-shadow:1px 1px 2px rgba(0,0,0,0.5);">' + formatNumber(progress) + ' / ' + formatNumber(task.target) + '</span>';
+            html += '</div>';
             html += '<div style="margin-top:4px;font-size:11px;color:#4caf84;">Награда: +' + formatNumber(task.reward.wood) + '🌲 +' + task.reward.crystals + '💎</div>';
             html += '</div>';
 
@@ -1385,10 +1425,12 @@ function showTasks() {
 
                 popup.remove();
 
-                alert('🎉 Задание выполнено!\n\n' + task.emoji + ' ' + task.name + '\n\n+' + formatNumber(task.reward.wood) + ' 🌲\n+' + task.reward.crystals + ' 💎');
+                showNotification('🎉 Задание выполнено!<br>' + task.emoji + ' ' + task.name + '<br>+' + formatNumber(task.reward.wood) + ' 🌲 +' + task.reward.crystals + ' 💎', 'success');
 
                 // Показать задания снова
-                showTasks();
+                setTimeout(function() {
+                    showTasks();
+                }, 400);
             }
         });
     });
@@ -1586,7 +1628,7 @@ function showShop() {
                     updateButton(self);
                 }
                 
-                holdTimer = setTimeout(holdLoop, 100);
+                holdTimer = setTimeout(holdLoop, 200);
             }
             
             holdLoop();
@@ -1607,7 +1649,7 @@ function showShop() {
                     updateButton(self);
                 }
                 
-                holdTimer = setTimeout(holdLoop, 100);
+                holdTimer = setTimeout(holdLoop, 200);
             }
             
             holdLoop();
