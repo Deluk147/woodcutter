@@ -1222,7 +1222,6 @@ function showDailyReward() {
     html += '</div></div>';
 
     html += '</div>';
-    html += '<button class="popup-close">Закрыть</button>';
 
     var popup = showPopup('🎁 Ежедневные бонусы', html);
 
@@ -1403,7 +1402,6 @@ function showTasks() {
     html += '</div></div>';
 
     html += '</div>';
-    html += '<button class="popup-close">Закрыть</button>';
 
     var popup = showPopup('📋 Задания', html);
 
@@ -1529,8 +1527,6 @@ function showShop() {
         html += '</button>';
         html += '</div>';
     });
-    
-    html += '<button class="popup-close">Закрыть</button>';
     
     var popup = showPopup('🏪 Магазин', html);
     
@@ -1794,13 +1790,11 @@ function showSkins() {
         });
         
         html += '</div>';
-        
+
         if (userId === ADMIN_ID) {
             html += '<button class="add-skin-btn" id="addBtn">➕ Добавить скин</button>';
         }
-        
-        html += '<button class="popup-close">Закрыть</button>';
-        
+
         var popup = document.createElement('div');
         popup.className = 'popup-bg';
         popup.innerHTML = '<div class="popup"><h3>🎨 Скины</h3>' + html + '</div>';
@@ -2060,12 +2054,10 @@ function addSkinForm() {
     html += '<input type="number" id="skinStock" class="form-input" placeholder="100" value="100" min="1"></div>';
     
     html += '<div id="skinPreview" style="text-align:center;margin:8px 0;"></div>';
-    
+
     html += '<button class="form-submit" id="saveSkinBtn">💾 Сохранить скин</button>';
     html += '</div>';
-    
-    html += '<button class="popup-close">Закрыть</button>';
-    
+
     var popup = document.createElement('div');
     popup.className = 'popup-bg';
     popup.innerHTML = '<div class="popup"><h3>➕ Новый скин</h3>' + html + '</div>';
@@ -2300,19 +2292,8 @@ function showTrade() {
                     html += '</div>';
                 });
             }
-            
-            html += '<button class="popup-close">Закрыть</button>';
-            
+
             var popup = showPopup('💱 Торговая площадка', html);
-            
-            var closeButton = popup.querySelector('.popup-close');
-            if (closeButton) {
-                closeButton.addEventListener('click', function(event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    popup.remove();
-                });
-            }
             
             var copyButton = popup.querySelector('#btnCopyIdTrade');
             if (copyButton) {
@@ -2547,8 +2528,7 @@ function showTrade() {
             html += 'Торги требуют работающий сервер.<br>';
             html += 'Проверьте PythonAnywhere.';
             html += '</div>';
-            html += '<button class="popup-close">Закрыть</button>';
-            
+
             var popup = showPopup('💱 Торги', html);
             
             var closeButton = popup.querySelector('.popup-close');
@@ -2611,8 +2591,7 @@ function showLeaderboard() {
             }
             
             html += '</tbody></table>';
-            html += '<button class="popup-close">Закрыть</button>';
-            
+
             var popup = showPopup('🏆 Рейтинг игроков', html);
             
             var closeButton = popup.querySelector('.popup-close');
@@ -2641,8 +2620,7 @@ function showLeaderboard() {
             html += '1. Запущен ли сервер на PythonAnywhere<br>';
             html += '2. Правильный ли API_URL в коде';
             html += '</div>';
-            html += '<button class="popup-close">Закрыть</button>';
-            
+
             var popup = showPopup('🏆 Рейтинг', html);
             
             var closeButton = popup.querySelector('.popup-close');
