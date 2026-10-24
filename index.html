@@ -196,10 +196,28 @@ tg.expand();
 tg.ready();
 
 var user = tg.initDataUnsafe ? tg.initDataUnsafe.user : null;
-var userId = user ? 'WC' + String(user.id).slice(-6).padStart(6, '0') : 'WC' + Math.random().toString(36).substr(2, 6).toUpperCase();
+var userId = user ? 'WC' + String(user.id).slice(-6).padStart(6, '0') : (function() { try { var d = localStorage.getItem('wc_dev_id'); if (!d) { d = 'WC' + (Math.random().toString(36) + '000000').substr(2, 6).toUpperCase(); localStorage.setItem('wc_dev_id', d); } return d; } catch (e) { return 'WC' + (Math.random().toString(36) + '000000').substr(2, 6).toUpperCase(); } })();
 var userName = user ? (user.first_name + (user.last_name ? ' ' + user.last_name : '')) : 'Игрок';
 var STORAGE_KEY = 'wc_' + userId;
-var ADMIN_ID = 'WC046190';
+var ADMIN_ID = 'WC046190'; // только для показа кнопок; права проверяет сервер
+
+(function() {
+    var nativeFetch = window.fetch.bind(window);
+    window.fetch = function(url, opts) {
+        try {
+            if (typeof url === 'string' && url.indexOf(API_URL) === 0) {
+                opts = opts || {};
+                var h = {};
+                var src = opts.headers || {};
+                for (var k in src) { h[k] = src[k]; }
+                if (tg.initData) { h['X-Telegram-Init-Data'] = tg.initData; }
+                h['X-Dev-User'] = userId;
+                opts.headers = h;
+            }
+        } catch (e) {}
+        return nativeFetch(url, opts);
+    };
+})();
 
 console.log('🌲 Woodcutter v19.0 - Fixed Stars');
 console.log('👤 User ID:', userId);
@@ -249,34 +267,38 @@ try { var ca = JSON.parse(localStorage.getItem('c_as')||'[]'); ca.forEach(functi
 var limitedSkinsData = {};
 try { limitedSkinsData = JSON.parse(localStorage.getItem('limited_skins_data')||'{}'); } catch(e) {}
 
-// Загрузка кастомных скинов с сервера
+// Загрузка кастомных скинов с сервера (сервер — источник истины)
 (function() {
     fetch(API_URL + '/custom_skins')
         .then(function(response) { return response.json(); })
         .then(function(data) {
-            if (data.success && data.skins) {
-                var count = 0;
-                for (var key in data.skins) {
-                    var serverSkin = data.skins[key];
-                    var skinType = serverSkin.skin_type || 'tree';
-                    var existsInTree = treeSkins.find(function(s) { return s.id === serverSkin.id; });
-                    var existsInAxe = axeSkins.find(function(s) { return s.id === serverSkin.id; });
-                    if (!existsInTree && !existsInAxe) {
-                        if (!serverSkin.limited) serverSkin.limited = false;
-                        if (!serverSkin.stock) serverSkin.stock = 0;
-                        if (!serverSkin.sold) serverSkin.sold = 0;
-                        if (skinType === 'tree') { treeSkins.push(serverSkin); } else { axeSkins.push(serverSkin); }
-                        count++;
-                    }
-                }
-                if (count > 0) {
-                    localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(s) { return s.id.indexOf('custom_') === 0; })));
-                    localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(s) { return s.id.indexOf('custom_') === 0; })));
-                    console.log('✅ Загружено ' + count + ' скинов с сервера');
-                }
+            if (!data.success || !data.skins) { return; }
+            var ids = {};
+            for (var key in data.skins) {
+                var sv = data.skins[key];
+                ids[sv.id] = true;
+                if (!sv.limited) sv.limited = false;
+                if (!sv.stock) sv.stock = 0;
+                if (!sv.sold) sv.sold = 0;
+                var list = sv.skin_type === 'axe' ? axeSkins : treeSkins;
+                var existing = list.find(function(x) { return x.id === sv.id; });
+                if (existing) { for (var f in sv) { existing[f] = sv[f]; } } else { list.push(sv); }
+                if (sv.limited && sv.stock > 0) { limitedSkinsData[sv.id] = { sold: sv.sold }; }
             }
+            [treeSkins, axeSkins].forEach(function(list) {
+                for (var i = list.length - 1; i >= 0; i--) {
+                    if (list[i].id.indexOf('custom_') === 0 && !ids[list[i].id]) { list.splice(i, 1); }
+                }
+            });
+            try {
+                localStorage.setItem('c_ts', JSON.stringify(treeSkins.filter(function(x) { return x.id.indexOf('custom_') === 0; })));
+                localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(x) { return x.id.indexOf('custom_') === 0; })));
+            } catch (e) {}
+            saveLimitedSkinsData();
+            updateAdminSelects();
+            updateUI();
         })
-        .catch(function(e) { console.log('⚠️ Сервер недоступен'); });
+        .catch(function() { console.log('⚠️ Сервер недоступен'); });
 })();
 
 var shopItems = [
@@ -522,79 +544,129 @@ var shopItems = [
     }
 ];
 
-// Загрузка профиля с сервера
+// ===== Синхронизация с сервером =====
+var SYNC_SCALARS = ['axePower','crystalBonus','autoWood','critChance','critMultiplier','crystalToWoodRate','comboBonus','treeHP','maxTreeHP','totalTrees','treeLevel'];
+
+function resetProgress() {
+    playerData.wood = 0; playerData.crystals = 0; playerData.stars = 0;
+    playerData.axePower = 1; playerData.crystalBonus = 1; playerData.autoWood = 0;
+    playerData.critChance = 0; playerData.critMultiplier = 2; playerData.crystalToWoodRate = 0;
+    playerData.comboBonus = 0; playerData.combo = 0; playerData.comboMultiplier = 1;
+    playerData.ownedSkins = ['default']; playerData.ownedAxes = ['default'];
+    playerData.activeSkin = 'default'; playerData.activeAxe = 'default';
+    playerData.treeLevel = 1; playerData.totalTrees = 0; playerData.treeHP = 15; playerData.maxTreeHP = 15;
+    playerData.upgrades = {};
+    for (var i = 0; i < upgradeIds.length; i++) { playerData.upgrades[upgradeIds[i]] = 0; }
+}
+
+// Применяет «гранты» сервера: выдачи админа, деньги за проданные скины, купленные за Stars скины
+function applyGrants(g) {
+    if (!g) { return false; }
+    var changed = false;
+    if (g.wipe) { resetProgress(); changed = true; }
+    if (g.wood) { playerData.wood = Math.max(0, playerData.wood + g.wood); changed = true; }
+    if (g.crystals) { playerData.crystals = Math.max(0, playerData.crystals + g.crystals); changed = true; }
+    (g.skins || []).forEach(function(id) { if (playerData.ownedSkins.indexOf(id) === -1) { playerData.ownedSkins.push(id); changed = true; } });
+    (g.axes || []).forEach(function(id) { if (playerData.ownedAxes.indexOf(id) === -1) { playerData.ownedAxes.push(id); changed = true; } });
+    if (changed) { updateUI(); persistLocal(); }
+    return changed;
+}
+
+function applyServerState(resp) {
+    if (!resp || !resp.success) { return resp; }
+    var changed = false;
+    if (typeof resp.stars === 'number' && resp.stars !== playerData.stars) { playerData.stars = resp.stars; changed = true; }
+    var rej = resp.rejected || {};
+    if (rej.skins && rej.skins.length) {
+        playerData.ownedSkins = playerData.ownedSkins.filter(function(id) { return rej.skins.indexOf(id) === -1; });
+        if (rej.skins.indexOf(playerData.activeSkin) !== -1) { playerData.activeSkin = 'default'; }
+        changed = true;
+    }
+    if (rej.axes && rej.axes.length) {
+        playerData.ownedAxes = playerData.ownedAxes.filter(function(id) { return rej.axes.indexOf(id) === -1; });
+        if (rej.axes.indexOf(playerData.activeAxe) !== -1) { playerData.activeAxe = 'default'; }
+        changed = true;
+    }
+    if (applyGrants(resp.grants) || changed) { updateUI(); persistLocal(); }
+    if ((rej.skins && rej.skins.length) || (rej.axes && rej.axes.length)) {
+        alert('❌ Сервер не подтвердил покупку скина (он распродан или недоступен).');
+    }
+    return resp;
+}
+
+function persistLocal() {
+    playerData.savedAt = Date.now();
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(playerData)); } catch (e) { console.error('Ошибка сохранения:', e); }
+    try { localStorage.setItem('limited_skins_data', JSON.stringify(limitedSkinsData)); } catch (e) { console.error('Ошибка сохранения данных лимитированных скинов:', e); }
+}
+
+var _saveTimer = null;
+
+// Локально сохраняем сразу, на сервер шлём не чаще раза в 2 секунды
+function saveData() {
+    persistLocal();
+    if (_saveTimer) { return; }
+    _saveTimer = setTimeout(function() { _saveTimer = null; syncNow(); }, 2000);
+}
+
+function buildSyncPayload() {
+    var p = { user_id: userId, name: playerData.name, wood: playerData.wood, crystals: playerData.crystals,
+        ownedSkins: playerData.ownedSkins, ownedAxes: playerData.ownedAxes, activeSkin: playerData.activeSkin,
+        activeAxe: playerData.activeAxe, upgrades: playerData.upgrades, savedAt: playerData.savedAt };
+    SYNC_SCALARS.forEach(function(k) { p[k] = playerData[k]; });
+    return p;
+}
+
+function syncNow() {
+    if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+    persistLocal();
+    return fetch(API_URL + '/profile/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildSyncPayload())
+    })
+    .then(function(r) { return r.json(); })
+    .then(applyServerState)
+    .catch(function() { console.log('⚠️ Ошибка синхронизации с сервером'); return null; });
+}
+
+// После оплаты Stars сервер выдаёт скин по вебхуку Telegram — ждём до ~15 секунд
+function waitForPurchase(done) {
+    var tries = 0;
+    (function poll() {
+        syncNow().then(function(r) {
+            var g = r && r.grants;
+            if (g && ((g.skins && g.skins.length) || (g.axes && g.axes.length))) { done(true); }
+            else if (++tries < 10) { setTimeout(poll, 1500); }
+            else { done(false); }
+        });
+    })();
+}
+
+// Загрузка профиля с сервера: берём серверную версию, только если она новее локальной
 (function() {
     fetch(API_URL + '/profile/' + userId)
-        .then(function(response) {
-            return response.json();
-        })
+        .then(function(response) { return response.json(); })
         .then(function(data) {
-            if (data.success && data.profile) {
-                var profile = data.profile;
-                if (profile.wood !== undefined) {
-                    playerData.wood = profile.wood;
-                }
-                if (profile.crystals !== undefined) {
-                    playerData.crystals = profile.crystals;
-                }
-                if (profile.stars !== undefined) {
-                    playerData.stars = profile.stars;
-                }
-                if (profile.ownedSkins) {
-                    playerData.ownedSkins = profile.ownedSkins;
-                }
-                if (profile.ownedAxes) {
-                    playerData.ownedAxes = profile.ownedAxes;
-                }
-                if (profile.activeSkin) {
-                    playerData.activeSkin = profile.activeSkin;
-                }
-                if (profile.activeAxe) {
-                    playerData.activeAxe = profile.activeAxe;
-                }
+            var p = data && data.success ? data.profile : null;
+            if (!p) { return; }
+            if (p.savedAt && p.savedAt > (playerData.savedAt || 0)) {
+                ['wood','crystals','stars'].concat(SYNC_SCALARS).forEach(function(k) { if (typeof p[k] === 'number') { playerData[k] = p[k]; } });
+                if (p.ownedSkins && p.ownedSkins.length) { playerData.ownedSkins = p.ownedSkins; }
+                if (p.ownedAxes && p.ownedAxes.length) { playerData.ownedAxes = p.ownedAxes; }
+                if (p.activeSkin) { playerData.activeSkin = p.activeSkin; }
+                if (p.activeAxe) { playerData.activeAxe = p.activeAxe; }
+                if (p.upgrades) { for (var u in p.upgrades) { playerData.upgrades[u] = p.upgrades[u]; } }
                 updateUI();
-                saveData();
+                persistLocal();
                 console.log('✅ Профиль загружен с сервера');
+            } else if (typeof p.stars === 'number') {
+                playerData.stars = p.stars;
             }
         })
-        .catch(function(error) {
-            console.log('⚠️ Сервер недоступен, играем локально');
-        });
+        .catch(function() { console.log('⚠️ Сервер недоступен, играем локально'); })
+        .then(function() { syncNow(); });
 })();
-
-function saveData() {
-    try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(playerData));
-    } catch (e) {
-        console.error('Ошибка сохранения:', e);
-    }
-    try {
-        localStorage.setItem('limited_skins_data', JSON.stringify(limitedSkinsData));
-    } catch (e) {
-        console.error('Ошибка сохранения данных лимитированных скинов:', e);
-    }
-    fetch(API_URL + '/profile/save', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            user_id: userId,
-            wood: playerData.wood,
-            crystals: playerData.crystals,
-            stars: playerData.stars,
-            ownedSkins: playerData.ownedSkins,
-            ownedAxes: playerData.ownedAxes,
-            activeSkin: playerData.activeSkin,
-            activeAxe: playerData.activeAxe,
-            name: playerData.name,
-            treeLevel: playerData.treeLevel,
-            totalTrees: playerData.totalTrees
-        })
-    }).catch(function(e) {
-        console.log('⚠️ Ошибка синхронизации с сервером');
-    });
-}
 
 function saveLimitedSkinsData() {
     try {
@@ -605,11 +677,9 @@ function saveLimitedSkinsData() {
 }
 
 function formatNumber(number) {
-    if (number >= 1000000) {
-        return (number / 1000000).toFixed(1) + 'M';
-    }
-    if (number >= 1000) {
-        return (number / 1000).toFixed(1) + 'K';
+    var units = [[1e15, 'Qa'], [1e12, 'T'], [1e9, 'B'], [1e6, 'M'], [1e3, 'K']];
+    for (var i = 0; i < units.length; i++) {
+        if (number >= units[i][0]) { return (number / units[i][0]).toFixed(1) + units[i][1]; }
     }
     return Math.floor(number).toString();
 }
@@ -617,7 +687,7 @@ function formatNumber(number) {
 function escapeHtml(text) {
     var div = document.createElement('div');
     div.textContent = text;
-    return div.innerHTML;
+    return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function updateUI() {
@@ -806,7 +876,13 @@ function calculateTreeHP(level) {
     return Math.floor(Math.random() * (maxHP - minHP) + minHP);
 }
 
+var _lastChop = 0;
+var treeFalling = false;
+
 function chop() {
+    var nowMs = Date.now();
+    if (treeFalling || nowMs - _lastChop < 40) { return; }
+    _lastChop = nowMs;
     if (playerData.treeHP <= 0) {
         playerData.maxTreeHP = calculateTreeHP(playerData.treeLevel);
         playerData.treeHP = playerData.maxTreeHP;
@@ -846,7 +922,9 @@ function chop() {
         playerData.totalTrees++;
         playerData.treeLevel = Math.min(Math.floor(playerData.totalTrees / 2) + 1, 9999);
         
+        treeFalling = true;
         animFall(function() {
+            treeFalling = false;
             playerData.maxTreeHP = calculateTreeHP(playerData.treeLevel);
             playerData.treeHP = playerData.maxTreeHP;
             updateUI();
@@ -918,345 +996,69 @@ function updateAdminSelects() {
     }
 }
 
+function admCall(payload, okMsg) {
+    return fetch(API_URL + '/admin/grant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+        if (d.success) {
+            alert(okMsg);
+            if (payload.target === userId) { syncNow(); }
+        } else {
+            alert('❌ ' + (d.error || 'Ошибка'));
+        }
+        return d;
+    })
+    .catch(function() { alert('❌ Ошибка соединения с сервером'); });
+}
+
 function admGive() {
-    var targetId = document.getElementById('atid').value.trim();
-    var woodAmount = parseInt(document.getElementById('aw').value) || 0;
-    var crystalAmount = parseInt(document.getElementById('ac').value) || 0;
-    
-    if (!targetId) {
-        alert('❌ Введите ID игрока');
-        return;
-    }
-    
-    fetch(API_URL + '/profile/' + targetId)
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(data) {
-            if (data.success) {
-                var profile = data.profile || {};
-                profile.user_id = targetId;
-                profile.wood = (profile.wood || 0) + woodAmount;
-                profile.crystals = (profile.crystals || 0) + crystalAmount;
-                profile.ownedSkins = profile.ownedSkins || ['default'];
-                profile.ownedAxes = profile.ownedAxes || ['default'];
-                profile.activeSkin = profile.activeSkin || 'default';
-                profile.activeAxe = profile.activeAxe || 'default';
-                profile.name = profile.name || 'Игрок';
-                profile.treeLevel = profile.treeLevel || 1;
-                profile.totalTrees = profile.totalTrees || 0;
-                
-                fetch(API_URL + '/profile/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(profile)
-                });
-                
-                fetch(API_URL + '/leaderboard/update', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: targetId,
-                        name: profile.name,
-                        wood: profile.wood,
-                        crystals: profile.crystals,
-                        treeLevel: profile.treeLevel,
-                        totalTrees: profile.totalTrees
-                    })
-                });
-                
-                alert('✅ Выдано: +' + woodAmount + '🌲 +' + crystalAmount + '💎');
-                document.getElementById('aw').value = '';
-                document.getElementById('ac').value = '';
-                
-                if (targetId === userId) {
-                    playerData.wood = profile.wood;
-                    playerData.crystals = profile.crystals;
-                    updateUI();
-                    saveData();
-                }
-            } else {
-                alert('❌ Игрок не найден');
-            }
-        })
-        .catch(function(error) {
-            alert('❌ Ошибка соединения с сервером');
-        });
+    var t = document.getElementById('atid').value.trim();
+    var w = parseInt(document.getElementById('aw').value) || 0;
+    var c = parseInt(document.getElementById('ac').value) || 0;
+    if (!t) { alert('❌ Введите ID игрока'); return; }
+    if (!w && !c) { alert('❌ Укажите количество'); return; }
+    admCall({ target: t, wood: w, crystals: c }, '✅ Выдано: +' + w + '🌲 +' + c + '💎').then(function() {
+        document.getElementById('aw').value = '';
+        document.getElementById('ac').value = '';
+    });
 }
 
 function admTake() {
-    var targetId = document.getElementById('atkid').value.trim();
-    var woodAmount = parseInt(document.getElementById('atkw').value) || 0;
-    var crystalAmount = parseInt(document.getElementById('atkc').value) || 0;
-    
-    if (!targetId) {
-        alert('❌ Введите ID игрока');
-        return;
-    }
-    
-    fetch(API_URL + '/profile/' + targetId)
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(data) {
-            if (data.success) {
-                var profile = data.profile || {};
-                profile.user_id = targetId;
-                profile.wood = Math.max(0, (profile.wood || 0) - woodAmount);
-                profile.crystals = Math.max(0, (profile.crystals || 0) - crystalAmount);
-                profile.ownedSkins = profile.ownedSkins || ['default'];
-                profile.ownedAxes = profile.ownedAxes || ['default'];
-                profile.activeSkin = profile.activeSkin || 'default';
-                profile.activeAxe = profile.activeAxe || 'default';
-                profile.name = profile.name || 'Игрок';
-                profile.treeLevel = profile.treeLevel || 1;
-                profile.totalTrees = profile.totalTrees || 0;
-                
-                fetch(API_URL + '/profile/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(profile)
-                });
-                
-                fetch(API_URL + '/leaderboard/update', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        user_id: targetId,
-                        name: profile.name,
-                        wood: profile.wood,
-                        crystals: profile.crystals,
-                        treeLevel: profile.treeLevel,
-                        totalTrees: profile.totalTrees
-                    })
-                });
-                
-                alert('✅ Изъято: -' + woodAmount + '🌲 -' + crystalAmount + '💎');
-                document.getElementById('atkw').value = '';
-                document.getElementById('atkc').value = '';
-                
-                if (targetId === userId) {
-                    playerData.wood = profile.wood;
-                    playerData.crystals = profile.crystals;
-                    updateUI();
-                    saveData();
-                }
-            } else {
-                alert('❌ Игрок не найден');
-            }
-        })
-        .catch(function(error) {
-            alert('❌ Ошибка соединения с сервером');
-        });
+    var t = document.getElementById('atkid').value.trim();
+    var w = parseInt(document.getElementById('atkw').value) || 0;
+    var c = parseInt(document.getElementById('atkc').value) || 0;
+    if (!t) { alert('❌ Введите ID игрока'); return; }
+    if (!w && !c) { alert('❌ Укажите количество'); return; }
+    admCall({ target: t, wood: -Math.abs(w), crystals: -Math.abs(c) }, '✅ Забрано: -' + Math.abs(w) + '🌲 -' + Math.abs(c) + '💎').then(function() {
+        document.getElementById('atkw').value = '';
+        document.getElementById('atkc').value = '';
+    });
 }
 
 function admGiveSkin() {
-    var targetId = document.getElementById('asid').value.trim();
+    var t = document.getElementById('asid').value.trim();
     var skinId = document.getElementById('ass').value;
-    
-    if (!targetId) {
-        alert('❌ Введите ID игрока');
-        return;
-    }
-    
-    fetch(API_URL + '/profile/' + targetId)
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(data) {
-            if (data.success) {
-                var profile = data.profile || {};
-                var skins = profile.ownedSkins || ['default'];
-                
-                if (skins.indexOf(skinId) === -1) {
-                    skins.push(skinId);
-                    profile.user_id = targetId;
-                    profile.wood = profile.wood || 0;
-                    profile.crystals = profile.crystals || 0;
-                    profile.ownedSkins = skins;
-                    profile.ownedAxes = profile.ownedAxes || ['default'];
-                    profile.activeSkin = skinId;
-                    profile.activeAxe = profile.activeAxe || 'default';
-                    profile.name = profile.name || 'Игрок';
-                    profile.treeLevel = profile.treeLevel || 1;
-                    profile.totalTrees = profile.totalTrees || 0;
-                    
-                    fetch(API_URL + '/profile/save', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(profile)
-                    });
-                    
-                    var skinName = treeSkins.find(function(s) {
-                        return s.id === skinId;
-                    });
-                    
-                    alert('✅ Скин "' + (skinName ? skinName.name : skinId) + '" выдан игроку ' + targetId);
-                    document.getElementById('asid').value = '';
-                    
-                    if (targetId === userId) {
-                        playerData.ownedSkins = skins;
-                        playerData.activeSkin = skinId;
-                        updateUI();
-                        saveData();
-                    }
-                } else {
-                    alert('⚠️ У игрока уже есть этот скин');
-                }
-            } else {
-                alert('❌ Игрок не найден');
-            }
-        })
-        .catch(function(error) {
-            alert('❌ Ошибка соединения с сервером');
-        });
+    if (!t) { alert('❌ Введите ID игрока'); return; }
+    if (!skinId) { alert('❌ Выберите скин'); return; }
+    admCall({ target: t, skin: skinId }, '✅ Скин выдан игроку ' + t);
 }
 
 function admGiveAxe() {
-    var targetId = document.getElementById('aaxid').value.trim();
+    var t = document.getElementById('aaxid').value.trim();
     var axeId = document.getElementById('aaxs').value;
-    
-    if (!targetId) {
-        alert('❌ Введите ID игрока');
-        return;
-    }
-    
-    fetch(API_URL + '/profile/' + targetId)
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(data) {
-            if (data.success) {
-                var profile = data.profile || {};
-                var axes = profile.ownedAxes || ['default'];
-                
-                if (axes.indexOf(axeId) === -1) {
-                    axes.push(axeId);
-                    profile.user_id = targetId;
-                    profile.wood = profile.wood || 0;
-                    profile.crystals = profile.crystals || 0;
-                    profile.ownedSkins = profile.ownedSkins || ['default'];
-                    profile.ownedAxes = axes;
-                    profile.activeAxe = axeId;
-                    profile.activeSkin = profile.activeSkin || 'default';
-                    profile.name = profile.name || 'Игрок';
-                    profile.treeLevel = profile.treeLevel || 1;
-                    profile.totalTrees = profile.totalTrees || 0;
-                    
-                    fetch(API_URL + '/profile/save', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(profile)
-                    });
-                    
-                    var axeName = axeSkins.find(function(a) {
-                        return a.id === axeId;
-                    });
-                    
-                    alert('✅ Топор "' + (axeName ? axeName.name : axeId) + '" выдан игроку ' + targetId);
-                    document.getElementById('aaxid').value = '';
-                    
-                    if (targetId === userId) {
-                        playerData.ownedAxes = axes;
-                        playerData.activeAxe = axeId;
-                        updateUI();
-                        saveData();
-                    }
-                } else {
-                    alert('⚠️ У игрока уже есть этот топор');
-                }
-            } else {
-                alert('❌ Игрок не найден');
-            }
-        })
-        .catch(function(error) {
-            alert('❌ Ошибка соединения с сервером');
-        });
+    if (!t) { alert('❌ Введите ID игрока'); return; }
+    if (!axeId) { alert('❌ Выберите топор'); return; }
+    admCall({ target: t, axe: axeId }, '✅ Топор выдан игроку ' + t);
 }
 
 function admWipeAccount(targetId) {
-    if (!confirm('⚠️ ВНИМАНИЕ! Вы уверены, что хотите ПОЛНОСТЬЮ стереть аккаунт игрока ' + targetId + '?\n\nБудут удалены: все ресурсы, скины, топоры, улучшения, прогресс.\n\nЭто действие НЕОБРАТИМО!')) {
-        return;
-    }
-    
-    if (!confirm('ПОДТВЕРДИТЕ удаление аккаунта ' + targetId + '?')) {
-        return;
-    }
-    
-    var wipedProfile = {
-        user_id: targetId,
-        wood: 0,
-        crystals: 0,
-        stars: 0,
-        ownedSkins: ['default'],
-        ownedAxes: ['default'],
-        activeSkin: 'default',
-        activeAxe: 'default',
-        name: 'Игрок',
-        treeLevel: 1,
-        totalTrees: 0
-    };
-    
-    fetch(API_URL + '/profile/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(wipedProfile)
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-        if (data.success) {
-            fetch(API_URL + '/leaderboard/update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: targetId,
-                    name: 'Игрок',
-                    wood: 0,
-                    crystals: 0,
-                    treeLevel: 1,
-                    totalTrees: 0
-                })
-            });
-            
-            if (targetId === userId) {
-                playerData.wood = 0;
-                playerData.crystals = 0;
-                playerData.stars = 0;
-                playerData.axePower = 1;
-                playerData.crystalBonus = 1;
-                playerData.autoWood = 0;
-                playerData.critChance = 0;
-                playerData.critMultiplier = 2;
-                playerData.crystalToWoodRate = 0;
-                playerData.comboBonus = 0;
-                playerData.ownedSkins = ['default'];
-                playerData.ownedAxes = ['default'];
-                playerData.activeSkin = 'default';
-                playerData.activeAxe = 'default';
-                playerData.treeLevel = 1;
-                playerData.totalTrees = 0;
-                playerData.treeHP = 15;
-                playerData.maxTreeHP = 15;
-                playerData.upgrades = {};
-                
-                for (var i = 0; i < upgradeIds.length; i++) {
-                    playerData.upgrades[upgradeIds[i]] = 0;
-                }
-                
-                updateUI();
-                saveData();
-            }
-            
-            alert('✅ Аккаунт ' + targetId + ' полностью очищен!');
-        } else {
-            alert('❌ Ошибка при очистке аккаунта');
-        }
-    })
-    .catch(function(error) {
-        alert('❌ Ошибка соединения с сервером');
-    });
+    if (!confirm('⚠️ Полностью стереть аккаунт игрока ' + targetId + '? Будут удалены ресурсы, скины, топоры, улучшения и прогресс.')) { return; }
+    if (!confirm('ПОДТВЕРДИТЕ удаление аккаунта ' + targetId + '?')) { return; }
+    admCall({ target: targetId, wipe: true }, '✅ Аккаунт ' + targetId + ' будет очищен при следующем входе игрока в сеть');
 }
 
 function openAdminWithId(targetId) {
@@ -1357,6 +1159,10 @@ function showShop() {
         });
         
         if (!item) {
+            return false;
+        }
+        
+        if ((itemId === 'crit1' || itemId === 'crit2') && playerData.critChance >= 80) {
             return false;
         }
         
@@ -1549,9 +1355,9 @@ function showSkins() {
             
             var imageHtml;
             if (skin.img) {
-                imageHtml = '<img src="' + skin.img + '" class="skin-img" onerror="this.style.display=\'none\'">';
+                imageHtml = '<img src="' + escapeHtml(skin.img) + '" class="skin-img" onerror="this.style.display=\'none\'">';
             } else {
-                imageHtml = '<span class="skin-emoji">' + (skin.emoji || '🎄') + '</span>';
+                imageHtml = '<span class="skin-emoji">' + escapeHtml(skin.emoji || '🎄') + '</span>';
             }
             
             html += '<div class="skin-card ' + (isActive ? 'active' : '') + (isLimited ? ' limited' : '') + '" data-sid="' + skin.id + '" data-type="' + tab + '" data-limited="' + (isLimited ? '1' : '0') + '">';
@@ -1561,7 +1367,7 @@ function showSkins() {
             }
             
             html += imageHtml;
-            html += '<div class="skin-name">' + skin.name;
+            html += '<div class="skin-name">' + escapeHtml(skin.name);
             
             if (isLimited) {
                 html += '<span class="limited-badge">LIMITED</span>';
@@ -1742,22 +1548,15 @@ function showSkins() {
                                 tg.openInvoice(result.invoice_link, function(status) {
                                     console.log('Payment status:', status);
                                     if (status === 'paid') {
-                                        if (ownedList.indexOf(skin.id) === -1) {
-                                            ownedList.push(skin.id);
-                                            if (isLimitedSkin && skin.stock > 0) {
-                                                var skinKey4 = skin.id;
-                                                if (!limitedSkinsData[skinKey4]) limitedSkinsData[skinKey4] = { sold: 0 };
-                                                limitedSkinsData[skinKey4].sold = (limitedSkinsData[skinKey4].sold || 0) + 1;
-                                                skin.sold = limitedSkinsData[skinKey4].sold;
-                                                saveLimitedSkinsData();
+                                        waitForPurchase(function(ok) {
+                                            if (ok) {
+                                                if (skinType === 'tree') { playerData.activeSkin = skin.id; } else { playerData.activeAxe = skin.id; }
+                                                updateUI(); saveData(); popup.remove(); render(currentTab);
+                                                alert('✅ Скин куплен!');
+                                            } else {
+                                                alert('⏳ Оплата получена. Скин появится в течение минуты — перезайдите в игру.');
                                             }
-                                            if (skinType === 'tree') playerData.activeSkin = skin.id;
-                                            else playerData.activeAxe = skin.id;
-                                            playerData.stars = (playerData.stars || 0) + skin.price;
-                                            updateUI(); saveData();
-                                            popup.remove(); render(currentTab);
-                                            alert('✅ Скин куплен!');
-                                        }
+                                        });
                                     } else {
                                         alert('❌ Оплата не прошла. Статус: ' + status);
                                     }
@@ -1796,6 +1595,7 @@ function showSkins() {
                         localStorage.setItem('c_as', JSON.stringify(axeSkins.filter(function(s) { return s.id.indexOf('custom_') === 0; })));
                     }
                     if (limitedSkinsData[skinId]) { delete limitedSkinsData[skinId]; saveLimitedSkinsData(); }
+                    fetch(API_URL + '/custom_skins/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ skin_id: skinId }) }).catch(function() {});
                     popup.remove();
                     render(currentTab);
                 }
@@ -1971,6 +1771,8 @@ function addSkinForm() {
                 }).then(function(data) {
                     if (data.success) {
                         console.log('✅ Скин сохранен на сервере');
+                    } else {
+                        alert('❌ Сервер не сохранил скин: ' + (data.error || 'ошибка'));
                     }
                 }).catch(function(e) {
                     console.log('⚠️ Скин сохранен только локально');
@@ -2028,7 +1830,7 @@ function showTrade() {
                 });
                 
                 if (skin) {
-                    var label = (skin.emoji || '🎄') + ' ' + skin.name;
+                    var label = escapeHtml((skin.emoji || '🎄') + ' ' + skin.name);
                     if (skin.limited) label += ' 🔥';
                     html += '<option value="' + skin.id + '">' + label + '</option>';
                 }
@@ -2075,7 +1877,7 @@ function showTrade() {
                     html += '</div>';
                     html += '<span class="trade-price">' + formatNumber(trade.price) + ' ' + currencyIcon + '</span>';
                     html += '</div>';
-                    html += '<div class="trade-tree">' + (trade.skinEmoji || '🎄') + ' ' + trade.skinName + '</div>';
+                    html += '<div class="trade-tree">' + escapeHtml((trade.skinEmoji || '🎄') + ' ' + trade.skinName) + '</div>';
                     
                     if (isOwn) {
                         html += '<button class="trade-btn cancel" data-action="cancel" data-id="' + trade.id + '">❌ Отменить</button>';
@@ -2144,7 +1946,7 @@ function showTrade() {
                         return s.id === skinId;
                     });
                     
-                    fetch(API_URL + '/trades/create', {
+                    syncNow().then(function() { return fetch(API_URL + '/trades/create', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -2158,7 +1960,7 @@ function showTrade() {
                             skinName: skin ? skin.name : 'Скин',
                             skinEmoji: skin ? (skin.emoji || '🎄') : '🎄'
                         })
-                    })
+                    }); })
                     .then(function(response) {
                         return response.json();
                     })
@@ -2185,7 +1987,7 @@ function showTrade() {
                             
                             alert('✅ Скин выставлен на продажу за ' + price + ' ' + (currencyNames[currency] || currency) + '!');
                         } else {
-                            alert('❌ Ошибка создания предложения');
+                            alert('❌ ' + (result.error || 'Ошибка создания предложения'));
                         }
                     });
                 });
@@ -2268,7 +2070,7 @@ function showTrade() {
                                     if (result.success && result.invoice_link) {
                                         tg.openInvoice(result.invoice_link, function(status) {
                                             if (status === 'paid') {
-                                                completeTradePurchase(tradeId, 'stars', popup);
+                                                waitForPurchase(function(ok) { popup.remove(); showTrade(); alert(ok ? '✅ Скин куплен!' : '⏳ Оплата получена. Скин появится в течение минуты.'); });
                                             } else {
                                                 alert('❌ Оплата не прошла');
                                             }
@@ -2305,37 +2107,28 @@ function showTrade() {
             });
             
             function completeTradePurchase(tradeId, paymentType, popup) {
-                fetch(API_URL + '/trades/buy', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        trade_id: tradeId,
-                        buyer_id: userId,
-                        payment_type: paymentType
-                    })
+                syncNow().then(function() {
+                    return fetch(API_URL + '/trades/buy', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ trade_id: tradeId })
+                    });
                 })
-                .then(function(response) {
-                    return response.json();
-                })
+                .then(function(response) { return response.json(); })
                 .then(function(result) {
                     if (result.success) {
-                        playerData.ownedSkins.push(result.skinId);
+                        if (playerData.ownedSkins.indexOf(result.skinId) === -1) { playerData.ownedSkins.push(result.skinId); }
+                        applyGrants(result.grants);
                         saveData();
                         updateUI();
                         popup.remove();
                         showTrade();
-                        
-                        if (paymentType === 'stars' && result.sellerCut) {
-                            alert('✅ Скин куплен! Продавец получил ' + result.sellerCut + '⭐');
-                        } else {
-                            alert('✅ Скин успешно куплен!');
-                        }
+                        alert('✅ Скин успешно куплен!');
                     } else {
                         alert('❌ Ошибка: ' + (result.error || 'неизвестная ошибка'));
                     }
-                });
+                })
+                .catch(function() { alert('❌ Ошибка соединения с сервером'); });
             }
         })
         .catch(function() {
@@ -2545,6 +2338,7 @@ document.getElementById('tc').addEventListener('click', chop);
 document.addEventListener('keydown', function(event) {
     if (event.code === 'Space') {
         event.preventDefault();
+        if (event.repeat) { return; }
         chop();
     }
 });
@@ -2553,42 +2347,15 @@ document.addEventListener('keydown', function(event) {
 updateUI();
 updateAdminSelects();
 
-fetch(API_URL + '/leaderboard/update', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-        user_id: userId,
-        name: userName,
-        wood: playerData.wood,
-        crystals: playerData.crystals,
-        treeLevel: playerData.treeLevel,
-        totalTrees: playerData.totalTrees
-    })
-}).catch(function() {});
 
 setInterval(passiveIncome, 1000);
 setInterval(saveData, 10000);
 
-setInterval(function() {
-    fetch(API_URL + '/leaderboard/update', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            user_id: userId,
-            name: userName,
-            wood: playerData.wood,
-            crystals: playerData.crystals,
-            treeLevel: playerData.treeLevel,
-            totalTrees: playerData.totalTrees
-        })
-    }).catch(function() {});
-}, 30000);
 
-console.log('✅ Woodcutter v19.0 - Fixed Stars Version Ready');
+document.addEventListener('visibilitychange', function() { if (document.hidden) { syncNow(); } });
+window.addEventListener('pagehide', function() { syncNow(); });
+
+console.log('✅ Woodcutter v20.0 - Secure Version Ready');
 console.log('📊 Все функции активны');
 console.log('🎮 Магазин: 16 улучшений (покупка по зажатию)');
 console.log('🎨 Скины: 9 деревьев + 4 топора');
